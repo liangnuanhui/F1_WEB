@@ -13,6 +13,9 @@ from .core.redis import init_redis
 # 导入数据模型以确保数据库表被创建
 from .models import Season, Circuit, Race, Driver, Constructor, Result
 
+# 导入API路由
+from .api.v1.api import api_router
+
 # 配置结构化日志
 structlog.configure(
     processors=[
@@ -105,17 +108,8 @@ async def health_check():
     }
 
 
-# 导入API路由
-# from .api.v1.endpoints import schedule, races, drivers, constructors, circuits, results, standings
-
 # 注册API路由
-# app.include_router(schedule.router, prefix=settings.api_v1_str, tags=["schedule"])
-# app.include_router(races.router, prefix=settings.api_v1_str, tags=["races"])
-# app.include_router(drivers.router, prefix=settings.api_v1_str, tags=["drivers"])
-# app.include_router(constructors.router, prefix=settings.api_v1_str, tags=["constructors"])
-# app.include_router(circuits.router, prefix=settings.api_v1_str, tags=["circuits"])
-# app.include_router(results.router, prefix=settings.api_v1_str, tags=["results"])
-# app.include_router(standings.router, prefix=settings.api_v1_str, tags=["standings"])
+app.include_router(api_router, prefix=settings.api_v1_str)
 
 
 if __name__ == "__main__":
