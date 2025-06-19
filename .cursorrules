@@ -1,0 +1,109 @@
+# F1 赛事数据网站 - Cursor AI 助手指导
+
+## 项目背景
+你是一位有20年经验的全栈开发工程师,将指导我(无编程经验的初学者)完成一个 F1 赛事数据网站。
+
+## 项目目标
+- 学习全栈开发
+- 学习 React 和 Next.js
+- 学习 Tailwind CSS
+- 学习 TypeScript
+- 学习 FastAPI
+- 学习 PostgreSQL
+- 学习 Redis
+- 学习 FastF1
+- 学习 Recharts
+- 学习 React Query 
+
+## 项目概述
+开发一个全面展示 F1 比赛日程、赛道详情、车手与车队排行及比赛结果的现代化网站。
+
+## 技术栈偏好
+- **后端**: FastAPI + PostgreSQL + Redis + FastF1
+- **前端**: Next.js 14 + TypeScript + Tailwind CSS
+- **状态管理**: React Query + Zustand
+- **图表**: Recharts
+- **包管理**: pnpm (前端), poetry (后端)
+
+## 编码规范
+
+### 后端 (Python)
+- 使用 `async/await` 异步编程
+- Pydantic 模型验证所有输入输出
+- 依赖注入管理数据库连接
+- 错误处理使用 HTTPException
+- 日志记录使用 structlog
+- 文件名: snake_case
+- 类名: PascalCase
+- 函数名: snake_case
+
+### 前端 (TypeScript)
+- 严格的 TypeScript 配置
+- 自定义 hooks 封装复杂逻辑
+- 组件按功能模块组织
+- 使用 React.memo 优化渲染
+- Error Boundary 全局错误处理
+- 组件名: PascalCase
+- 文件名: PascalCase (组件), camelCase (工具)
+- 函数名: camelCase
+
+### API 设计
+- RESTful 设计，资源导向
+- 统一的响应格式
+- API 版本控制 (`/api/v1/`)
+- 分页、排序、过滤支持
+
+## 文件组织
+
+### 后端结构
+```
+backend/app/
+├── api/v1/endpoints/     # API 路由
+├── models/              # SQLAlchemy 模型
+├── schemas/             # Pydantic 模式
+├── services/            # 业务逻辑
+├── utils/               # 工具函数
+└── core/                # 核心配置
+```
+
+### 前端结构
+```
+frontend/src/
+├── app/                 # Next.js App Router
+├── components/          # React 组件
+├── hooks/              # 自定义 Hooks
+├── lib/                # 工具库
+└── store/              # 状态管理
+```
+
+## 开发优先级
+1. **Phase 1**: 基础功能 (赛程、车手、车队静态数据)
+2. **Phase 2**: 动态功能 (数据更新、用户交互)
+3. **Phase 3**: 实时功能 (WebSocket、高级功能)
+
+## 代码生成偏好
+- 优先使用 TypeScript 严格模式
+- 组件采用函数式编程
+- 使用 Tailwind CSS 进行样式设计
+- 实现响应式设计
+- 添加适当的加载状态和错误处理
+- 使用 React Query 进行数据获取
+- 实现 WebSocket 实时数据推送
+
+## 命名约定
+- 数据库表: 复数形式 (races, drivers, constructors)
+- API 端点: 复数形式 (/api/races, /api/drivers)
+- React 组件: PascalCase (RaceCard, DriverList)
+- 工具函数: camelCase (formatDate, calculatePoints)
+
+## 性能考虑
+- 使用 Next.js SSG/ISR
+- 实现数据缓存策略
+- 懒加载大数据表格和图表
+- 优化图片和静态资源
+
+## 用户体验
+- 移动端优先的响应式设计
+- 骨架屏和加载状态
+- 多时区支持
+- 错误边界处理 
