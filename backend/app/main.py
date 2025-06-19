@@ -10,6 +10,9 @@ from .core.config import settings
 from .core.database import init_db
 from .core.redis import init_redis
 
+# 导入数据模型以确保数据库表被创建
+from .models import Season, Circuit, Race, Driver, Constructor, Result
+
 # 配置结构化日志
 structlog.configure(
     processors=[
