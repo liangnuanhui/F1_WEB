@@ -1,14 +1,14 @@
 """
-比赛结果数据模型
+冲刺赛结果数据模型
 """
-from sqlalchemy import Column, Integer, String, Float, Text, Boolean, ForeignKey, Index
+from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, Index
 from sqlalchemy.orm import relationship
 
 from .base import BaseModel
 
 
-class Result(BaseModel):
-    """比赛结果模型"""
+class SprintResult(BaseModel):
+    """冲刺赛结果模型"""
     
     # 赛季和比赛信息
     season = Column(Integer, nullable=False, index=True)  # 赛季年份
@@ -23,12 +23,12 @@ class Result(BaseModel):
     driver_number = Column(Integer, nullable=True)  # 车手号码
     driver_code = Column(String(10), nullable=True)  # 车手代码
     
-    # 比赛成绩
-    position = Column(Integer, nullable=True)  # 完赛名次
+    # 冲刺赛成绩
+    position = Column(Integer, nullable=True)  # 冲刺赛名次
     position_text = Column(String(10), nullable=True)  # 位置文本 (DNF, DNS等)
     points = Column(Float, default=0, nullable=False)  # 获得积分
     
-    # 排位赛成绩
+    # 发车位置
     grid_position = Column(Integer, nullable=True)  # 发车位置
     
     # 比赛数据
@@ -46,21 +46,17 @@ class Result(BaseModel):
     total_race_time = Column(String(50), nullable=True)  # 总完赛时间
     total_race_time_millis = Column(Integer, nullable=True)  # 总完赛时间(毫秒)
     
-    # 额外信息
-    penalties = Column(Text, nullable=True)  # 处罚信息
-    notes = Column(Text, nullable=True)  # 备注
-    
     # 关联关系
-    race = relationship("Race", back_populates="results")
-    driver = relationship("Driver", back_populates="results")
-    constructor = relationship("Constructor", back_populates="results")
+    race = relationship("Race", back_populates="sprint_results")
+    driver = relationship("Driver", back_populates="sprint_results")
+    constructor = relationship("Constructor", back_populates="sprint_results")
     
     # 复合索引
     __table_args__ = (
-        Index('idx_result_season_round', 'season', 'round_number'),
-        Index('idx_result_season_round_driver', 'season', 'round_number', 'driver_id'),
-        Index('idx_result_season_round_constructor', 'season', 'round_number', 'constructor_id'),
+        Index('idx_sprint_season_round', 'season', 'round_number'),
+        Index('idx_sprint_season_round_driver', 'season', 'round_number', 'driver_id'),
+        Index('idx_sprint_season_round_constructor', 'season', 'round_number', 'constructor_id'),
     )
     
     def __repr__(self):
-        return f"<Result(season={self.season}, round={self.round_number}, driver_id={self.driver_id}, position={self.position})>" 
+        return f"<SprintResult(season={self.season}, round={self.round_number}, driver_id={self.driver_id}, position={self.position})>" 

@@ -40,6 +40,9 @@ class Driver(BaseModel):
     season = relationship("Season", back_populates="drivers")
     constructor = relationship("Constructor", back_populates="drivers")
     results = relationship("Result", back_populates="driver")
+    qualifying_results = relationship("QualifyingResult", back_populates="driver")
+    sprint_results = relationship("SprintResult", back_populates="driver")
+    driver_standings = relationship("DriverStanding", back_populates="driver")
     
     def __repr__(self):
         return f"<Driver(name='{self.full_name}', number={self.number})>" 

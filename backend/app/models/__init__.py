@@ -7,6 +7,9 @@ from .race import Race
 from .driver import Driver
 from .constructor import Constructor
 from .result import Result
+from .qualifying_result import QualifyingResult
+from .sprint_result import SprintResult
+from .standings import DriverStanding, ConstructorStanding
 
 __all__ = [
     "BaseModel",
@@ -15,5 +18,9 @@ __all__ = [
     "Race",
     "Driver",
     "Constructor",
-    "Result"
+    "Result",
+    "QualifyingResult",
+    "SprintResult",
+    "DriverStanding",
+    "ConstructorStanding"
 ] 

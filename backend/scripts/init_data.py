@@ -1,7 +1,7 @@
-        #!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 数据初始化脚本
-从 FastF1 拉取真实的 F1 数据并填充数据库
+从 FastF1 拉取 2025 赛季主数据并填充数据库
 """
 
 import asyncio
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 async def main():
     """主函数"""
-    logger.info("开始初始化 F1 数据...")
+    logger.info("开始初始化 2025 赛季 F1 主数据...")
     
     try:
         # 获取数据库会话
@@ -37,10 +37,10 @@ async def main():
         # 创建 FastF1 服务
         fastf1_service = FastF1Service(db)
         
-        # 初始化数据库（从 2020 年到 2024 年）
-        await fastf1_service.initialize_database(start_year=2020, end_year=2024)
+        # 只初始化 2025 赛季主数据
+        await fastf1_service.initialize_database(start_year=2025, end_year=2025)
         
-        logger.info("数据初始化完成！")
+        logger.info("2025 赛季主数据初始化完成！")
         
         # 显示统计信息
         await show_statistics(db)
@@ -82,7 +82,7 @@ async def show_statistics(db: Session):
         seasons = db.query(Season).order_by(Season.year).all()
         logger.info("\n=== 赛季信息 ===")
         for season in seasons:
-            logger.info(f"{season.year}: {season.name}")
+            logger.info(f"{season.year}: {season.name} {'(当前赛季)' if season.is_current else ''}")
         
         # 显示最近的比赛
         recent_races = db.query(Race).order_by(Race.race_date.desc()).limit(5).all()

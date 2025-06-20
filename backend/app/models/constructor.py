@@ -38,6 +38,10 @@ class Constructor(BaseModel):
     season = relationship("Season", back_populates="constructors")
     drivers = relationship("Driver", back_populates="constructor")
     results = relationship("Result", back_populates="constructor")
+    qualifying_results = relationship("QualifyingResult", back_populates="constructor")
+    sprint_results = relationship("SprintResult", back_populates="constructor")
+    driver_standings = relationship("DriverStanding", back_populates="constructor")
+    constructor_standings = relationship("ConstructorStanding", back_populates="constructor")
     
     def __repr__(self):
         return f"<Constructor(name='{self.name}', nationality='{self.nationality}')>" 

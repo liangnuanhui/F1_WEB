@@ -38,6 +38,8 @@ class Race(BaseModel):
     season = relationship("Season", back_populates="races")
     circuit = relationship("Circuit", back_populates="races")
     results = relationship("Result", back_populates="race")
+    qualifying_results = relationship("QualifyingResult", back_populates="race")
+    sprint_results = relationship("SprintResult", back_populates="race")
     
     def __repr__(self):
         return f"<Race(name='{self.name}', round={self.round_number}, date={self.race_date})>" 
