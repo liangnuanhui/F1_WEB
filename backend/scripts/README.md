@@ -1,133 +1,118 @@
 # F1 数据同步脚本
 
-本目录包含用于从 FastF1 拉取和同步 F1 数据到本地数据库的脚本。
+## 概述
 
-## 🎯 2025 赛季优化
+本目录包含用于同步 F1 数据的各种脚本。我们使用统一的数据同步服务 (`UnifiedSyncService`) 来确保数据的一致性和完整性。
 
-所有脚本已针对 2025 赛季进行了优化：
+## 🎯 统一同步服务
 
-- ✅ 统一默认年份为 2025
-- ✅ 智能频率限制处理
-- ✅ 避免重复数据同步
-- ✅ 详细的日志记录
-- ✅ 错误恢复机制
-- ✅ 数据模型自动修复
+所有脚本现在都基于 `UnifiedSyncService`，提供：
+
+- ✅ 统一的 API 调用和错误处理
+- ✅ 智能频率限制管理
+- ✅ 完整的数据同步功能
+- ✅ 基于 FastF1 实际数据结构
 
 ## 📁 脚本说明
 
-### 1. `validate_2025_config.py` - 配置验证脚本 ⭐ 推荐先运行
+### 1. `sync_all_data.py` - 完整数据同步脚本 ⭐ **推荐使用**
 
-**用途**: 验证所有 2025 赛季相关配置是否正确
+**功能**: 使用统一同步服务同步所有 F1 数据
+**特点**:
+
+- 同步基础数据：赛季、赛道、车队、车手、比赛
+- 同步结果数据：比赛结果、排位赛结果
+- 同步排名数据：车手排名、车队排名
+- 智能频率限制处理
+- 完整的错误处理和重试机制
+
+**使用方法**:
 
 ```bash
-# 验证所有配置
-poetry run python scripts/validate_2025_config.py
-
-# 功能:
-# - 验证数据库配置
-# - 验证服务配置
-# - 验证脚本配置
-# - 验证API端点配置
-# - 测试数据提供者
+cd backend
+python scripts/sync_all_data.py
 ```
 
-### 2. `fix_season_model.py` - 数据模型修复脚本
+**同步的数据**:
 
-**用途**: 修复 Season 模型中的字段类型问题
+- ✅ 赛季数据 (2023-2025)
+- ✅ 赛道数据
+- ✅ 车队数据
+- ✅ 车手数据
+- ✅ 比赛数据
+- ✅ 比赛结果
+- ✅ 排位赛结果
+- ✅ 冲刺赛结果 🆕
+- ✅ 车手排名
+- ✅ 车队排名
 
-```bash
-# 修复数据模型
-poetry run python scripts/fix_season_model.py
+### 2. `sync_custom_seasons.py` - 自定义赛季同步脚本 🆕
 
-# 功能:
-# - 修复is_current字段类型
-# - 设置2025赛季为当前赛季
-# - 验证修复结果
-```
+**功能**: 允许用户选择要同步的赛季
+**特点**:
 
-### 3. `init_data.py` - 数据初始化脚本
+- 支持命令行参数
+- 灵活的赛季选择
+- 多种预设模式
 
-**用途**: 初始化 2025 赛季的主数据
-
-```bash
-# 基本使用
-poetry run python scripts/init_data.py
-
-# 功能:
-# - 自动修复数据模型
-# - 同步赛季数据 (2025)
-# - 同步赛道数据
-# - 同步车手数据
-# - 同步车队数据
-# - 同步积分榜数据
-# - 同步前3轮比赛结果
-```
-
-### 4. `test_data_providers.py` - 数据提供者测试脚本
-
-**用途**: 测试 FastF1 数据提供者是否正常工作
+**使用方法**:
 
 ```bash
-# 基本测试
-poetry run python scripts/test_data_providers.py
+# 同步所有默认赛季 (2023-2025)
+python scripts/sync_custom_seasons.py
 
-# 详细测试
-poetry run python scripts/test_data_providers.py --verbose
+# 只同步当前赛季 (2025)
+python scripts/sync_custom_seasons.py --current-only
 
-# 测试数据一致性
-poetry run python scripts/test_data_providers.py --consistency
+# 只同步最近两个赛季 (2024-2025)
+python scripts/sync_custom_seasons.py --recent-only
+
+# 自定义赛季
+python scripts/sync_custom_seasons.py --seasons 2024 2025
 
 # 指定缓存目录
-poetry run python scripts/test_data_providers.py --cache-dir ./cache
+python scripts/sync_custom_seasons.py --cache-dir ./my_cache
 ```
 
-### 5. `sync_data_safe.py` - 安全数据同步脚本
+### 3. `init_data.py` - 初始化数据脚本
 
-**用途**: 安全地同步数据，包含频率限制处理
+**功能**: 快速初始化基础数据和部分结果数据
+**特点**:
+
+- 同步基础数据：赛季、赛道、车队、车手、比赛
+- 同步部分结果数据：前 3 轮比赛结果、排位赛结果、冲刺赛结果
+- 适合快速测试和开发环境
+
+### 4. `validate_2025_config.py` - 配置验证脚本
+
+**功能**: 验证所有配置是否正确
+**特点**: 检查数据库、服务、脚本配置
+
+### 5. `test_data_providers.py` - 数据提供者测试脚本
+
+**功能**: 测试数据提供者是否正常工作
+**特点**: 详细的数据源测试
+
+### 6. `test_sprint_sync.py` - 冲刺赛同步测试脚本 🆕
+
+**功能**: 测试冲刺赛结果同步功能
+**特点**:
+
+- 专门测试冲刺赛数据同步
+- 显示冲刺赛结果统计
+- 验证冲刺赛数据完整性
+
+**使用方法**:
 
 ```bash
-# 同步基础数据（推荐）
-poetry run python scripts/sync_data_safe.py --basic-only
-
-# 同步所有数据（包括比赛结果）
-poetry run python scripts/sync_data_safe.py
-
-# 限制同步轮次
-poetry run python scripts/sync_data_safe.py --max-rounds 2
-
-# 指定缓存目录
-poetry run python scripts/sync_data_safe.py --cache-dir ./cache
+python scripts/test_sprint_sync.py
 ```
 
-### 6. `sync_data.py` - 标准数据同步脚本
+### 7. 数据库管理脚本
 
-**用途**: 标准的数据同步，支持多种数据类型
-
-```bash
-# 初始化数据库表
-poetry run python scripts/sync_data.py init
-
-# 同步当前赛季数据
-poetry run python scripts/sync_data.py current
-
-# 同步特定数据类型
-poetry run python scripts/sync_data.py drivers --season 2025
-poetry run python scripts/sync_data.py constructors --season 2025
-poetry run python scripts/sync_data.py circuits --season 2025
-poetry run python scripts/sync_data.py race_results --season 2025 --round 1
-```
-
-### 7. `history_data.py` - 历史数据同步脚本
-
-**用途**: 同步历史赛季数据
-
-```bash
-# 同步指定赛季
-poetry run python scripts/history_data.py season --season 2024
-
-# 同步年份范围
-poetry run python scripts/history_data.py all --start-year 2020 --end-year 2024
-```
+- **`clear_database.py`**: 清空所有表数据
+- **`drop_all_tables.py`**: 删除所有表
+- **`fix_database_field.py`**: 修复数据库字段
 
 ## 🚀 推荐使用流程
 
@@ -135,133 +120,167 @@ poetry run python scripts/history_data.py all --start-year 2020 --end-year 2024
 
 ```bash
 # 1. 验证所有配置
-poetry run python scripts/validate_2025_config.py
+python scripts/validate_2025_config.py
 
-# 2. 如果验证失败，修复数据模型
-poetry run python scripts/fix_season_model.py
+# 2. 测试数据提供者
+python scripts/test_data_providers.py --verbose
 
-# 3. 测试数据提供者
-poetry run python scripts/test_data_providers.py --verbose
+# 3. 同步所有数据
+python scripts/sync_all_data.py
 
-# 4. 初始化 2025 赛季数据
-poetry run python scripts/init_data.py
-
-# 5. 再次验证配置
-poetry run python scripts/validate_2025_config.py
+# 4. 或者只同步当前赛季
+python scripts/sync_custom_seasons.py --current-only
 ```
 
 ### 日常同步（推荐）
 
 ```bash
-# 同步基础数据（安全，不会触发API限制）
-poetry run python scripts/sync_data_safe.py --basic-only
+# 同步所有数据
+python scripts/sync_all_data.py
 
-# 如果需要比赛结果数据
-poetry run python scripts/sync_data_safe.py --max-rounds 3
+# 或者只同步当前赛季
+python scripts/sync_custom_seasons.py --current-only
 ```
 
-## ⚙️ 配置说明
+## 赛季选择说明
 
-### 频率限制配置
+### 为什么选择 2023-2025 赛季？
 
-- **基础数据**: 0.5 秒延迟
-- **比赛结果**: 1.0 秒延迟
-- **积分榜**: 1.5 秒延迟
-- **会话数据**: 2.0 秒延迟
+1. **2025 赛季** - 当前赛季 ⭐
 
-### 缓存配置
+   - 正在进行中的赛季
+   - 数据最完整和最新
+   - 用户最关心的数据
+   - 支持实时更新
 
-```bash
-# 启用缓存（推荐）
-poetry run python scripts/init_data.py --cache-dir ./cache
-```
+2. **2024 赛季** - 刚结束的赛季 ⭐
 
-### 日志配置
+   - 完整的赛季数据
+   - 有历史对比价值
+   - 数据质量高
+   - 支持趋势分析
 
-- 控制台输出 + 文件日志
-- 详细的时间戳和状态信息
-- 错误追踪和恢复建议
+3. **2023 赛季** - 历史赛季
+   - 提供更多历史数据
+   - 支持长期趋势分析
+   - 但数据可能不如新赛季完整
 
-## 🔧 故障排除
+### 数据范围控制策略
+
+**性能考虑**:
+
+- 避免获取不必要的历史数据
+- 减少网络请求和数据处理时间
+- 降低存储空间需求
+- 提高同步效率
+
+**业务价值**:
+
+- 专注于当前相关赛季
+- 提供更有价值的分析数据
+- 减少数据噪音
+- 提高用户体验
+
+**API 限制**:
+
+- FastF1 API 有频率限制
+- 减少请求数量避免被限制
+- 优化数据获取策略
+
+## 统一同步服务
+
+我们使用 `UnifiedSyncService` 来统一管理所有数据同步操作：
+
+### 主要特性
+
+1. **智能频率限制**: 根据 API 类型自动调整请求频率
+2. **错误重试**: 自动处理 API 频率限制和网络错误
+3. **数据完整性**: 确保所有相关数据都被正确同步
+4. **缓存支持**: 支持 FastF1 缓存以提高性能
+
+### 同步流程
+
+1. **基础数据同步**
+
+   - 赛季数据
+   - 赛道数据
+   - 车队数据
+   - 车手数据
+
+2. **比赛数据同步**
+
+   - 比赛日程
+   - 比赛结果
+   - 排位赛结果
+   - 冲刺赛结果 🆕
+
+3. **排名数据同步**
+   - 车手积分榜
+   - 车队积分榜
+
+## 数据源
+
+- **FastF1**: 主要数据源，提供详细的比赛和结果数据
+- **Ergast API**: 通过 FastF1 访问，提供标准化的 F1 数据
+
+## 注意事项
+
+1. **频率限制**: API 有频率限制，脚本会自动处理
+2. **数据范围**: 默认同步 2023-2025 赛季数据
+3. **缓存**: 建议启用 FastF1 缓存以提高性能
+4. **错误处理**: 脚本包含完整的错误处理和日志记录
+
+## 故障排除
 
 ### 常见问题
 
-1. **Season 模型字段类型错误**
+1. **API 频率限制**
 
-   ```
-   解决方案: 运行 fix_season_model.py 脚本
-   ```
+   - 脚本会自动重试
+   - 增加延迟时间
 
-2. **API 频率限制**
+2. **数据不完整**
 
-   ```
-   解决方案: 使用 --basic-only 模式，或增加延迟时间
-   ```
+   - 检查网络连接
+   - 查看日志文件
 
-3. **网络连接问题**
+3. **数据库错误**
+   - 检查数据库连接
+   - 验证模型定义
 
-   ```
-   解决方案: 检查网络连接，使用缓存目录
-   ```
+### 日志文件
 
-4. **数据库连接问题**
+- `unified_sync.log`: 统一同步服务的详细日志
+- `custom_sync.log`: 自定义同步的详细日志
+- 控制台输出: 实时同步状态
 
-   ```
-   解决方案: 确保 PostgreSQL 服务运行，检查连接配置
-   ```
+## 开发说明
 
-5. **数据不完整**
-   ```
-   解决方案: 运行一致性测试，重新同步缺失的数据
-   ```
+### 添加新的同步功能
 
-### 调试模式
+1. 在 `UnifiedSyncService` 中添加新方法
+2. 在 `sync_all_data()` 中调用新方法
+3. 更新文档和测试
 
-```bash
-# 验证配置
-poetry run python scripts/validate_2025_config.py
+### 自定义同步
 
-# 启用详细日志
-poetry run python scripts/test_data_providers.py --verbose
+```python
+from app.services.unified_sync_service import UnifiedSyncService
 
-# 查看日志文件
-tail -f data_init_2025.log
+# 创建同步服务
+sync_service = UnifiedSyncService(db, cache_dir="./cache")
+
+# 同步特定赛季
+sync_service.sync_all_data(target_seasons=[2025])
+
+# 同步特定数据类型
+sync_service.sync_race_results(2025)
+sync_service.sync_driver_standings(2025)
 ```
-
-## 📊 数据统计
-
-运行初始化脚本后，会显示详细的统计信息：
-
-- 赛季数量
-- 赛道数量
-- 比赛数量
-- 车手数量
-- 车队数量
-- 比赛结果数量
-- 排位赛结果数量
-- 积分榜数量
-
-## 🎯 2025 赛季特殊说明
-
-- 所有脚本默认配置为 2025 赛季
-- 使用优化的频率限制策略
-- 支持智能延迟和错误恢复
-- 避免重复数据同步
-- 详细的进度和状态反馈
-- 自动数据模型修复
-- 2025 赛季数据不可用时的降级处理
-
-## 📝 注意事项
-
-1. **首次运行**: 建议先运行验证脚本检查环境
-2. **网络环境**: 确保稳定的网络连接
-3. **API 限制**: 注意 FastF1 API 的频率限制
-4. **数据完整性**: 定期运行一致性测试
-5. **备份**: 重要数据建议定期备份
-6. **模型修复**: 如果遇到字段类型错误，运行修复脚本
 
 ## 🔄 更新日志
 
+- **v3.0**: 统一同步服务，删除冗余脚本
 - **v2.1**: 添加配置验证和模型修复脚本
 - **v2.0**: 针对 2025 赛季优化
 - **v1.5**: 增加智能延迟和错误恢复

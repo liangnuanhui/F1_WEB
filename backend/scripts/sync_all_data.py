@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-FastF1 数据同步脚本
-基于实际数据结构进行数据同步
+完整数据同步脚本
+使用统一同步服务同步所有F1数据
 """
 
 import sys
@@ -15,7 +15,7 @@ sys.path.insert(0, str(project_root))
 
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.services.fastf1_sync_service import FastF1SyncService
+from app.services.unified_sync_service import UnifiedSyncService
 
 # 配置日志
 logging.basicConfig(
@@ -23,7 +23,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler('fastf1_sync.log')
+        logging.FileHandler('unified_sync.log')
     ]
 )
 
@@ -32,19 +32,24 @@ logger = logging.getLogger(__name__)
 
 def main():
     """主函数"""
-    logger.info("🚀 开始FastF1数据同步...")
+    logger.info("🚀 开始完整数据同步...")
     
     try:
         # 获取数据库会话
         db = next(get_db())
         
-        # 创建同步服务
-        sync_service = FastF1SyncService(db)
+        # 创建统一同步服务
+        sync_service = UnifiedSyncService(db, cache_dir="./cache")
         
-        # 执行数据同步
-        sync_service.sync_all_data()
+        # 同步所有数据
+        # 使用服务中定义的目标赛季，或者可以自定义
+        sync_service.sync_all_data()  # 使用默认的 TARGET_SEASONS = [2023, 2024, 2025]
         
-        logger.info("✅ FastF1数据同步完成！")
+        # 或者只同步特定赛季（可选）
+        # sync_service.sync_all_data(target_seasons=[2025])  # 只同步2025赛季
+        # sync_service.sync_all_data(target_seasons=[2024, 2025])  # 同步2024-2025赛季
+        
+        logger.info("✅ 完整数据同步完成！")
         
     except Exception as e:
         logger.error(f"❌ 数据同步失败: {e}")

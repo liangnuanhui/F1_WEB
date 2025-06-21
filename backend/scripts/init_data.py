@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 数据初始化脚本
-从 FastF1 拉取 2025 赛季主数据并填充数据库
+使用统一同步服务初始化F1数据
 """
 
 import asyncio
@@ -17,7 +17,7 @@ sys.path.insert(0, str(project_root))
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.services.data_sync_service import DataSyncService
+from app.services.unified_sync_service import UnifiedSyncService
 
 # 配置日志
 logging.basicConfig(
@@ -25,7 +25,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('data_init_2025.log')
+        logging.FileHandler('data_init_unified.log')
     ]
 )
 logger = logging.getLogger(__name__)
@@ -33,90 +33,79 @@ logger = logging.getLogger(__name__)
 
 async def main():
     """主函数"""
-    logger.info("🚀 开始初始化 2025 赛季 F1 主数据...")
+    logger.info("🚀 开始初始化F1数据...")
     start_time = time.time()
     
     try:
         # 获取数据库会话
         db = next(get_db())
         
-        # 修复Season模型（如果需要）
-        logger.info("🔧 检查并修复数据模型...")
-        try:
-            from scripts.fix_season_model import fix_season_model
-            if fix_season_model():
-                logger.info("✅ 数据模型检查完成")
-            else:
-                logger.warning("⚠️ 数据模型修复跳过")
-        except Exception as e:
-            logger.warning(f"⚠️ 数据模型检查跳过: {e}")
+        # 创建统一同步服务
+        sync_service = UnifiedSyncService(db, cache_dir="./cache")
         
-        # 创建数据同步服务
-        sync_service = DataSyncService(cache_dir="./cache")
-        
-        # 初始化 2025 赛季主数据
+        # 初始化基础数据
         logger.info("📊 开始同步基础数据...")
         
         # 1. 同步赛季数据
         logger.info("1️⃣ 同步赛季数据...")
-        if sync_service.sync_seasons(db, start_year=2025, end_year=2025):
-            logger.info("✅ 赛季数据同步完成")
-        else:
-            logger.error("❌ 赛季数据同步失败")
-            return False
+        seasons = sync_service.sync_seasons()
+        logger.info(f"✅ 赛季数据同步完成，共 {len(seasons)} 个赛季")
         
         # 2. 同步赛道数据
         logger.info("2️⃣ 同步赛道数据...")
-        if sync_service.sync_circuits(db, season=2025):
-            logger.info("✅ 赛道数据同步完成")
-        else:
-            logger.error("❌ 赛道数据同步失败")
-            return False
+        circuits = sync_service.sync_circuits()
+        logger.info(f"✅ 赛道数据同步完成，共 {len(circuits)} 个赛道")
         
-        # 3. 同步车手数据
-        logger.info("3️⃣ 同步车手数据...")
-        if sync_service.sync_drivers(db, season=2025):
-            logger.info("✅ 车手数据同步完成")
-        else:
-            logger.error("❌ 车手数据同步失败")
-            return False
+        # 3. 同步车队数据
+        logger.info("3️⃣ 同步车队数据...")
+        constructors = sync_service.sync_constructors()
+        logger.info(f"✅ 车队数据同步完成，共 {len(constructors)} 个车队")
         
-        # 4. 同步车队数据
-        logger.info("4️⃣ 同步车队数据...")
-        if sync_service.sync_constructors(db, season=2025):
-            logger.info("✅ 车队数据同步完成")
-        else:
-            logger.error("❌ 车队数据同步失败")
-            return False
+        # 4. 同步车手数据
+        logger.info("4️⃣ 同步车手数据...")
+        drivers = sync_service.sync_drivers()
+        logger.info(f"✅ 车手数据同步完成，共 {len(drivers)} 个车手")
         
-        # 5. 同步积分榜数据
-        logger.info("5️⃣ 同步积分榜数据...")
-        if sync_service.sync_driver_standings(db, season=2025):
+        # 5. 同步比赛数据（2025赛季）
+        logger.info("5️⃣ 同步比赛数据...")
+        races = sync_service.sync_races(2025)
+        logger.info(f"✅ 比赛数据同步完成，共 {len(races)} 场比赛")
+        
+        # 6. 同步积分榜数据（2025赛季）
+        logger.info("6️⃣ 同步积分榜数据...")
+        if sync_service.sync_driver_standings(2025):
             logger.info("✅ 车手积分榜同步完成")
         else:
             logger.warning("⚠️ 车手积分榜同步跳过")
         
-        if sync_service.sync_constructor_standings(db, season=2025):
+        if sync_service.sync_constructor_standings(2025):
             logger.info("✅ 车队积分榜同步完成")
         else:
             logger.warning("⚠️ 车队积分榜同步跳过")
         
-        # 6. 同步比赛结果数据（前10轮）
-        logger.info("6️⃣ 同步比赛结果数据（前10轮）...")
-        for round_num in range(1, 11):
+        # 7. 同步比赛结果数据（前3轮）
+        logger.info("7️⃣ 同步比赛结果数据（前3轮）...")
+        for round_num in range(1, 4):
             logger.info(f"   同步第 {round_num} 轮比赛结果...")
-            if sync_service.sync_race_results(db, season=2025, round_number=round_num):
+            if sync_service.sync_race_results(2025):
                 logger.info(f"   ✅ 第 {round_num} 轮比赛结果同步完成")
             else:
                 logger.warning(f"   ⚠️ 第 {round_num} 轮比赛结果同步跳过")
             
-            if sync_service.sync_qualifying_results(db, season=2025, round_number=round_num):
+            if sync_service.sync_qualifying_results(2025):
                 logger.info(f"   ✅ 第 {round_num} 轮排位赛结果同步完成")
             else:
                 logger.warning(f"   ⚠️ 第 {round_num} 轮排位赛结果同步跳过")
         
+        # 8. 同步冲刺赛结果数据（2025赛季）
+        logger.info("8️⃣ 同步冲刺赛结果数据...")
+        if sync_service.sync_sprint_results(2025):
+            logger.info("✅ 冲刺赛结果同步完成")
+        else:
+            logger.warning("⚠️ 冲刺赛结果同步跳过")
+        
         elapsed_time = time.time() - start_time
-        logger.info(f"🎉 2025 赛季主数据初始化完成！耗时: {elapsed_time:.2f} 秒")
+        logger.info(f"🎉 F1数据初始化完成！耗时: {elapsed_time:.2f} 秒")
         
         # 显示统计信息
         await show_statistics(db)
@@ -140,6 +129,7 @@ async def show_statistics(db: Session):
         from app.models.constructor import Constructor
         from app.models.result import Result
         from app.models.qualifying_result import QualifyingResult
+        from app.models.sprint_result import SprintResult
         from app.models.standings import DriverStanding, ConstructorStanding
         
         # 统计各表记录数
@@ -150,6 +140,7 @@ async def show_statistics(db: Session):
         constructors_count = db.query(Constructor).count()
         results_count = db.query(Result).count()
         qualifying_results_count = db.query(QualifyingResult).count()
+        sprint_results_count = db.query(SprintResult).count()
         driver_standings_count = db.query(DriverStanding).count()
         constructor_standings_count = db.query(ConstructorStanding).count()
         
@@ -161,6 +152,7 @@ async def show_statistics(db: Session):
         logger.info(f"车队数量: {constructors_count}")
         logger.info(f"比赛结果数量: {results_count}")
         logger.info(f"排位赛结果数量: {qualifying_results_count}")
+        logger.info(f"冲刺赛结果数量: {sprint_results_count}")
         logger.info(f"车手积分榜数量: {driver_standings_count}")
         logger.info(f"车队积分榜数量: {constructor_standings_count}")
         
@@ -171,22 +163,22 @@ async def show_statistics(db: Session):
             logger.info(f"{season.year}: {season.name} {'(当前赛季)' if season.is_current else ''}")
         
         # 显示最近的比赛
-        recent_races = db.query(Race).order_by(Race.race_date.desc()).limit(5).all()
+        recent_races = db.query(Race).order_by(Race.event_date.desc()).limit(5).all()
         logger.info("\n🏁 === 最近的比赛 ===")
         for race in recent_races:
-            logger.info(f"{race.race_date.strftime('%Y-%m-%d')}: {race.name}")
+            logger.info(f"{race.event_date.strftime('%Y-%m-%d')}: {race.official_event_name}")
         
         # 显示车手信息
-        drivers = db.query(Driver).filter_by(is_active=True).limit(10).all()
-        logger.info("\n👥 === 活跃车手 (前10名) ===")
+        drivers = db.query(Driver).limit(10).all()
+        logger.info("\n👥 === 车手信息 (前10名) ===")
         for driver in drivers:
-            logger.info(f"{driver.full_name} ({driver.nationality}) - #{driver.number}")
+            logger.info(f"{driver.given_name} {driver.family_name} ({driver.driver_nationality}) - #{driver.driver_number}")
         
         # 显示车队信息
-        constructors = db.query(Constructor).filter_by(is_active=True).all()
-        logger.info("\n🏎️ === 活跃车队 ===")
+        constructors = db.query(Constructor).all()
+        logger.info("\n🏎️ === 车队信息 ===")
         for constructor in constructors:
-            logger.info(f"{constructor.name} ({constructor.nationality})")
+            logger.info(f"{constructor.constructor_name} ({constructor.constructor_nationality})")
         
     except Exception as e:
         logger.error(f"显示统计信息时发生错误: {e}")
