@@ -14,7 +14,7 @@ sys.path.insert(0, str(project_root))
 
 from sqlalchemy import text
 from app.core.database import get_db
-from app.services.data_sync_service import DataSyncService
+from app.services.unified_sync_service import UnifiedSyncService
 from app.services.data_provider import DataProviderFactory
 
 # 配置日志
@@ -79,11 +79,15 @@ def validate_service_config():
     
     try:
         # 检查数据同步服务
-        sync_service = DataSyncService()
-        if sync_service.current_season == 2025:
-            logger.info("✅ DataSyncService.current_season配置正确 (2025)")
+        db = next(get_db())
+        sync_service = UnifiedSyncService(db)
+        
+        # 检查目标赛季配置
+        from app.services.unified_sync_service import TARGET_SEASONS
+        if 2025 in TARGET_SEASONS:
+            logger.info("✅ UnifiedSyncService包含2025赛季配置")
         else:
-            logger.error(f"❌ DataSyncService.current_season配置错误: {sync_service.current_season} (应该是2025)")
+            logger.error("❌ UnifiedSyncService缺少2025赛季配置")
             return False
         
         # 检查频率限制配置
@@ -95,7 +99,7 @@ def validate_service_config():
         }
         
         for delay_type, expected_delay in expected_delays.items():
-            actual_delay = sync_service.rate_limit_delays.get(delay_type)
+            actual_delay = sync_service.delays.get(delay_type)
             if actual_delay == expected_delay:
                 logger.info(f"✅ {delay_type}延迟配置正确: {actual_delay}s")
             else:
