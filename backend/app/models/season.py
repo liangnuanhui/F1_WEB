@@ -21,6 +21,7 @@ class Season(Base):
     
     # 关联关系
     races = relationship("Race", back_populates="season")
+    constructors = relationship("Constructor", back_populates="season")
     driver_standings = relationship("DriverStanding", back_populates="season")
     constructor_standings = relationship("ConstructorStanding", back_populates="season")
     driver_seasons = relationship("DriverSeason", back_populates="season")

@@ -23,7 +23,7 @@ class Race(Base):
     country = Column(String(100), nullable=True)  # 国家
     location = Column(String(100), nullable=True)  # 地点
     official_event_name = Column(String(200), nullable=False)  # 官方名称
-    event_date = Column(Date, nullable=False)  # 比赛日期
+    event_date = Column(Date, nullable=True)  # 比赛日期
     event_format = Column(String(50), nullable=True)  # 比赛格式
     
     # 会话信息
