@@ -399,83 +399,119 @@ class UnifiedSyncService:
             raise
     
     def sync_race_results(self, season_year: int) -> bool:
-        """同步比赛结果数据"""
-        logger.info(f"🏁 开始同步 {season_year} 赛季比赛结果...")
+        """同步比赛结果，并创建 DriverSeason 记录"""
+        logger.info(f"🔄 开始同步 {season_year} 赛季的比赛结果...")
         
         try:
-            # 获取赛季
             season = self.db.query(Season).filter(Season.year == season_year).first()
             if not season:
-                logger.error(f"赛季 {season_year} 不存在")
+                logger.error(f"❌ 赛季 {season_year} 不存在，无法同步比赛结果")
                 return False
-            
-            # 获取该赛季的所有比赛
-            races = self.db.query(Race).filter(Race.season_id == season.id).all()
+
+            races = self.db.query(Race).filter(Race.season_id == season.id).order_by(Race.round_number).all()
             if not races:
-                logger.warning(f"赛季 {season_year} 没有比赛数据")
-                return False
-            
-            total_results = 0
-            
+                logger.warning(f"⚠️ 赛季 {season_year} 没有比赛，跳过结果同步")
+                return True
+
+            logger.info(f"赛季 {season_year} 共有 {len(races)} 场比赛，开始同步结果...")
+
             for race in races:
-                logger.info(f"  同步第 {race.round_number} 轮比赛结果...")
-                
-                # 检查是否已有数据
-                existing_results = self.db.query(Result).filter(
-                    Result.race_id == race.id
-                ).count()
-                
-                if existing_results > 0:
-                    logger.info(f"  第 {race.round_number} 轮比赛结果已存在，跳过")
+                logger.info(f"  🔄 同步比赛: {race.race_name} (Round {race.round_number})")
+                self._smart_delay('results')
+
+                # 检查此比赛是否已有结果数据，避免重复处理
+                existing_result_count = self.db.query(Result).filter(Result.race_id == race.id).count()
+                if existing_result_count > 0:
+                    logger.info(f"    - 比赛 {race.race_name} 已有 {existing_result_count} 条结果，跳过")
                     continue
-                
-                # 获取比赛结果数据
+
+                # 获取比赛结果
                 results_df = self._handle_api_call(
-                    self.ergast.get_race_results, 
-                    season=season_year, 
-                    round_number=race.round_number
+                    self.ergast.get_race_results,
+                    season=season_year,
+                    round=race.round_number
                 )
                 
                 if results_df.empty:
-                    logger.warning(f"  没有获取到第 {race.round_number} 轮比赛结果")
+                    logger.warning(f"    - 比赛 {race.race_name} API未返回结果数据，跳过")
                     continue
                 
-                # 处理比赛结果
-                for _, row in results_df.iterrows():
-                    # 获取车手和车队
-                    driver = self._get_or_create_driver_from_result(row)
-                    constructor = self._get_or_create_constructor_from_result(row)
+                # 'results' 是一个包含 ErgastMultiResponse 的列
+                if 'results' not in results_df.columns or results_df.iloc[0]['results'] is None:
+                    logger.warning(f"    - 比赛 {race.race_name} 结果格式不正确或为空，跳过")
+                    continue
+
+                actual_results = results_df.iloc[0]['results']
+                if not isinstance(actual_results, list) or not actual_results:
+                    logger.warning(f"    - 比赛 {race.race_name} 没有有效的详细结果列表，跳过")
+                    continue
+
+                results_added_count = 0
+                for result_data in actual_results:
+                    row = pd.Series(result_data)
+                    
+                    driver_info = row.get('Driver')
+                    constructor_info = row.get('Constructor')
+
+                    if not driver_info or not constructor_info:
+                        logger.warning("    - 结果中缺少车手或车队信息，跳过此条")
+                        continue
+                        
+                    driver = self._get_or_create_driver_from_result(driver_info)
+                    constructor = self._get_or_create_constructor_from_result(constructor_info)
                     
                     if not driver or not constructor:
+                        logger.warning("    - 无法获取或创建车手/车队实体，跳过此条结果")
                         continue
+                        
+                    # 检查并创建 DriverSeason 记录
+                    existing_driver_season = self.db.query(DriverSeason).filter_by(
+                        driver_id=driver.id,
+                        constructor_id=constructor.id,
+                        season_id=season.id
+                    ).first()
+
+                    if not existing_driver_season:
+                        driver_season = DriverSeason(
+                            driver_id=driver.id,
+                            constructor_id=constructor.id,
+                            season_id=season.id
+                        )
+                        self.db.add(driver_season)
+                        logger.info(f"      -> 新增 DriverSeason: {driver.driver_name} 为 {constructor.constructor_name} ({season.year})")
+
+                    # 创建比赛结果记录
+                    time_str = row.get('Time', {}).get('time') if isinstance(row.get('Time'), dict) else None
                     
-                    # 创建比赛结果
                     result = Result(
                         race_id=race.id,
                         driver_id=driver.id,
                         constructor_id=constructor.id,
+                        number=row.get('number'),
                         position=row.get('position'),
-                        position_text=str(row.get('positionText', '')),
-                        points=row.get('points', 0),
-                        grid_position=row.get('grid'),
-                        status=row.get('status', ''),
-                        laps_completed=row.get('laps'),
-                        fastest_lap=row.get('fastestLap'),
-                        is_active=True
+                        position_text=row.get('positionText'),
+                        points=row.get('points'),
+                        grid=row.get('grid'),
+                        laps=row.get('laps'),
+                        status=row.get('status'),
+                        time=time_str,
+                        fastest_lap=row.get('FastestLap', {}).get('lap') if isinstance(row.get('FastestLap'), dict) else None,
+                        fastest_lap_time=row.get('FastestLap', {}).get('Time', {}).get('time') if isinstance(row.get('FastestLap'), dict) else None,
+                        fastest_lap_speed=row.get('FastestLap', {}).get('AverageSpeed', {}).get('speed') if isinstance(row.get('FastestLap'), dict) else None,
                     )
-                    
                     self.db.add(result)
-                    total_results += 1
+                    results_added_count += 1
+
+                if results_added_count > 0:
+                    logger.info(f"    - 为比赛 {race.race_name} 添加了 {results_added_count} 条新结果")
                 
-                self.db.commit()
-                self._smart_delay('results')
-                logger.info(f"  ✅ 第 {race.round_number} 轮比赛结果同步完成")
-            
-            logger.info(f"✅ {season_year} 赛季比赛结果同步完成，共 {total_results} 条记录")
+                self.db.commit() # 在处理完一场比赛的所有结果后提交
+
+            logger.info(f"✅ {season_year} 赛季比赛结果同步完成")
             return True
             
         except Exception as e:
-            logger.error(f"❌ 比赛结果同步失败: {e}")
+            logger.error(f"❌ 同步 {season_year} 赛季比赛结果时发生严重错误: {e}", exc_info=True)
             self.db.rollback()
             return False
     
