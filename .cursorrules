@@ -107,3 +107,45 @@ frontend/src/
 - 骨架屏和加载状态
 - 多时区支持
 - 错误边界处理 
+
+# Cursor AI 助手性能优化规则
+
+## 代码生成优化
+- 优先使用 TypeScript 严格模式
+- 组件采用函数式编程
+- 使用 Tailwind CSS 进行样式设计
+- 实现响应式设计
+- 添加适当的加载状态和错误处理
+- 使用 React Query 进行数据获取
+- 实现 WebSocket 实时数据推送
+
+## 性能优化指令
+- 生成代码时优先考虑性能
+- 使用 React.memo 优化组件渲染
+- 实现懒加载和代码分割
+- 优化图片和静态资源
+- 使用适当的缓存策略
+
+## 代码风格
+- 使用 ESLint 和 Prettier 保持代码一致性
+- 遵循 TypeScript 最佳实践
+- 使用语义化的变量和函数命名
+- 添加适当的注释和文档
+
+## 项目特定规则
+- 后端使用 FastAPI + PostgreSQL + Redis
+- 前端使用 Next.js 14 + TypeScript + Tailwind CSS
+- 状态管理使用 React Query + Zustand
+- 图表使用 Recharts
+- 包管理使用 pnpm (前端), poetry (后端)
+
+## 文件组织
+- 组件按功能模块组织
+- 使用自定义 hooks 封装复杂逻辑
+- 实现 Error Boundary 全局错误处理
+- 遵循 RESTful API 设计原则
+
+## 开发优先级
+1. 基础功能 (赛程、车手、车队静态数据)
+2. 动态功能 (数据更新、用户交互)
+3. 实时功能 (WebSocket、高级功能) 

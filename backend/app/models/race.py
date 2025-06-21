@@ -1,7 +1,7 @@
 """
 比赛数据模型 - 基于FastF1实际数据结构
 """
-from sqlalchemy import Column, String, Integer, Date, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, Date, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -25,6 +25,9 @@ class Race(Base):
     official_event_name = Column(String(200), nullable=False)  # 官方名称
     event_date = Column(Date, nullable=True)  # 比赛日期
     event_format = Column(String(50), nullable=True)  # 比赛格式
+    
+    # 冲刺赛标识
+    is_sprint = Column(Boolean, default=False, nullable=False)  # 是否有冲刺赛
     
     # 会话信息
     session1 = Column(String(100), nullable=True)  # 第一节
