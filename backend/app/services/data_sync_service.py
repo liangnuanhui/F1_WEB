@@ -94,10 +94,10 @@ class DataSyncService:
                     circuit = Circuit(
                         circuit_id=circuit_id,
                         name=row['circuitName'],
+                        location=row.get('locality', ''),
                         country=row.get('country', ''),
-                        locality=row.get('locality', ''),
-                        latitude=row.get('lat'),
-                        longitude=row.get('long')
+                        description=f"Circuit: {row['circuitName']} in {row.get('country', '')}",
+                        is_active=True
                     )
                     db.add(circuit)
                     logger.info(f"添加赛道: {row['circuitName']}")
@@ -116,6 +116,14 @@ class DataSyncService:
         """同步车手数据"""
         try:
             logger.info(f"开始同步车手数据 (赛季: {season or 'all'})...")
+            
+            # 获取对应的赛季记录
+            season_record = None
+            if season:
+                season_record = db.query(Season).filter_by(year=season).first()
+                if not season_record:
+                    logger.error(f"未找到年份为 {season} 的赛季记录")
+                    return False
             
             # 获取车手数据
             drivers_data = self.provider.get_drivers(season=season)
@@ -144,7 +152,7 @@ class DataSyncService:
                         date_of_birth=row.get('dateOfBirth'),
                         nationality=row.get('nationality', ''),
                         number=row.get('driverNumber'),
-                        season_id=season,
+                        season_id=season_record.id if season_record else None,
                         constructor_id=None,  # 稍后关联
                         is_active=True
                     )
@@ -166,6 +174,14 @@ class DataSyncService:
         try:
             logger.info(f"开始同步车队数据 (赛季: {season or 'all'})...")
             
+            # 获取对应的赛季记录
+            season_record = None
+            if season:
+                season_record = db.query(Season).filter_by(year=season).first()
+                if not season_record:
+                    logger.error(f"未找到年份为 {season} 的赛季记录")
+                    return False
+            
             # 获取车队数据
             constructors_data = self.provider.get_constructors(season=season)
             
@@ -183,7 +199,7 @@ class DataSyncService:
                         constructor_id=constructor_id,
                         name=row['constructorName'],
                         nationality=row.get('constructorNationality', ''),
-                        season_id=season,
+                        season_id=season_record.id if season_record else None,
                         is_active=True
                     )
                     db.add(constructor)
@@ -280,8 +296,6 @@ class DataSyncService:
                         race_id=race.id,
                         driver_id=driver.id,
                         constructor_id=constructor.id,
-                        season=season,
-                        round_number=current_round,
                         position=row.get('position'),
                         position_text=str(row.get('positionText', '')),
                         points=row.get('points', 0),
@@ -676,8 +690,10 @@ class DataSyncService:
                         circuit = Circuit(
                             circuit_id=circuit_name,
                             name=f"{location} Circuit",
+                            location=location,
                             country=country,
-                            locality=location
+                            description=f"Circuit: {location} in {country}",
+                            is_active=True
                         )
                         db.add(circuit)
                         db.flush()

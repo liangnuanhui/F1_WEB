@@ -3,7 +3,7 @@ API v1 路由注册
 """
 from fastapi import APIRouter
 
-from .endpoints import circuits, drivers, data_init, standings
+from .endpoints import circuits, drivers, data_init, standings, seasons
 
 api_router = APIRouter()
 
@@ -11,4 +11,5 @@ api_router = APIRouter()
 api_router.include_router(circuits.router, prefix="/circuits", tags=["circuits"])
 api_router.include_router(drivers.router, prefix="/drivers", tags=["drivers"])
 api_router.include_router(data_init.router, prefix="/data-init", tags=["data-init"])
-api_router.include_router(standings.router, prefix="/standings", tags=["standings"]) 
+api_router.include_router(standings.router, prefix="/standings", tags=["standings"])
+api_router.include_router(seasons.router, prefix="/seasons", tags=["seasons"]) 

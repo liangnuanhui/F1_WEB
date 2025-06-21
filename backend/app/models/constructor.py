@@ -1,19 +1,21 @@
 """
-车队数据模型
+车队数据模型 - 基于FastF1实际数据结构
 """
 from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
-from .base import BaseModel
+from .base import Base
 
 
-class Constructor(BaseModel):
-    """车队模型"""
+class Constructor(Base):
+    """车队模型 - 基于FastF1实际数据结构"""
+    __tablename__ = "constructors"
     
-    # 车队基本信息
-    constructor_id = Column(String(50), nullable=False, unique=True, index=True)
-    name = Column(String(200), nullable=False)
-    nationality = Column(String(100), nullable=False)
+    # 使用constructor_id作为主键
+    constructor_id = Column(String(50), primary_key=True, index=True)  # FastF1的constructorId
+    constructor_url = Column(String(500), nullable=True)  # 维基百科链接
+    constructor_name = Column(String(200), nullable=False)  # 车队名称
+    constructor_nationality = Column(String(100), nullable=True)  # 国籍
     
     # 外键关联
     season_id = Column(Integer, ForeignKey("seasons.id"), nullable=False)
@@ -36,7 +38,7 @@ class Constructor(BaseModel):
     
     # 关联关系
     season = relationship("Season", back_populates="constructors")
-    drivers = relationship("Driver", back_populates="constructor")
+    driver_seasons = relationship("DriverSeason", back_populates="constructor")
     results = relationship("Result", back_populates="constructor")
     qualifying_results = relationship("QualifyingResult", back_populates="constructor")
     sprint_results = relationship("SprintResult", back_populates="constructor")
@@ -44,4 +46,4 @@ class Constructor(BaseModel):
     constructor_standings = relationship("ConstructorStanding", back_populates="constructor")
     
     def __repr__(self):
-        return f"<Constructor(name='{self.name}', nationality='{self.nationality}')>" 
+        return f"<Constructor(constructor_id='{self.constructor_id}', name='{self.constructor_name}')>" 

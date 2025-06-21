@@ -1,38 +1,42 @@
 """
-比赛数据模型
+比赛数据模型 - 基于FastF1实际数据结构
 """
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey
+from sqlalchemy import Column, String, Integer, Date, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
-from .base import BaseModel
+from .base import Base
 
 
-class Race(BaseModel):
-    """比赛模型"""
+class Race(Base):
+    """比赛模型 - 基于FastF1实际数据结构"""
+    __tablename__ = "races"
     
-    # 比赛基本信息
-    race_id = Column(String(50), nullable=False, unique=True, index=True)
-    name = Column(String(200), nullable=False)
-    round_number = Column(Integer, nullable=False)  # 比赛轮次
+    # 使用自增ID作为主键
+    id = Column(Integer, primary_key=True, index=True)
     
     # 外键关联
     season_id = Column(Integer, ForeignKey("seasons.id"), nullable=False)
-    circuit_id = Column(Integer, ForeignKey("circuits.id"), nullable=False)
+    circuit_id = Column(String(50), ForeignKey("circuits.circuit_id"), nullable=False)
     
-    # 比赛时间
-    race_date = Column(DateTime, nullable=False)
-    qualifying_date = Column(DateTime, nullable=True)
-    sprint_date = Column(DateTime, nullable=True)
+    # FastF1实际字段名
+    round_number = Column(Integer, nullable=False)  # 轮次
+    country = Column(String(100), nullable=True)  # 国家
+    location = Column(String(100), nullable=True)  # 地点
+    official_event_name = Column(String(200), nullable=False)  # 官方名称
+    event_date = Column(Date, nullable=False)  # 比赛日期
+    event_format = Column(String(50), nullable=True)  # 比赛格式
     
-    # 比赛状态
-    status = Column(String(50), default="scheduled", nullable=False)  # scheduled, ongoing, completed, cancelled
-    is_sprint_weekend = Column(Boolean, default=False, nullable=False)
-    
-    # 比赛信息
-    description = Column(Text, nullable=True)
-    weather = Column(String(100), nullable=True)
-    temperature = Column(Integer, nullable=True)  # 温度(摄氏度)
+    # 会话信息
+    session1 = Column(String(100), nullable=True)  # 第一节
+    session1_date = Column(DateTime, nullable=True)  # 第一节日期
+    session2 = Column(String(100), nullable=True)  # 第二节
+    session2_date = Column(DateTime, nullable=True)  # 第二节日期
+    session3 = Column(String(100), nullable=True)  # 第三节
+    session3_date = Column(DateTime, nullable=True)  # 第三节日期
+    session4 = Column(String(100), nullable=True)  # 第四节
+    session4_date = Column(DateTime, nullable=True)  # 第四节日期
+    session5 = Column(String(100), nullable=True)  # 第五节
+    session5_date = Column(DateTime, nullable=True)  # 第五节日期
     
     # 关联关系
     season = relationship("Season", back_populates="races")
@@ -42,4 +46,4 @@ class Race(BaseModel):
     sprint_results = relationship("SprintResult", back_populates="race")
     
     def __repr__(self):
-        return f"<Race(name='{self.name}', round={self.round_number}, date={self.race_date})>" 
+        return f"<Race(round={self.round_number}, name='{self.official_event_name}', date={self.event_date})>" 

@@ -101,9 +101,9 @@ async def main():
         else:
             logger.warning("⚠️ 车队积分榜同步跳过")
         
-        # 6. 同步比赛结果数据（前3轮）
-        logger.info("6️⃣ 同步比赛结果数据（前3轮）...")
-        for round_num in range(1, 4):
+        # 6. 同步比赛结果数据（前10轮）
+        logger.info("6️⃣ 同步比赛结果数据（前10轮）...")
+        for round_num in range(1, 11):
             logger.info(f"   同步第 {round_num} 轮比赛结果...")
             if sync_service.sync_race_results(db, season=2025, round_number=round_num):
                 logger.info(f"   ✅ 第 {round_num} 轮比赛结果同步完成")
@@ -140,8 +140,7 @@ async def show_statistics(db: Session):
         from app.models.constructor import Constructor
         from app.models.result import Result
         from app.models.qualifying_result import QualifyingResult
-        from app.models.driver_standing import DriverStanding
-        from app.models.constructor_standing import ConstructorStanding
+        from app.models.standings import DriverStanding, ConstructorStanding
         
         # 统计各表记录数
         seasons_count = db.query(Season).count()

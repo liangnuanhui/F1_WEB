@@ -1,20 +1,24 @@
 """
-赛道数据模型
+赛道数据模型 - 基于FastF1实际数据结构
 """
 from sqlalchemy import Column, Integer, String, Float, Text, Boolean
 from sqlalchemy.orm import relationship
 
-from .base import BaseModel
+from .base import Base
 
 
-class Circuit(BaseModel):
-    """赛道模型"""
+class Circuit(Base):
+    """赛道模型 - 基于FastF1实际数据结构"""
+    __tablename__ = "circuits"
     
-    # 赛道基本信息
-    circuit_id = Column(String(50), nullable=False, unique=True, index=True)
-    name = Column(String(200), nullable=False)
-    location = Column(String(200), nullable=False)
-    country = Column(String(100), nullable=False)
+    # 使用circuit_id作为主键
+    circuit_id = Column(String(50), primary_key=True, index=True)  # FastF1的circuitId
+    circuit_url = Column(String(500), nullable=True)  # 维基百科链接
+    circuit_name = Column(String(200), nullable=False)  # 赛道名称
+    lat = Column(Float, nullable=True)  # 纬度
+    long = Column(Float, nullable=True)  # 经度
+    locality = Column(String(100), nullable=True)  # 城市
+    country = Column(String(100), nullable=True)  # 国家
     
     # 赛道规格
     length = Column(Float, nullable=True)  # 赛道长度(米)
@@ -32,4 +36,4 @@ class Circuit(BaseModel):
     races = relationship("Race", back_populates="circuit")
     
     def __repr__(self):
-        return f"<Circuit(name='{self.name}', country='{self.country}')>" 
+        return f"<Circuit(circuit_id='{self.circuit_id}', name='{self.circuit_name}')>" 
