@@ -143,7 +143,7 @@ def safe_sync_session_data(sync_service: DataSyncService, db, season: int, max_r
 
 def main():
     parser = argparse.ArgumentParser(description="安全的F1数据同步脚本")
-    parser.add_argument("--season", type=int, default=2024, help="赛季年份 (默认: 2024)")
+    parser.add_argument("--season", type=int, default=2025, help="赛季年份 (默认: 2025)")
     parser.add_argument("--max-rounds", type=int, default=3, help="最大同步轮次数 (默认: 3)")
     parser.add_argument("--basic-only", action="store_true", help="只同步基础数据（含积分榜）")
     parser.add_argument("--cache-dir", type=str, help="FastF1缓存目录")

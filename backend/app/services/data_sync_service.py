@@ -40,6 +40,12 @@ class DataSyncService:
         """
         self.provider = DataProviderFactory.get_provider('fastf1', cache_dir=cache_dir)
         self.current_season = 2025  # 当前主赛季
+        self.rate_limit_delays = {
+            'basic': 0.5,      # 基础数据延迟
+            'results': 1.0,    # 比赛结果延迟
+            'standings': 1.5,  # 积分榜延迟
+            'session': 2.0     # 会话数据延迟
+        }
         logger.info("初始化数据同步服务，使用 FastF1 数据提供者（带频率限制处理）")
     
     def _handle_rate_limit_error(self, func, *args, max_retries=3, base_delay=1.0, **kwargs):
@@ -62,6 +68,11 @@ class DataSyncService:
         
         return None
     
+    def _smart_delay(self, data_type: str = 'basic'):
+        """智能延迟，根据数据类型调整延迟时间"""
+        delay = self.rate_limit_delays.get(data_type, 1.0)
+        time.sleep(delay)
+    
     def sync_seasons(self, db: DBSession, start_year: int = None, end_year: int = None) -> bool:
         """同步赛季数据"""
         try:
@@ -74,6 +85,9 @@ class DataSyncService:
                 logger.warning("没有获取到赛季数据")
                 return False
             
+            # 先重置所有赛季的is_current状态
+            db.query(Season).update({Season.is_current: False})
+            
             for _, row in seasons_data.iterrows():
                 season_year = row['season']
                 
@@ -83,10 +97,15 @@ class DataSyncService:
                     season = Season(
                         year=season_year,
                         name=row.get('name', f"{season_year} Formula 1 World Championship"),
-                        is_active=season_year == self.current_season
+                        is_current=season_year == self.current_season,
+                        is_active=True
                     )
                     db.add(season)
-                    logger.info(f"添加赛季: {season_year}")
+                    logger.info(f"添加赛季: {season_year} {'(当前赛季)' if season_year == self.current_season else ''}")
+                else:
+                    # 更新现有赛季的is_current状态
+                    existing_season.is_current = season_year == self.current_season
+                    logger.info(f"更新赛季: {season_year} {'(设为当前赛季)' if season_year == self.current_season else ''}")
             
             db.commit()
             logger.info("赛季数据同步完成")
@@ -127,6 +146,7 @@ class DataSyncService:
                     logger.info(f"添加赛道: {row['circuitName']}")
             
             db.commit()
+            self._smart_delay('basic')
             logger.info("赛道数据同步完成")
             return True
             
@@ -175,6 +195,7 @@ class DataSyncService:
                     logger.info(f"添加车手: {full_name}")
             
             db.commit()
+            self._smart_delay('basic')
             logger.info("车手数据同步完成")
             return True
             
@@ -212,6 +233,7 @@ class DataSyncService:
                     logger.info(f"添加车队: {row['constructorName']}")
             
             db.commit()
+            self._smart_delay('basic')
             logger.info("车队数据同步完成")
             return True
             
@@ -231,13 +253,18 @@ class DataSyncService:
 
             for current_round in rounds_to_sync:
                 logger.info(f"  同步第 {current_round} 轮比赛结果...")
-                db.query(Result).filter_by(season=season, round_number=current_round).delete()
+                
+                # 检查是否已有数据，避免重复同步
+                existing_results = db.query(Result).filter_by(season=season, round_number=current_round).count()
+                if existing_results > 0:
+                    logger.info(f"  第 {current_round} 轮比赛结果已存在，跳过")
+                    continue
                 
                 results_data = self.provider.get_race_results(season=season, round_number=current_round)
                 
                 if results_data.empty:
                     logger.warning(f"  没有获取到 {season} 赛季第 {current_round} 轮的比赛结果数据")
-                    if not round_number: time.sleep(0.5)
+                    self._smart_delay('results')
                     continue
 
                 for _, row in results_data.iterrows():
@@ -266,8 +293,7 @@ class DataSyncService:
                     db.add(result)
                 
                 db.commit()
-                if not round_number:
-                    time.sleep(0.5)
+                self._smart_delay('results')
             
             logger.info("比赛结果数据同步完成")
             return True
@@ -288,13 +314,18 @@ class DataSyncService:
 
             for current_round in rounds_to_sync:
                 logger.info(f"  同步第 {current_round} 轮排位赛结果...")
-                db.query(QualifyingResult).filter_by(season=season, round_number=current_round).delete()
+                
+                # 检查是否已有数据，避免重复同步
+                existing_results = db.query(QualifyingResult).filter_by(season=season, round_number=current_round).count()
+                if existing_results > 0:
+                    logger.info(f"  第 {current_round} 轮排位赛结果已存在，跳过")
+                    continue
 
                 qualifying_data = self.provider.get_qualifying_results(season=season, round_number=current_round)
                 
                 if qualifying_data.empty:
                     logger.warning(f"  没有获取到 {season} 赛季第 {current_round} 轮的排位赛结果数据")
-                    if not round_number: time.sleep(0.5)
+                    self._smart_delay('results')
                     continue
                 
                 for _, row in qualifying_data.iterrows():
@@ -319,8 +350,7 @@ class DataSyncService:
                     db.add(qualifying_result)
                 
                 db.commit()
-                if not round_number:
-                    time.sleep(0.5)
+                self._smart_delay('results')
             
             logger.info("排位赛结果数据同步完成")
             return True
@@ -341,13 +371,18 @@ class DataSyncService:
 
             for current_round in rounds_to_sync:
                 logger.info(f"  同步第 {current_round} 轮车手积分榜...")
-                db.query(DriverStanding).filter_by(season=season, round_number=current_round).delete()
+                
+                # 检查是否已有数据，避免重复同步
+                existing_standings = db.query(DriverStanding).filter_by(season=season, round_number=current_round).count()
+                if existing_standings > 0:
+                    logger.info(f"  第 {current_round} 轮车手积分榜已存在，跳过")
+                    continue
                 
                 standings_data = self.provider.get_driver_standings(season=season, round_number=current_round)
                 
                 if standings_data.empty:
                     logger.warning(f"  没有获取到 {season} 赛季第 {current_round} 轮的车手积分榜数据")
-                    if not round_number: time.sleep(1) # Standings API is more sensitive
+                    self._smart_delay('standings')
                     continue
                 
                 for _, row in standings_data.iterrows():
@@ -370,8 +405,7 @@ class DataSyncService:
                     db.add(standing)
 
                 db.commit()
-                if not round_number:
-                    time.sleep(1) # Standings API is more sensitive
+                self._smart_delay('standings')
             
             logger.info("车手积分榜数据同步完成")
             return True
@@ -392,13 +426,18 @@ class DataSyncService:
 
             for current_round in rounds_to_sync:
                 logger.info(f"  同步第 {current_round} 轮车队积分榜...")
-                db.query(ConstructorStanding).filter_by(season=season, round_number=current_round).delete()
+                
+                # 检查是否已有数据，避免重复同步
+                existing_standings = db.query(ConstructorStanding).filter_by(season=season, round_number=current_round).count()
+                if existing_standings > 0:
+                    logger.info(f"  第 {current_round} 轮车队积分榜已存在，跳过")
+                    continue
 
                 standings_data = self.provider.get_constructor_standings(season=season, round_number=current_round)
                 
                 if standings_data.empty:
                     logger.warning(f"  没有获取到 {season} 赛季第 {current_round} 轮的车队积分榜数据")
-                    if not round_number: time.sleep(1)
+                    self._smart_delay('standings')
                     continue
                 
                 for _, row in standings_data.iterrows():
@@ -418,8 +457,7 @@ class DataSyncService:
                     db.add(standing)
                 
                 db.commit()
-                if not round_number:
-                    time.sleep(1)
+                self._smart_delay('standings')
             
             logger.info("车队积分榜数据同步完成")
             return True

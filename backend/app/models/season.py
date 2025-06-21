@@ -1,7 +1,7 @@
 """
 赛季数据模型
 """
-from sqlalchemy import Column, Integer, String, Date, Text
+from sqlalchemy import Column, Integer, String, Date, Text, Boolean
 from sqlalchemy.orm import relationship
 
 from .base import BaseModel
@@ -20,7 +20,7 @@ class Season(BaseModel):
     end_date = Column(Date, nullable=True)
     
     # 赛季状态
-    is_current = Column(Integer, default=False, nullable=False)
+    is_current = Column(Boolean, default=False, nullable=False)
     total_races = Column(Integer, default=0, nullable=False)
     completed_races = Column(Integer, default=0, nullable=False)
     

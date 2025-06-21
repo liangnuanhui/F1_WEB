@@ -19,18 +19,29 @@ class RateLimitHandler:
     def __init__(self, delay_seconds: float = 1.0, max_retries: int = 3):
         self.delay_seconds = delay_seconds
         self.max_retries = max_retries
+        self.request_count = 0
+        self.last_request_time = 0
         
     def execute_with_retry(self, func, *args, **kwargs):
         """执行函数并处理频率限制"""
         for attempt in range(self.max_retries):
             try:
+                # 智能延迟：根据请求类型调整延迟
                 if attempt > 0:
                     # 递增延迟策略
                     delay = self.delay_seconds * (2 ** attempt)
                     logger.info(f"等待 {delay} 秒后重试...")
                     time.sleep(delay)
+                else:
+                    # 基础延迟，避免过于频繁的请求
+                    if self.request_count > 0:
+                        time.sleep(self.delay_seconds * 0.5)
                 
                 result = func(*args, **kwargs)
+                
+                # 更新请求统计
+                self.request_count += 1
+                self.last_request_time = time.time()
                 
                 # 成功后添加基础延迟
                 if self.delay_seconds > 0:
@@ -110,11 +121,19 @@ class FastF1Provider(DataProvider):
         
         if cache_dir:
             fastf1.Cache.enable_cache(cache_dir)
+            logger.info(f"启用 FastF1 缓存目录: {cache_dir}")
         
         self.fastf1 = fastf1
         self.ergast = Ergast()
-        self.rate_limiter = RateLimitHandler(delay_seconds=0.8, max_retries=3)
+        
+        # 为2025赛季优化频率限制配置
+        self.rate_limiter = RateLimitHandler(delay_seconds=1.0, max_retries=3)
+        
+        # 设置FastF1配置
+        fastf1.set_log_level('WARNING')  # 减少日志输出
+        
         logger.info("初始化 FastF1 数据提供者，启用频率限制处理")
+        logger.info("当前配置: 延迟1.0秒，最大重试3次")
     
     def get_seasons(self, start_year: int = None, end_year: int = None) -> pd.DataFrame:
         """获取赛季数据"""
@@ -125,7 +144,21 @@ class FastF1Provider(DataProvider):
                     seasons = seasons[(seasons['season'] >= start_year) & (seasons['season'] <= end_year)]
                 return seasons
             
-            return self.rate_limiter.execute_with_retry(_get_seasons)
+            result = self.rate_limiter.execute_with_retry(_get_seasons)
+            
+            # 2025赛季特殊处理
+            if start_year == 2025 and end_year == 2025:
+                if result.empty:
+                    logger.warning("2025赛季数据可能尚未完全可用，尝试获取最新赛季数据")
+                    # 尝试获取最近的几个赛季
+                    recent_seasons = self.ergast.get_seasons()
+                    if not recent_seasons.empty:
+                        latest_year = recent_seasons['season'].max()
+                        logger.info(f"最新可用赛季: {latest_year}")
+                        if latest_year >= 2024:  # 如果2024或更晚的赛季可用
+                            result = recent_seasons[recent_seasons['season'] >= 2024]
+            
+            return result
         except Exception as e:
             logger.error(f"获取赛季数据失败: {e}")
             return pd.DataFrame()
