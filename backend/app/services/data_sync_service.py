@@ -199,6 +199,50 @@ class DataSyncService:
             db.rollback()
             return False
     
+    def sync_seasons(self, db: DBSession, start_year: int = None, end_year: int = None) -> bool:
+        """同步赛季数据"""
+        try:
+            logger.info(f"开始同步赛季数据 (年份范围: {start_year}-{end_year})...")
+            
+            # 如果没有指定年份范围，默认同步2023-2025
+            if start_year is None:
+                start_year = 2023
+            if end_year is None:
+                end_year = 2025
+            
+            # 为每个目标年份创建赛季记录
+            for year in range(start_year, end_year + 1):
+                # 检查赛季是否已存在
+                existing_season = db.query(Season).filter_by(year=year).first()
+                if not existing_season:
+                    # 创建新赛季
+                    season = Season(
+                        year=year,
+                        name=f"{year} Formula 1 World Championship",
+                        description=f"Formula 1 World Championship {year} season",
+                        is_current=(year == 2025),  # 2025为当前赛季
+                        is_active=True
+                    )
+                    db.add(season)
+                    logger.info(f"添加赛季: {year}")
+                else:
+                    # 更新现有赛季的当前状态
+                    if year == 2025:
+                        # 重置所有赛季的当前状态
+                        db.query(Season).update({"is_current": False})
+                        existing_season.is_current = True
+                        logger.info(f"设置 {year} 为当前赛季")
+            
+            db.commit()
+            self._smart_delay('basic')
+            logger.info(f"赛季数据同步完成 ({start_year}-{end_year})")
+            return True
+            
+        except Exception as e:
+            logger.error(f"同步赛季数据失败: {e}")
+            db.rollback()
+            return False
+    
     def sync_race_results(self, db: DBSession, season: int, round_number: int = None) -> bool:
         """同步比赛结果数据 (增加延迟和分批处理)"""
         try:
@@ -317,53 +361,45 @@ class DataSyncService:
             db.rollback()
             return False
     
-    def sync_driver_standings(self, db: DBSession, season: int, round_number: int = None) -> bool:
-        """同步车手积分榜数据 (增加延迟和分批处理)"""
+    def sync_driver_standings(self, db: DBSession, season: int) -> bool:
+        """同步车手积分榜数据 - 只保存最新积分榜"""
         try:
-            logger.info(f"开始同步车手积分榜数据 (赛季: {season}, 轮次: {round_number or 'all'})...")
+            logger.info(f"开始同步车手积分榜数据 (赛季: {season})...")
             
-            rounds_to_sync = self._get_rounds_to_sync(season, round_number)
-            if not rounds_to_sync:
-                return True
-
-            for current_round in rounds_to_sync:
-                logger.info(f"  同步第 {current_round} 轮车手积分榜...")
-                
-                # 检查是否已有数据，避免重复同步
-                existing_standings = db.query(DriverStanding).filter_by(season=season, round_number=current_round).count()
-                if existing_standings > 0:
-                    logger.info(f"  第 {current_round} 轮车手积分榜已存在，跳过")
-                    continue
-                
-                standings_data = self.provider.get_driver_standings(season=season, round_number=current_round)
-                
-                if standings_data.empty:
-                    logger.warning(f"  没有获取到 {season} 赛季第 {current_round} 轮的车手积分榜数据")
-                    self._smart_delay('standings')
-                    continue
-                
-                for _, row in standings_data.iterrows():
-                    driver = self._get_or_create_driver(db, row)
-                    constructor = self._get_or_create_constructor(db, row)
-                    
-                    if not all([driver, constructor]):
-                        continue
-
-                    standing = DriverStanding(
-                        season=season,
-                        round_number=current_round,
-                        driver_id=driver.id,
-                        constructor_id=constructor.id,
-                        position=row.get('position'),
-                        position_text=str(row.get('positionText', '')),
-                        points=row.get('points', 0),
-                        wins=row.get('wins', 0)
-                    )
-                    db.add(standing)
-
-                db.commit()
-                self._smart_delay('standings')
+            # 获取最新轮次的积分榜数据
+            standings_data = self.provider.get_driver_standings(season=season)
             
+            if standings_data.empty:
+                logger.warning(f"没有获取到 {season} 赛季的车手积分榜数据")
+                return False
+            
+            # 清除该赛季的旧积分榜数据
+            db.query(DriverStanding).filter(DriverStanding.season == season).delete()
+            
+            for _, row in standings_data.iterrows():
+                # 添加赛季信息到数据行
+                row_with_season = row.copy()
+                row_with_season['season'] = season
+                
+                driver = self._get_or_create_driver(db, row_with_season)
+                constructor = self._get_or_create_constructor(db, row_with_season)
+                
+                if not all([driver, constructor]):
+                    continue
+
+                standing = DriverStanding(
+                    season=season,
+                    driver_id=driver.id,
+                    constructor_id=constructor.id,
+                    position=row.get('position'),
+                    position_text=str(row.get('positionText', '')),
+                    points=row.get('points', 0),
+                    wins=row.get('wins', 0)
+                )
+                db.add(standing)
+
+            db.commit()
+            self._smart_delay('standings')
             logger.info("车手积分榜数据同步完成")
             return True
             
@@ -372,50 +408,42 @@ class DataSyncService:
             db.rollback()
             return False
     
-    def sync_constructor_standings(self, db: DBSession, season: int, round_number: int = None) -> bool:
-        """同步车队积分榜数据 (增加延迟和分批处理)"""
+    def sync_constructor_standings(self, db: DBSession, season: int) -> bool:
+        """同步车队积分榜数据 - 只保存最新积分榜"""
         try:
-            logger.info(f"开始同步车队积分榜数据 (赛季: {season}, 轮次: {round_number or 'all'})...")
+            logger.info(f"开始同步车队积分榜数据 (赛季: {season})...")
             
-            rounds_to_sync = self._get_rounds_to_sync(season, round_number)
-            if not rounds_to_sync:
-                return True
-
-            for current_round in rounds_to_sync:
-                logger.info(f"  同步第 {current_round} 轮车队积分榜...")
+            # 获取最新轮次的积分榜数据
+            standings_data = self.provider.get_constructor_standings(season=season)
+            
+            if standings_data.empty:
+                logger.warning(f"没有获取到 {season} 赛季的车队积分榜数据")
+                return False
+            
+            # 清除该赛季的旧积分榜数据
+            db.query(ConstructorStanding).filter(ConstructorStanding.season == season).delete()
+            
+            for _, row in standings_data.iterrows():
+                # 添加赛季信息到数据行
+                row_with_season = row.copy()
+                row_with_season['season'] = season
                 
-                # 检查是否已有数据，避免重复同步
-                existing_standings = db.query(ConstructorStanding).filter_by(season=season, round_number=current_round).count()
-                if existing_standings > 0:
-                    logger.info(f"  第 {current_round} 轮车队积分榜已存在，跳过")
+                constructor = self._get_or_create_constructor(db, row_with_season)
+                if not constructor:
                     continue
 
-                standings_data = self.provider.get_constructor_standings(season=season, round_number=current_round)
-                
-                if standings_data.empty:
-                    logger.warning(f"  没有获取到 {season} 赛季第 {current_round} 轮的车队积分榜数据")
-                    self._smart_delay('standings')
-                    continue
-                
-                for _, row in standings_data.iterrows():
-                    constructor = self._get_or_create_constructor(db, row)
-                    if not constructor:
-                        continue
-
-                    standing = ConstructorStanding(
-                        season=season,
-                        round_number=current_round,
-                        constructor_id=constructor.id,
-                        position=row.get('position'),
-                        position_text=str(row.get('positionText', '')),
-                        points=row.get('points', 0),
-                        wins=row.get('wins', 0)
-                    )
-                    db.add(standing)
-                
-                db.commit()
-                self._smart_delay('standings')
+                standing = ConstructorStanding(
+                    season=season,
+                    constructor_id=constructor.id,
+                    position=row.get('position'),
+                    position_text=str(row.get('positionText', '')),
+                    points=row.get('points', 0),
+                    wins=row.get('wins', 0)
+                )
+                db.add(standing)
             
+            db.commit()
+            self._smart_delay('standings')
             logger.info("车队积分榜数据同步完成")
             return True
             
@@ -437,6 +465,13 @@ class DataSyncService:
             last_name = row.get('familyName', '')
             full_name = f"{first_name} {last_name}".strip()
             
+            # 获取当前赛季 - 使用积分榜数据的赛季
+            season_year = row.get('season', 2025)  # 从数据中获取赛季，默认为2025
+            season = db.query(Season).filter_by(year=season_year).first()
+            if not season:
+                logger.error(f"找不到{season_year}赛季记录")
+                return None
+            
             driver = Driver(
                 driver_id=driver_id,
                 code=row.get('code', ''),
@@ -446,6 +481,7 @@ class DataSyncService:
                 date_of_birth=row.get('dateOfBirth'),
                 nationality=row.get('nationality', ''),
                 number=row.get('driverNumber'),
+                season_id=season.id,  # 设置正确的 season_id
                 is_active=True
             )
             db.add(driver)
@@ -462,10 +498,18 @@ class DataSyncService:
         constructor = db.query(Constructor).filter_by(constructor_id=constructor_id).first()
         if not constructor:
             # 创建新车队
+            # 获取当前赛季 - 使用积分榜数据的赛季
+            season_year = row.get('season', 2025)  # 从数据中获取赛季，默认为2025
+            season = db.query(Season).filter_by(year=season_year).first()
+            if not season:
+                logger.error(f"找不到{season_year}赛季记录")
+                return None
+            
             constructor = Constructor(
                 constructor_id=constructor_id,
                 name=row.get('constructorName', ''),
                 nationality=row.get('constructorNationality', ''),
+                season_id=season.id,  # 设置正确的 season_id
                 is_active=True
             )
             db.add(constructor)
@@ -475,7 +519,13 @@ class DataSyncService:
     
     def _get_or_create_race(self, db: DBSession, season_year: int, round_num: int, row: pd.Series) -> Optional[Race]:
         """获取或创建比赛"""
-        race = db.query(Race).filter_by(season_year=season_year, round_number=round_num).first()
+        # 获取赛季
+        season = db.query(Season).filter_by(year=season_year).first()
+        if not season:
+            logger.error(f"找不到{season_year}赛季记录")
+            return None
+        
+        race = db.query(Race).filter_by(season_id=season.id, round_number=round_num).first()
         if not race:
             # Create new race
             circuit_name = row.get('circuitId', f'round_{round_num}')
@@ -486,7 +536,7 @@ class DataSyncService:
                 db.flush()
 
             race = Race(
-                season_year=season_year,
+                season_id=season.id,  # 使用 season_id 而不是 season_year
                 round_number=round_num,
                 name=row.get('raceName', f'Round {round_num}'),
                 circuit_id=circuit.id,
@@ -613,7 +663,7 @@ class DataSyncService:
                 
                 # 检查是否已存在
                 existing_race = db.query(Race).filter_by(
-                    season_year=season, 
+                    season_id=season_obj.id, 
                     round_number=round_number
                 ).first()
                 
@@ -634,13 +684,11 @@ class DataSyncService:
                     
                     # 创建比赛记录
                     race = Race(
-                        season_year=season,
+                        season_id=season_obj.id,  # 使用 season_id
                         round_number=round_number,
                         name=event_name,
-                        official_name=official_name,
                         circuit_id=circuit.id,
-                        event_date=event_date,
-                        event_format=event_format,
+                        race_date=event_date,  # 使用正确的字段名
                         is_active=True
                     )
                     db.add(race)
@@ -648,9 +696,7 @@ class DataSyncService:
                 else:
                     # 更新现有比赛信息
                     existing_race.name = event_name
-                    existing_race.official_name = official_name
-                    existing_race.event_date = event_date
-                    existing_race.event_format = event_format
+                    existing_race.race_date = event_date  # 使用正确的字段名
                     logger.info(f"🔄 更新比赛: 第{round_number}轮 - {event_name}")
             
             db.commit()

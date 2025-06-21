@@ -97,6 +97,11 @@ class DataProvider(ABC):
         pass
     
     @abstractmethod
+    def get_sprint_results(self, season: int, round_number: int = None) -> pd.DataFrame:
+        """获取冲刺赛结果"""
+        pass
+    
+    @abstractmethod
     def get_driver_standings(self, season: int, round_number: int = None) -> pd.DataFrame:
         """获取车手积分榜"""
         pass
@@ -104,6 +109,11 @@ class DataProvider(ABC):
     @abstractmethod
     def get_constructor_standings(self, season: int, round_number: int = None) -> pd.DataFrame:
         """获取车队积分榜"""
+        pass
+
+    @abstractmethod
+    def get_seasons(self, start_year: int = None, end_year: int = None) -> pd.DataFrame:
+        """获取赛季数据"""
         pass
 
 
@@ -163,6 +173,59 @@ class FastF1Provider(DataProvider):
             logger.error(f"获取车队数据失败: {e}")
             return pd.DataFrame()
     
+    def get_seasons(self, start_year: int = None, end_year: int = None) -> pd.DataFrame:
+        """获取赛季数据 - 支持年份范围过滤，使用分页机制获取所有数据"""
+        try:
+            def _get_seasons():
+                # 使用分页机制获取所有赛季数据
+                all_seasons = []
+                offset = 0
+                limit = 30  # FastF1 默认限制
+                
+                while True:
+                    # 获取当前页的赛季数据
+                    seasons_page = self.ergast.get_seasons(limit=limit, offset=offset)
+                    
+                    if seasons_page.empty:
+                        break
+                    
+                    all_seasons.append(seasons_page)
+                    
+                    # 检查是否还有更多数据
+                    if seasons_page.is_complete:
+                        break
+                    
+                    offset += limit
+                
+                # 合并所有页面的数据
+                if all_seasons:
+                    complete_seasons = pd.concat(all_seasons, ignore_index=True)
+                    logger.info(f"获取到所有赛季数据，共{len(complete_seasons)}个赛季")
+                else:
+                    complete_seasons = pd.DataFrame()
+                    logger.warning("没有获取到任何赛季数据")
+                
+                # 如果指定了年份范围，进行过滤
+                if start_year is not None or end_year is not None:
+                    # 设置默认值
+                    filter_start_year = start_year if start_year is not None else (complete_seasons['season'].min() if not complete_seasons.empty else 1950)
+                    filter_end_year = end_year if end_year is not None else (complete_seasons['season'].max() if not complete_seasons.empty else 2025)
+                    
+                    # 过滤指定年份范围的赛季
+                    filtered_seasons = complete_seasons[
+                        (complete_seasons['season'] >= filter_start_year) & 
+                        (complete_seasons['season'] <= filter_end_year)
+                    ]
+                    logger.info(f"过滤赛季数据: {filter_start_year}-{filter_end_year}，共{len(filtered_seasons)}个赛季")
+                    return filtered_seasons
+                
+                return complete_seasons
+            
+            return self.rate_limiter.execute_with_retry(_get_seasons)
+        except Exception as e:
+            logger.error(f"获取赛季数据失败: {e}")
+            return pd.DataFrame()
+    
     def get_races(self, season: int, round_number: int = None) -> pd.DataFrame:
         """获取比赛数据 - 优先使用 FastF1，失败时降级到 Ergast"""
         try:
@@ -215,51 +278,246 @@ class FastF1Provider(DataProvider):
             return pd.DataFrame()
     
     def get_race_results(self, season: int, round_number: int = None) -> pd.DataFrame:
-        """获取比赛结果 - 使用 fastf1.ergast（避免session.load()）"""
+        """获取比赛结果 - 正确处理 ErgastMultiResponse 数据结构并支持分页"""
         try:
             def _get_race_results():
                 return self.ergast.get_race_results(season=season, round=round_number)
             
             results = self.rate_limiter.execute_with_retry(_get_race_results)
             
-            # 处理Ergast返回的数据结构
+            # 正确处理 ErgastMultiResponse 数据结构并支持分页
             if hasattr(results, 'content') and results.content:
                 all_results = []
+                
+                # 处理第一页数据
                 for idx, result_df in enumerate(results.content):
                     if idx < len(results.description):
+                        # 获取比赛描述信息
                         race_info = results.description.iloc[idx]
+                        round_num = race_info['round']
+                        
+                        # 为结果数据添加比赛信息
+                        result_df = result_df.copy()
                         result_df['season'] = season
-                        result_df['round'] = race_info['round']
+                        result_df['round'] = round_num
+                        result_df['raceName'] = race_info['raceName']
+                        result_df['circuitName'] = race_info['circuitName']
+                        result_df['country'] = race_info['country']
+                        
                         all_results.append(result_df)
-                return pd.concat(all_results, ignore_index=True) if all_results else pd.DataFrame()
+                        logger.info(f"📊 处理第 {round_num} 轮比赛: {race_info['raceName']} (第1页)")
+                
+                # 如果数据不完整，继续获取下一页
+                current_results = results
+                page_count = 1
+                while hasattr(current_results, 'is_complete') and not current_results.is_complete:
+                    try:
+                        page_count += 1
+                        logger.info(f"📄 获取第 {page_count} 页比赛结果数据...")
+                        current_results = current_results.get_next_result_page()
+                        
+                        if hasattr(current_results, 'content') and current_results.content:
+                            for idx, result_df in enumerate(current_results.content):
+                                if idx < len(current_results.description):
+                                    # 获取比赛描述信息
+                                    race_info = current_results.description.iloc[idx]
+                                    round_num = race_info['round']
+                                    
+                                    # 为结果数据添加比赛信息
+                                    result_df = result_df.copy()
+                                    result_df['season'] = season
+                                    result_df['round'] = round_num
+                                    result_df['raceName'] = race_info['raceName']
+                                    result_df['circuitName'] = race_info['circuitName']
+                                    result_df['country'] = race_info['country']
+                                    
+                                    all_results.append(result_df)
+                                    logger.info(f"📊 处理第 {round_num} 轮比赛: {race_info['raceName']} (第{page_count}页)")
+                    except ValueError:
+                        # 没有更多页面了
+                        break
+                    except Exception as e:
+                        logger.warning(f"⚠️ 获取下一页数据时出错: {e}")
+                        break
+                
+                # 合并所有比赛的结果
+                if all_results:
+                    combined_results = pd.concat(all_results, ignore_index=True)
+                    unique_rounds = sorted(combined_results['round'].unique())
+                    logger.info(f"✅ 成功获取 {len(unique_rounds)} 场比赛的结果数据，共 {len(combined_results)} 条记录")
+                    logger.info(f"🎯 包含轮次: {unique_rounds}")
+                    return combined_results
+                else:
+                    logger.warning("⚠️ 没有比赛结果数据")
+                    return pd.DataFrame()
+            else:
+                logger.warning("⚠️ ErgastMultiResponse 没有内容数据")
+                return pd.DataFrame()
             
-            return pd.DataFrame()
         except Exception as e:
             logger.error(f"获取比赛结果失败: {e}")
             return pd.DataFrame()
     
     def get_qualifying_results(self, season: int, round_number: int = None) -> pd.DataFrame:
-        """获取排位赛结果 - 使用 fastf1.ergast（避免session.load()）"""
+        """获取排位赛结果 - 正确处理 ErgastMultiResponse 数据结构并支持分页"""
         try:
             def _get_qualifying_results():
                 return self.ergast.get_qualifying_results(season=season, round=round_number)
             
             results = self.rate_limiter.execute_with_retry(_get_qualifying_results)
             
-            # 处理Ergast返回的数据结构
+            # 正确处理 ErgastMultiResponse 数据结构并支持分页
             if hasattr(results, 'content') and results.content:
                 all_results = []
+                
+                # 处理第一页数据
                 for idx, result_df in enumerate(results.content):
                     if idx < len(results.description):
+                        # 获取比赛描述信息
                         race_info = results.description.iloc[idx]
+                        round_num = race_info['round']
+                        
+                        # 为结果数据添加比赛信息
+                        result_df = result_df.copy()
                         result_df['season'] = season
-                        result_df['round'] = race_info['round']
+                        result_df['round'] = round_num
+                        result_df['raceName'] = race_info['raceName']
+                        result_df['circuitName'] = race_info['circuitName']
+                        result_df['country'] = race_info['country']
+                        
                         all_results.append(result_df)
-                return pd.concat(all_results, ignore_index=True) if all_results else pd.DataFrame()
+                        logger.info(f"📊 处理第 {round_num} 轮排位赛: {race_info['raceName']} (第1页)")
+                
+                # 如果数据不完整，继续获取下一页
+                current_results = results
+                page_count = 1
+                while hasattr(current_results, 'is_complete') and not current_results.is_complete:
+                    try:
+                        page_count += 1
+                        logger.info(f"📄 获取第 {page_count} 页排位赛结果数据...")
+                        current_results = current_results.get_next_result_page()
+                        
+                        if hasattr(current_results, 'content') and current_results.content:
+                            for idx, result_df in enumerate(current_results.content):
+                                if idx < len(current_results.description):
+                                    # 获取比赛描述信息
+                                    race_info = current_results.description.iloc[idx]
+                                    round_num = race_info['round']
+                                    
+                                    # 为结果数据添加比赛信息
+                                    result_df = result_df.copy()
+                                    result_df['season'] = season
+                                    result_df['round'] = round_num
+                                    result_df['raceName'] = race_info['raceName']
+                                    result_df['circuitName'] = race_info['circuitName']
+                                    result_df['country'] = race_info['country']
+                                    
+                                    all_results.append(result_df)
+                                    logger.info(f"📊 处理第 {round_num} 轮排位赛: {race_info['raceName']} (第{page_count}页)")
+                    except ValueError:
+                        # 没有更多页面了
+                        break
+                    except Exception as e:
+                        logger.warning(f"⚠️ 获取下一页数据时出错: {e}")
+                        break
+                
+                # 合并所有比赛的结果
+                if all_results:
+                    combined_results = pd.concat(all_results, ignore_index=True)
+                    unique_rounds = sorted(combined_results['round'].unique())
+                    logger.info(f"✅ 成功获取 {len(unique_rounds)} 场比赛的排位赛数据，共 {len(combined_results)} 条记录")
+                    logger.info(f"🎯 包含轮次: {unique_rounds}")
+                    return combined_results
+                else:
+                    logger.warning("⚠️ 没有排位赛结果数据")
+                    return pd.DataFrame()
+            else:
+                logger.warning("⚠️ ErgastMultiResponse 没有内容数据")
+                return pd.DataFrame()
             
-            return pd.DataFrame()
         except Exception as e:
             logger.error(f"获取排位赛结果失败: {e}")
+            return pd.DataFrame()
+    
+    def get_sprint_results(self, season: int, round_number: int = None) -> pd.DataFrame:
+        """获取冲刺赛结果 - 正确处理 ErgastMultiResponse 数据结构并支持分页"""
+        try:
+            def _get_sprint_results():
+                return self.ergast.get_sprint_results(season=season, round=round_number)
+            
+            results = self.rate_limiter.execute_with_retry(_get_sprint_results)
+            
+            # 正确处理 ErgastMultiResponse 数据结构并支持分页
+            if hasattr(results, 'content') and results.content:
+                all_results = []
+                
+                # 处理第一页数据
+                for idx, result_df in enumerate(results.content):
+                    if idx < len(results.description):
+                        # 获取比赛描述信息
+                        race_info = results.description.iloc[idx]
+                        round_num = race_info['round']
+                        
+                        # 为结果数据添加比赛信息
+                        result_df = result_df.copy()
+                        result_df['season'] = season
+                        result_df['round'] = round_num
+                        result_df['raceName'] = race_info['raceName']
+                        result_df['circuitName'] = race_info['circuitName']
+                        result_df['country'] = race_info['country']
+                        
+                        all_results.append(result_df)
+                        logger.info(f"📊 处理第 {round_num} 轮冲刺赛: {race_info['raceName']} (第1页)")
+                
+                # 如果数据不完整，继续获取下一页
+                current_results = results
+                page_count = 1
+                while hasattr(current_results, 'is_complete') and not current_results.is_complete:
+                    try:
+                        page_count += 1
+                        logger.info(f"📄 获取第 {page_count} 页冲刺赛结果数据...")
+                        current_results = current_results.get_next_result_page()
+                        
+                        if hasattr(current_results, 'content') and current_results.content:
+                            for idx, result_df in enumerate(current_results.content):
+                                if idx < len(current_results.description):
+                                    # 获取比赛描述信息
+                                    race_info = current_results.description.iloc[idx]
+                                    round_num = race_info['round']
+                                    
+                                    # 为结果数据添加比赛信息
+                                    result_df = result_df.copy()
+                                    result_df['season'] = season
+                                    result_df['round'] = round_num
+                                    result_df['raceName'] = race_info['raceName']
+                                    result_df['circuitName'] = race_info['circuitName']
+                                    result_df['country'] = race_info['country']
+                                    
+                                    all_results.append(result_df)
+                                    logger.info(f"📊 处理第 {round_num} 轮冲刺赛: {race_info['raceName']} (第{page_count}页)")
+                    except ValueError:
+                        # 没有更多页面了
+                        break
+                    except Exception as e:
+                        logger.warning(f"⚠️ 获取下一页数据时出错: {e}")
+                        break
+                
+                # 合并所有比赛的结果
+                if all_results:
+                    combined_results = pd.concat(all_results, ignore_index=True)
+                    unique_rounds = sorted(combined_results['round'].unique())
+                    logger.info(f"✅ 成功获取 {len(unique_rounds)} 场比赛的冲刺赛数据，共 {len(combined_results)} 条记录")
+                    logger.info(f"🎯 包含轮次: {unique_rounds}")
+                    return combined_results
+                else:
+                    logger.warning("⚠️ 没有冲刺赛结果数据")
+                    return pd.DataFrame()
+            else:
+                logger.warning("⚠️ ErgastMultiResponse 没有内容数据")
+                return pd.DataFrame()
+            
+        except Exception as e:
+            logger.error(f"获取冲刺赛结果失败: {e}")
             return pd.DataFrame()
     
     def get_driver_standings(self, season: int, round_number: int = None) -> pd.DataFrame:

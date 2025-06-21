@@ -44,6 +44,12 @@ from .constructor import (
     ConstructorListResponse,
     ConstructorStandingResponse
 )
+from .standings import (
+    DriverStandingResponse as StandingsDriverResponse,
+    ConstructorStandingResponse as StandingsConstructorResponse,
+    DriverStandingList,
+    ConstructorStandingList
+)
 
 __all__ = [
     # Base schemas
@@ -89,4 +95,10 @@ __all__ = [
     "ConstructorResponse",
     "ConstructorListResponse",
     "ConstructorStandingResponse",
+    
+    # Standings schemas
+    "StandingsDriverResponse",
+    "StandingsConstructorResponse",
+    "DriverStandingList",
+    "ConstructorStandingList",
 ] 
