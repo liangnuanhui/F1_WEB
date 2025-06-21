@@ -67,11 +67,6 @@ class DataProvider(ABC):
     """数据提供者抽象基类"""
     
     @abstractmethod
-    def get_seasons(self, start_year: int = None, end_year: int = None) -> pd.DataFrame:
-        """获取赛季数据"""
-        pass
-    
-    @abstractmethod
     def get_circuits(self, season: int = None) -> pd.DataFrame:
         """获取赛道数据"""
         pass
@@ -135,34 +130,6 @@ class FastF1Provider(DataProvider):
         logger.info("初始化 FastF1 数据提供者，启用频率限制处理")
         logger.info("当前配置: 延迟1.0秒，最大重试3次")
     
-    def get_seasons(self, start_year: int = None, end_year: int = None) -> pd.DataFrame:
-        """获取赛季数据"""
-        try:
-            def _get_seasons():
-                seasons = self.ergast.get_seasons()
-                if start_year and end_year:
-                    seasons = seasons[(seasons['season'] >= start_year) & (seasons['season'] <= end_year)]
-                return seasons
-            
-            result = self.rate_limiter.execute_with_retry(_get_seasons)
-            
-            # 2025赛季特殊处理
-            if start_year == 2025 and end_year == 2025:
-                if result.empty:
-                    logger.warning("2025赛季数据可能尚未完全可用，尝试获取最新赛季数据")
-                    # 尝试获取最近的几个赛季
-                    recent_seasons = self.ergast.get_seasons()
-                    if not recent_seasons.empty:
-                        latest_year = recent_seasons['season'].max()
-                        logger.info(f"最新可用赛季: {latest_year}")
-                        if latest_year >= 2024:  # 如果2024或更晚的赛季可用
-                            result = recent_seasons[recent_seasons['season'] >= 2024]
-            
-            return result
-        except Exception as e:
-            logger.error(f"获取赛季数据失败: {e}")
-            return pd.DataFrame()
-    
     def get_circuits(self, season: int = None) -> pd.DataFrame:
         """获取赛道数据 - 使用 fastf1.ergast"""
         try:
@@ -197,13 +164,50 @@ class FastF1Provider(DataProvider):
             return pd.DataFrame()
     
     def get_races(self, season: int, round_number: int = None) -> pd.DataFrame:
-        """获取比赛数据 - 使用 fastf1.get_event_schedule"""
+        """获取比赛数据 - 优先使用 FastF1，失败时降级到 Ergast"""
         try:
             def _get_races():
-                schedule = self.fastf1.get_event_schedule(season)
-                if round_number:
-                    schedule = schedule[schedule.get('RoundNumber', 0) == round_number]
-                return schedule
+                # 优先使用 FastF1 获取详细日程
+                try:
+                    logger.info(f"尝试使用 FastF1 获取 {season} 赛季比赛日程...")
+                    schedule = self.fastf1.get_event_schedule(season)
+                    
+                    if not schedule.empty:
+                        logger.info(f"✅ FastF1 获取成功，共{len(schedule)}条记录")
+                        
+                        # 如果指定了轮次，过滤出指定轮次的比赛
+                        if round_number is not None:
+                            schedule = schedule[schedule.get('RoundNumber', 0) == round_number]
+                            logger.info(f"过滤轮次 {round_number}，剩余{len(schedule)}条记录")
+                        
+                        return schedule
+                    else:
+                        logger.warning("FastF1 返回空数据，尝试 Ergast...")
+                        raise Exception("FastF1 返回空数据")
+                        
+                except Exception as e:
+                    logger.warning(f"FastF1 获取失败: {e}，降级到 Ergast...")
+                    
+                    # 降级到 Ergast
+                    try:
+                        schedule = self.ergast.get_race_schedule(season=season)
+                        
+                        if not schedule.empty:
+                            logger.info(f"✅ Ergast 获取成功，共{len(schedule)}条记录")
+                            
+                            # 如果指定了轮次，过滤出指定轮次的比赛
+                            if round_number is not None:
+                                schedule = schedule[schedule.get('round', 0) == round_number]
+                                logger.info(f"过滤轮次 {round_number}，剩余{len(schedule)}条记录")
+                            
+                            return schedule
+                        else:
+                            logger.error("Ergast 也返回空数据")
+                            return pd.DataFrame()
+                            
+                    except Exception as ergast_error:
+                        logger.error(f"Ergast 获取也失败: {ergast_error}")
+                        return pd.DataFrame()
             
             return self.rate_limiter.execute_with_retry(_get_races)
         except Exception as e:

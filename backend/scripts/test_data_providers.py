@@ -33,7 +33,6 @@ def test_fastf1_provider(season: int = 2025, cache_dir: str = None, verbose: boo
         # 定义测试方法 - 按优先级排序
         test_methods = [
             # 基础信息数据 (使用 fastf1.ergast) - 优先级最高
-            ('get_seasons', provider.get_seasons, {'start_year': 2025, 'end_year': 2025}, '基础信息', '高'),
             ('get_circuits', provider.get_circuits, {'season': season}, '基础信息', '高'),
             ('get_drivers', provider.get_drivers, {'season': season}, '基础信息', '高'),
             ('get_constructors', provider.get_constructors, {'season': season}, '基础信息', '高'),

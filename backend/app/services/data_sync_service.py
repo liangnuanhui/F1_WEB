@@ -73,49 +73,6 @@ class DataSyncService:
         delay = self.rate_limit_delays.get(data_type, 1.0)
         time.sleep(delay)
     
-    def sync_seasons(self, db: DBSession, start_year: int = None, end_year: int = None) -> bool:
-        """同步赛季数据"""
-        try:
-            logger.info(f"开始同步赛季数据 (年份范围: {start_year}-{end_year})...")
-            
-            # 获取赛季数据
-            seasons_data = self.provider.get_seasons(start_year, end_year)
-            
-            if seasons_data.empty:
-                logger.warning("没有获取到赛季数据")
-                return False
-            
-            # 先重置所有赛季的is_current状态
-            db.query(Season).update({Season.is_current: False})
-            
-            for _, row in seasons_data.iterrows():
-                season_year = row['season']
-                
-                # 检查是否已存在
-                existing_season = db.query(Season).filter_by(year=season_year).first()
-                if not existing_season:
-                    season = Season(
-                        year=season_year,
-                        name=row.get('name', f"{season_year} Formula 1 World Championship"),
-                        is_current=season_year == self.current_season,
-                        is_active=True
-                    )
-                    db.add(season)
-                    logger.info(f"添加赛季: {season_year} {'(当前赛季)' if season_year == self.current_season else ''}")
-                else:
-                    # 更新现有赛季的is_current状态
-                    existing_season.is_current = season_year == self.current_season
-                    logger.info(f"更新赛季: {season_year} {'(设为当前赛季)' if season_year == self.current_season else ''}")
-            
-            db.commit()
-            logger.info("赛季数据同步完成")
-            return True
-            
-        except Exception as e:
-            logger.error(f"同步赛季数据失败: {e}")
-            db.rollback()
-            return False
-    
     def sync_circuits(self, db: DBSession, season: int = None) -> bool:
         """同步赛道数据"""
         try:
@@ -540,32 +497,54 @@ class DataSyncService:
         return race
     
     def _get_rounds_to_sync(self, season: int, round_number: Optional[int]) -> List[int]:
-        """Helper to get a list of rounds to sync"""
+        """获取需要同步的轮次列表 - 优化处理 FastF1 数据"""
         if round_number:
             return [round_number]
         
-        races = self.provider.get_races(season=season)
-        if races.empty:
-            logger.warning(f"无法获取 {season} 赛季的比赛日程，无法确定轮次")
+        try:
+            logger.info(f"🔍 获取 {season} 赛季比赛日程以确定轮次...")
+            races = self.provider.get_races(season=season)
+            
+            if races.empty:
+                logger.warning(f"无法获取 {season} 赛季的比赛日程，无法确定轮次")
+                return []
+            
+            # 确保 RoundNumber 是整数类型
+            races['RoundNumber'] = pd.to_numeric(races['RoundNumber'], errors='coerce').dropna().astype(int)
+            
+            # 过滤掉季前测试（RoundNumber = 0）
+            actual_races = races[races['RoundNumber'] > 0]
+            
+            if actual_races.empty:
+                logger.warning(f"{season} 赛季没有实际比赛数据")
+                return []
+            
+            num_rounds = actual_races['RoundNumber'].max()
+            rounds_list = list(range(1, num_rounds + 1))
+            
+            logger.info(f"📊 {season} 赛季共有 {num_rounds} 轮比赛")
+            logger.info(f"🏁 轮次列表: {rounds_list}")
+            
+            return rounds_list
+            
+        except Exception as e:
+            logger.error(f"❌ 获取轮次列表失败: {e}")
             return []
-        
-        # Ensure 'RoundNumber' is integer
-        races['RoundNumber'] = pd.to_numeric(races['RoundNumber'], errors='coerce').dropna().astype(int)
-        num_rounds = races['RoundNumber'].max()
-        return list(range(1, num_rounds + 1))
     
     def sync_all_data(self, db: DBSession, season: int = None, start_year: int = None, end_year: int = None) -> bool:
         """同步所有数据"""
         try:
-            logger.info(f"开始同步所有数据 (赛季: {season}, 年份范围: {start_year}-{end_year})...")
+            logger.info(f"🚀 开始同步所有数据 (赛季: {season}, 年份范围: {start_year}-{end_year})...")
             
             success = True
             
             # 同步基础数据
             if season:
+                logger.info(f"📊 同步 {season} 赛季数据...")
                 success &= self.sync_circuits(db, season)
                 success &= self.sync_drivers(db, season)
                 success &= self.sync_constructors(db, season)
+                success &= self.sync_races(db, season)
                 success &= self.sync_race_results(db, season)
                 success &= self.sync_qualifying_results(db, season)
                 success &= self.sync_driver_standings(db, season)
@@ -573,23 +552,113 @@ class DataSyncService:
             else:
                 # 同步历史数据
                 if start_year and end_year:
-                    success &= self.sync_seasons(db, start_year, end_year)
+                    logger.info(f"📊 同步历史数据 ({start_year}-{end_year})...")
                     for year in range(start_year, end_year + 1):
+                        logger.info(f"📅 同步 {year} 赛季...")
                         success &= self.sync_circuits(db, year)
                         success &= self.sync_drivers(db, year)
                         success &= self.sync_constructors(db, year)
+                        success &= self.sync_races(db, year)
                         success &= self.sync_race_results(db, year)
                         success &= self.sync_qualifying_results(db, year)
                         success &= self.sync_driver_standings(db, year)
                         success &= self.sync_constructor_standings(db, year)
             
             if success:
-                logger.info("所有数据同步完成")
+                logger.info("✅ 所有数据同步完成")
             else:
-                logger.warning("部分数据同步失败")
+                logger.warning("⚠️ 部分数据同步失败")
             
             return success
             
         except Exception as e:
-            logger.error(f"同步所有数据时发生错误: {e}")
+            logger.error(f"❌ 同步所有数据时发生错误: {e}")
+            return False
+    
+    def sync_races(self, db: DBSession, season: int) -> bool:
+        """同步比赛数据 - 使用 FastF1 获取的详细日程"""
+        try:
+            logger.info(f"🏁 开始同步 {season} 赛季比赛数据...")
+            
+            # 自动创建赛季（如果不存在）
+            season_obj = db.query(Season).filter(Season.year == season).first()
+            if not season_obj:
+                logger.info(f"赛季 {season} 在数据库中不存在，将自动创建。")
+                season_obj = Season(year=season, name=f"{season} Formula 1 Season")
+                db.add(season_obj)
+                db.flush()  # 使用 flush 以便后续操作可以引用此赛季
+                logger.info(f"✅ 赛季 {season} 已创建。")
+
+            # 获取比赛日程（使用 FastF1 获取最全面的数据）
+            races_data = self.provider.get_races(season=season)
+            
+            if races_data.empty:
+                logger.warning(f"没有获取到 {season} 赛季的比赛数据")
+                return False
+            
+            logger.info(f"📊 获取到 {len(races_data)} 场比赛数据")
+            
+            # 过滤掉季前测试（RoundNumber = 0）
+            actual_races = races_data[races_data['RoundNumber'] > 0]
+            logger.info(f"🏁 实际比赛场数: {len(actual_races)}场（排除季前测试）")
+            
+            for _, row in actual_races.iterrows():
+                round_number = row.get('RoundNumber')
+                event_name = row.get('EventName', '')
+                official_name = row.get('OfficialEventName', '')
+                country = row.get('Country', '')
+                location = row.get('Location', '')
+                event_date = row.get('EventDate')
+                event_format = row.get('EventFormat', 'conventional')
+                
+                # 检查是否已存在
+                existing_race = db.query(Race).filter_by(
+                    season_year=season, 
+                    round_number=round_number
+                ).first()
+                
+                if not existing_race:
+                    # 获取或创建赛道
+                    circuit_name = f"{country}_{location}".replace(' ', '_').lower()
+                    circuit = db.query(Circuit).filter_by(circuit_id=circuit_name).first()
+                    
+                    if not circuit:
+                        circuit = Circuit(
+                            circuit_id=circuit_name,
+                            name=f"{location} Circuit",
+                            country=country,
+                            locality=location
+                        )
+                        db.add(circuit)
+                        db.flush()
+                    
+                    # 创建比赛记录
+                    race = Race(
+                        season_year=season,
+                        round_number=round_number,
+                        name=event_name,
+                        official_name=official_name,
+                        circuit_id=circuit.id,
+                        event_date=event_date,
+                        event_format=event_format,
+                        is_active=True
+                    )
+                    db.add(race)
+                    logger.info(f"✅ 添加比赛: 第{round_number}轮 - {event_name} ({event_format})")
+                else:
+                    # 更新现有比赛信息
+                    existing_race.name = event_name
+                    existing_race.official_name = official_name
+                    existing_race.event_date = event_date
+                    existing_race.event_format = event_format
+                    logger.info(f"🔄 更新比赛: 第{round_number}轮 - {event_name}")
+            
+            db.commit()
+            self._smart_delay('basic')
+            logger.info(f"✅ {season} 赛季比赛数据同步完成")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ 同步比赛数据失败: {e}")
+            db.rollback()
             return False 
