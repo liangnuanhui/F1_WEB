@@ -5,9 +5,11 @@ import Link from "next/link";
 import { Menu, X, Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 export function Header() {
-  const { sidebarOpen, setSidebarOpen, theme, setTheme } = useAppStore();
+  const { sidebarOpen, setSidebarOpen } = useAppStore();
+  const { theme, setTheme } = useTheme();
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
   const toggleTheme = (newTheme: "light" | "dark" | "system") => {
