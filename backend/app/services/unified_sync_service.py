@@ -343,11 +343,6 @@ class UnifiedSyncService:
             skipped_count = 0
             
             for _, row in races_df.iterrows():
-                # 跳过季前测试（第0轮）
-                if row['RoundNumber'] == 0:
-                    logger.info(f"⏭️  跳过季前测试: {row['OfficialEventName']}")
-                    continue
-                
                 # 检查是否已存在
                 existing = self.db.query(Race).filter(
                     Race.season_id == season.id,
@@ -389,6 +384,15 @@ class UnifiedSyncService:
                 else:
                     event_date = datetime(season_year, 3, 1).date()
                 
+                # 处理会话日期，将NaT转换为None
+                def handle_session_date(date_value):
+                    if pd.isna(date_value) or pd.isna(pd.to_datetime(date_value, errors='coerce')):
+                        return None
+                    try:
+                        return pd.to_datetime(date_value)
+                    except:
+                        return None
+                
                 # 创建新比赛
                 race = Race(
                     season_id=season.id,
@@ -399,17 +403,23 @@ class UnifiedSyncService:
                     official_event_name=row['OfficialEventName'],
                     event_date=event_date,
                     event_format=row['EventFormat'],
+                    # 根据EventFormat设置is_sprint
+                    is_sprint=row['EventFormat'] == 'sprint_qualifying',
                     session1=row.get('Session1'),
-                    session1_date=row.get('Session1Date'),
+                    session1_date=handle_session_date(row.get('Session1Date')),
                     session2=row.get('Session2'),
-                    session2_date=row.get('Session2Date'),
+                    session2_date=handle_session_date(row.get('Session2Date')),
                     session3=row.get('Session3'),
-                    session3_date=row.get('Session3Date'),
+                    session3_date=handle_session_date(row.get('Session3Date')),
                     session4=row.get('Session4'),
-                    session4_date=row.get('Session4Date'),
+                    session4_date=handle_session_date(row.get('Session4Date')),
                     session5=row.get('Session5'),
-                    session5_date=row.get('Session5Date')
+                    session5_date=handle_session_date(row.get('Session5Date'))
                 )
+                
+                # 添加冲刺赛识别日志
+                if row['EventFormat'] == 'sprint_qualifying':
+                    logger.info(f"🏁 识别冲刺赛: 第{row['RoundNumber']}轮 {row['OfficialEventName']}")
                 
                 self.db.add(race)
                 races.append(race)
@@ -623,12 +633,13 @@ class UnifiedSyncService:
             total_results = 0
             sprint_count = 0
             
-            # 获取该赛季的所有比赛，按轮次排序
-            all_races = self.db.query(Race).filter(
-                Race.season_id == season_year
+            # 获取该赛季的所有冲刺赛
+            sprint_races = self.db.query(Race).filter(
+                Race.season_id == season_year,
+                Race.is_sprint == True
             ).order_by(Race.round_number).all()
             
-            logger.info(f"📊 数据库中找到 {len(all_races)} 场比赛")
+            logger.info(f"📊 数据库中找到 {len(sprint_races)} 场冲刺赛")
             
             for df_idx, sprint_df in enumerate(sprint_dfs):
                 if sprint_df is None or sprint_df.empty:
@@ -637,13 +648,12 @@ class UnifiedSyncService:
                 
                 logger.info(f"📊 处理DataFrame {df_idx}: {len(sprint_df)} 条记录")
                 
-                # 根据DataFrame索引匹配比赛
-                # 假设冲刺赛结果按比赛轮次顺序返回
-                if df_idx < len(all_races):
-                    race = all_races[df_idx]
-                    logger.info(f"📊 匹配到第 {race.round_number} 轮比赛: {race.official_event_name}")
+                # 根据DataFrame索引匹配冲刺赛
+                if df_idx < len(sprint_races):
+                    race = sprint_races[df_idx]
+                    logger.info(f"📊 匹配到第 {race.round_number} 轮冲刺赛: {race.official_event_name}")
                 else:
-                    logger.warning(f"DataFrame {df_idx} 无法匹配到比赛，跳过")
+                    logger.warning(f"DataFrame {df_idx} 无法匹配到冲刺赛，跳过")
                     continue
                 
                 sprint_count += 1
