@@ -18,6 +18,12 @@ class BaseResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="响应时间")
 
 
+class ApiResponse(BaseResponse, Generic[T]):
+    """API响应模式 - 用于统一API响应格式"""
+    
+    data: Optional[T] = Field(default=None, description="响应数据")
+
+
 class DataResponse(BaseResponse, Generic[T]):
     """数据响应模式"""
     
@@ -45,12 +51,7 @@ class PaginationParams(BaseModel):
 
 
 class BaseModelSchema(BaseModel):
-    """基础模型模式"""
-    
-    id: int = Field(description="记录ID")
-    created_at: datetime = Field(description="创建时间")
-    updated_at: datetime = Field(description="更新时间")
-    is_active: bool = Field(description="是否激活")
+    """基础模型模式 - 根据实际数据库结构调整"""
     
     class Config:
         from_attributes = True 

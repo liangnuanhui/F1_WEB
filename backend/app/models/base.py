@@ -14,11 +14,8 @@ class BaseModel(Base):
     
     __abstract__ = True
     
-    # 通用字段
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False)
+    # 注意：实际的数据库表中没有这些字段，所以这里不定义
+    # 如果需要这些字段，需要通过数据库迁移添加
     
     @declared_attr
     def __tablename__(cls):
@@ -27,7 +24,7 @@ class BaseModel(Base):
     
     def __repr__(self):
         """字符串表示"""
-        return f"<{self.__class__.__name__}(id={self.id})>"
+        return f"<{self.__class__.__name__}(id={getattr(self, 'id', 'N/A')})>"
     
     def to_dict(self):
         """转换为字典"""

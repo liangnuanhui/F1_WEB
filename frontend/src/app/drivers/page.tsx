@@ -46,7 +46,7 @@ export default function DriversPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {drivers.data.map((driver: Driver) => (
             <div
-              key={driver.id}
+              key={driver.driver_id}
               className="rounded-lg border bg-card p-6 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between mb-4">

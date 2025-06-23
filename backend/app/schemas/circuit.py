@@ -10,17 +10,21 @@ from .base import BaseModelSchema
 class CircuitBase(BaseModel):
     """赛道基础模式"""
     
-    circuit_id: str = Field(..., min_length=1, max_length=50, description="赛道ID")
-    name: str = Field(..., min_length=1, max_length=200, description="赛道名称")
-    location: str = Field(..., min_length=1, max_length=200, description="赛道位置")
-    country: str = Field(..., min_length=1, max_length=100, description="国家")
-    length: Optional[float] = Field(default=None, gt=0, description="赛道长度(米)")
-    corners: Optional[int] = Field(default=None, ge=0, description="弯道数量")
-    lap_record: Optional[str] = Field(default=None, max_length=50, description="单圈记录")
-    lap_record_driver: Optional[str] = Field(default=None, max_length=100, description="记录保持者")
-    lap_record_year: Optional[int] = Field(default=None, ge=1950, le=2030, description="记录年份")
-    description: Optional[str] = Field(default=None, description="赛道描述")
-    characteristics: Optional[str] = Field(default=None, description="赛道特点")
+    circuit_id: str = Field(..., description="赛道ID")
+    circuit_url: Optional[str] = Field(None, description="赛道官网")
+    circuit_name: str = Field(..., description="赛道名称")
+    lat: Optional[float] = Field(None, description="纬度")
+    long: Optional[float] = Field(None, description="经度")
+    locality: Optional[str] = Field(None, description="城市/地区")
+    country: Optional[str] = Field(None, description="国家")
+    length: Optional[float] = Field(None, description="赛道长度")
+    corners: Optional[int] = Field(None, description="弯道数")
+    lap_record: Optional[str] = Field(None, description="单圈纪录")
+    lap_record_driver: Optional[str] = Field(None, description="纪录保持者")
+    lap_record_year: Optional[int] = Field(None, description="纪录年份")
+    description: Optional[str] = Field(None, description="描述")
+    characteristics: Optional[str] = Field(None, description="特点")
+    is_active: bool = Field(..., description="是否活跃")
 
 
 class CircuitCreate(CircuitBase):

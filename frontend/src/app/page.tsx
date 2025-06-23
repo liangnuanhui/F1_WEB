@@ -21,7 +21,7 @@ export default function HomePage() {
   const stats = [
     {
       title: "当前赛季",
-      value: activeSeason?.data?.year || "2024",
+      value: activeSeason?.data?.year || "2025",
       icon: TrendingUp,
       href: "/races",
     },
@@ -106,16 +106,18 @@ export default function HomePage() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold">
-                      {formatRaceName(race.name)}
+                      {formatRaceName(race.official_event_name)}
                     </h3>
                     <span className="text-sm text-muted-foreground">
-                      第 {race.round} 站
+                      第 {race.round_number} 站
                     </span>
                   </div>
                   <div className="space-y-1 text-sm text-muted-foreground">
-                    <p>{race.circuit?.name}</p>
-                    <p>{formatDate(race.date, "long")}</p>
-                    {race.time && <p>时间: {race.time.substring(0, 5)}</p>}
+                    <p>{race.circuit?.circuit_name}</p>
+                    <p>
+                      {race.event_date && formatDate(race.event_date, "long")}
+                    </p>
+                    <p>{race.country}</p>
                   </div>
                 </div>
               ))}

@@ -14,8 +14,8 @@ class Constructor(Base):
     # 使用constructor_id作为主键
     constructor_id = Column(String(50), primary_key=True, index=True)  # FastF1的constructorId
     constructor_url = Column(String(500), nullable=True)  # 维基百科链接
-    constructor_name = Column(String(200), nullable=False)  # 车队名称
-    constructor_nationality = Column(String(100), nullable=True)  # 国籍
+    name = Column("constructor_name", String(200), nullable=False)  # 车队名称
+    nationality = Column("constructor_nationality", String(100), nullable=True)  # 国籍
     
     # 外键关联
     season_id = Column(Integer, ForeignKey("seasons.id"), nullable=False)
@@ -46,4 +46,4 @@ class Constructor(Base):
     constructor_standings = relationship("ConstructorStanding", back_populates="constructor")
     
     def __repr__(self):
-        return f"<Constructor(constructor_id='{self.constructor_id}', name='{self.constructor_name}')>" 
+        return f"<Constructor(constructor_id='{self.constructor_id}', name='{self.name}')>" 

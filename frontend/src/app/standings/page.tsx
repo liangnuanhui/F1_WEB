@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { standingsApi } from "@/lib/api";
 import { getCountryFlag } from "@/lib/utils";
 import { Trophy, Users, Building2 } from "lucide-react";
+import { DriverStanding, ConstructorStanding } from "@/types";
 
 type StandingsType = "drivers" | "constructors";
 
@@ -106,54 +107,64 @@ export default function StandingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {standings.data.map((standing, index) => (
-                  <tr key={standing.id} className="border-b hover:bg-muted/50">
-                    <td className="px-4 py-3 font-medium">
-                      {standing.position}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center space-x-2">
-                        {type === "drivers" ? (
-                          <>
-                            <span className="font-medium">
-                              {standing.driver?.forename}{" "}
-                              {standing.driver?.surname}
-                            </span>
-                            {standing.driver?.number && (
-                              <span className="text-sm text-muted-foreground">
-                                #{standing.driver.number}
+                {standings.data.map(
+                  (
+                    standing: DriverStanding | ConstructorStanding,
+                    index: number
+                  ) => (
+                    <tr
+                      key={standing.id}
+                      className="border-b hover:bg-muted/50"
+                    >
+                      <td className="px-4 py-3 font-medium">
+                        {standing.position || index + 1}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center space-x-2">
+                          {type === "drivers" ? (
+                            <>
+                              <span className="font-medium">
+                                {standing.driver?.forename}{" "}
+                                {standing.driver?.surname}
                               </span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="font-medium">
-                            {standing.constructor?.name}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center space-x-1">
-                        <span>
-                          {type === "drivers"
-                            ? getCountryFlag(standing.driver?.nationality || "")
-                            : getCountryFlag(
-                                standing.constructor?.nationality || ""
+                              {standing.driver?.number && (
+                                <span className="text-sm text-muted-foreground">
+                                  #{standing.driver.number}
+                                </span>
                               )}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {type === "drivers"
-                            ? standing.driver?.nationality
-                            : standing.constructor?.nationality}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {standing.points}
-                    </td>
-                    <td className="px-4 py-3 text-right">{standing.wins}</td>
-                  </tr>
-                ))}
+                            </>
+                          ) : (
+                            <span className="font-medium">
+                              {standing.constructor?.name}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center space-x-1">
+                          <span>
+                            {type === "drivers"
+                              ? getCountryFlag(
+                                  standing.driver?.nationality || ""
+                                )
+                              : getCountryFlag(
+                                  standing.constructor?.nationality || ""
+                                )}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {type === "drivers"
+                              ? standing.driver?.nationality
+                              : standing.constructor?.nationality}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium">
+                        {standing.points}
+                      </td>
+                      <td className="px-4 py-3 text-right">{standing.wins}</td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
           </div>

@@ -45,10 +45,10 @@ export default function RacesPage() {
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <h2 className="text-xl font-semibold">
-                      {formatRaceName(race.name)}
+                      {formatRaceName(race.official_event_name)}
                     </h2>
                     <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                      第 {race.round} 站
+                      第 {race.round_number} 站
                     </span>
                   </div>
 
@@ -63,10 +63,6 @@ export default function RacesPage() {
                       {race.time && <span> • {formatTime(race.time)}</span>}
                     </div>
                   </div>
-                </div>
-
-                <div className="text-right text-sm text-muted-foreground">
-                  <p>{race.season?.year} 赛季</p>
                 </div>
               </div>
 
