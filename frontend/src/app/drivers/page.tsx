@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { driversApi } from "@/lib/api";
-import { formatDriverName, getCountryFlag } from "@/lib/utils";
 import { Users, Flag, Calendar } from "lucide-react";
 import { Driver } from "@/types";
 
@@ -13,7 +12,7 @@ export default function DriversPage() {
     error,
   } = useQuery({
     queryKey: ["drivers"],
-    queryFn: () => driversApi.getAll(),
+    queryFn: () => driversApi.getAll({ size: 30 }),
   });
 
   if (isLoading) {
@@ -39,7 +38,7 @@ export default function DriversPage() {
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
         <Users className="h-6 w-6 text-primary" />
-        <h1 className="text-3xl font-bold">车手</h1>
+        <h1 className="text-3xl font-bold">车手简介</h1>
       </div>
 
       {drivers?.data && drivers.data.length > 0 ? (
@@ -52,7 +51,7 @@ export default function DriversPage() {
               <div className="flex items-start justify-between mb-4">
                 <div className="space-y-2">
                   <h2 className="text-xl font-semibold">
-                    {formatDriverName(driver.forename, driver.surname)}
+                    {driver.forename} {driver.surname}
                   </h2>
                   {driver.number && (
                     <div className="flex items-center space-x-2">
@@ -69,7 +68,7 @@ export default function DriversPage() {
                 </div>
 
                 <div className="flex items-center space-x-1 text-lg">
-                  <span>{getCountryFlag(driver.nationality)}</span>
+                  <span>{driver.nationality}</span>
                 </div>
               </div>
 
@@ -85,12 +84,6 @@ export default function DriversPage() {
                     <span>{new Date(driver.date_of_birth).getFullYear()}</span>
                   </div>
                 )}
-              </div>
-
-              <div className="mt-4 pt-4 border-t">
-                <p className="text-xs text-muted-foreground">
-                  车手代码: {driver.driver_ref}
-                </p>
               </div>
             </div>
           ))}

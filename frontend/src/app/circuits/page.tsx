@@ -13,7 +13,7 @@ export default function CircuitsPage() {
     error,
   } = useQuery({
     queryKey: ["circuits"],
-    queryFn: () => circuitsApi.getAll(),
+    queryFn: () => circuitsApi.getAll({ size: 30 }),
   });
 
   if (isLoading) {

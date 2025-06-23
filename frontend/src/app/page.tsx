@@ -13,10 +13,25 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Race } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import { driversApi, constructorsApi, circuitsApi } from "@/lib/api";
 
 export default function HomePage() {
   const { data: activeSeason, isLoading: seasonLoading } = useActiveSeason();
   const { data: upcomingRaces, isLoading: racesLoading } = useUpcomingRaces();
+
+  const { data: drivers } = useQuery({
+    queryKey: ["drivers"],
+    queryFn: () => driversApi.getAll(),
+  });
+  const { data: constructors } = useQuery({
+    queryKey: ["constructors"],
+    queryFn: () => constructorsApi.getAll(),
+  });
+  const { data: circuits } = useQuery({
+    queryKey: ["circuits"],
+    queryFn: () => circuitsApi.getAll(),
+  });
 
   const stats = [
     {
@@ -33,27 +48,21 @@ export default function HomePage() {
     },
     {
       title: "车手数量",
-      value: "20",
+      value: drivers?.data?.length ?? "-",
       icon: Users,
       href: "/drivers",
     },
     {
       title: "车队数量",
-      value: "10",
+      value: constructors?.data?.length ?? "-",
       icon: Building2,
       href: "/constructors",
     },
     {
       title: "赛道数量",
-      value: "24",
+      value: circuits?.data?.length ?? "-",
       icon: MapPin,
       href: "/circuits",
-    },
-    {
-      title: "积分榜",
-      value: "实时",
-      icon: Trophy,
-      href: "/standings",
     },
   ];
 

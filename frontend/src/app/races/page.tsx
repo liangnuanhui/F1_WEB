@@ -6,7 +6,11 @@ import { Calendar, MapPin, Clock } from "lucide-react";
 import { Race } from "@/types";
 
 export default function RacesPage() {
-  const { data: races, isLoading, error } = useRaces();
+  const {
+    data: races,
+    isLoading,
+    error,
+  } = useRaces({ season: 2025, size: 30 });
 
   if (isLoading) {
     return (
@@ -55,68 +59,53 @@ export default function RacesPage() {
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                     <div className="flex items-center space-x-1">
                       <MapPin className="h-4 w-4" />
-                      <span>{race.circuit?.name}</span>
+                      <span>{race.circuit_name}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Clock className="h-4 w-4" />
-                      <span>{formatDate(race.date, "long")}</span>
-                      {race.time && <span> • {formatTime(race.time)}</span>}
+                      <span>{formatDate(race.event_date, "long")}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* 练习赛和排位赛时间 */}
-              {(race.fp1_date ||
-                race.fp2_date ||
-                race.fp3_date ||
-                race.quali_date) && (
+              {(race.session1_date ||
+                race.session2_date ||
+                race.session3_date ||
+                race.session4_date ||
+                race.session5_date) && (
                 <div className="mt-4 pt-4 border-t">
                   <h3 className="text-sm font-medium mb-2">详细时间安排</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
-                    {race.fp1_date && (
+                    {race.session1_date && (
                       <div className="flex justify-between">
-                        <span>FP1:</span>
-                        <span>
-                          {formatDate(race.fp1_date)}{" "}
-                          {race.fp1_time && formatTime(race.fp1_time)}
-                        </span>
+                        <span>{race.session1 || "Session1"}:</span>
+                        <span>{formatDate(race.session1_date)}</span>
                       </div>
                     )}
-                    {race.fp2_date && (
+                    {race.session2_date && (
                       <div className="flex justify-between">
-                        <span>FP2:</span>
-                        <span>
-                          {formatDate(race.fp2_date)}{" "}
-                          {race.fp2_time && formatTime(race.fp2_time)}
-                        </span>
+                        <span>{race.session2 || "Session2"}:</span>
+                        <span>{formatDate(race.session2_date)}</span>
                       </div>
                     )}
-                    {race.fp3_date && (
+                    {race.session3_date && (
                       <div className="flex justify-between">
-                        <span>FP3:</span>
-                        <span>
-                          {formatDate(race.fp3_date)}{" "}
-                          {race.fp3_time && formatTime(race.fp3_time)}
-                        </span>
+                        <span>{race.session3 || "Session3"}:</span>
+                        <span>{formatDate(race.session3_date)}</span>
                       </div>
                     )}
-                    {race.quali_date && (
+                    {race.session4_date && (
                       <div className="flex justify-between">
-                        <span>排位赛:</span>
-                        <span>
-                          {formatDate(race.quali_date)}{" "}
-                          {race.quali_time && formatTime(race.quali_time)}
-                        </span>
+                        <span>{race.session4 || "Session4"}:</span>
+                        <span>{formatDate(race.session4_date)}</span>
                       </div>
                     )}
-                    {race.sprint_date && (
+                    {race.session5_date && (
                       <div className="flex justify-between">
-                        <span>冲刺赛:</span>
-                        <span>
-                          {formatDate(race.sprint_date)}{" "}
-                          {race.sprint_time && formatTime(race.sprint_time)}
-                        </span>
+                        <span>{race.session5 || "Session5"}:</span>
+                        <span>{formatDate(race.session5_date)}</span>
                       </div>
                     )}
                   </div>

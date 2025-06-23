@@ -18,9 +18,10 @@ const navigation = [
   { name: "首页", href: "/", icon: Home },
   { name: "赛程", href: "/races", icon: Calendar },
   { name: "车手", href: "/drivers", icon: Users },
+  { name: "车手排行榜", href: "/driver_standing", icon: Trophy },
   { name: "车队", href: "/constructors", icon: Building2 },
+  { name: "车队排行榜", href: "/constructor_standing", icon: Trophy },
   { name: "赛道", href: "/circuits", icon: MapPin },
-  { name: "积分榜", href: "/standings", icon: Trophy },
 ];
 
 export function Sidebar() {

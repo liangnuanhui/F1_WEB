@@ -3,7 +3,7 @@
 """
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
 
 from app.api.deps import get_db
@@ -25,16 +25,22 @@ def get_driver_standings(
     获取车手积分榜
     """
     try:
-        standings = db.query(DriverStanding).filter(DriverStanding.season_id == season_id).order_by(DriverStanding.position.asc()).all()
+        standings = db.query(DriverStanding)\
+            .options(joinedload(DriverStanding.constructor))\
+            .filter(DriverStanding.season_id == season_id)\
+            .order_by(DriverStanding.position.asc())\
+            .all()
         result = []
         for s in standings:
+            # 保险做法：直接查 driver 表，确保 driver_name 一定有值
+            driver = db.query(Driver).filter(Driver.driver_id == s.driver_id).first()
             result.append({
                 "position": s.position,
                 "points": s.points,
                 "wins": s.wins,
                 "driver_id": s.driver_id,
-                "driver_name": f"{s.driver.forename} {s.driver.surname}" if s.driver else "",
-                "nationality": s.driver.nationality if s.driver else "",
+                "driver_name": f"{driver.forename} {driver.surname}" if driver else "",
+                "nationality": driver.nationality if driver else "",
                 "constructor_id": s.constructor_id,
                 "constructor_name": s.constructor.name if s.constructor else "",
             })

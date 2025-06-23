@@ -6,7 +6,7 @@ import { formatConstructorName, getCountryFlag } from "@/lib/utils";
 import { Building2, Flag, Globe } from "lucide-react";
 import { Constructor } from "@/types";
 
-export default function ConstructorsPage() {
+export default function ConstructorPage() {
   const {
     data: constructors,
     isLoading,
@@ -39,14 +39,14 @@ export default function ConstructorsPage() {
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
         <Building2 className="h-6 w-6 text-primary" />
-        <h1 className="text-3xl font-bold">车队</h1>
+        <h1 className="text-3xl font-bold">车队简介</h1>
       </div>
 
       {constructors?.data && constructors.data.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {constructors.data.map((constructor: Constructor) => (
             <div
-              key={constructor.id}
+              key={constructor.constructor_id}
               className="rounded-lg border bg-card p-6 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between mb-4">
@@ -60,7 +60,7 @@ export default function ConstructorsPage() {
                 </div>
 
                 <div className="flex items-center space-x-1 text-lg">
-                  <span>{getCountryFlag(constructor.nationality)}</span>
+                  <span>{getCountryFlag(constructor.nationality || "")}</span>
                 </div>
               </div>
 
@@ -72,19 +72,21 @@ export default function ConstructorsPage() {
 
                 <div className="flex items-center space-x-2">
                   <Globe className="h-4 w-4" />
-                  <span>车队代码: {constructor.constructor_ref}</span>
+                  <span>车队代码: {constructor.constructor_id}</span>
                 </div>
               </div>
 
               <div className="mt-4 pt-4 border-t">
-                <a
-                  href={constructor.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary hover:underline"
-                >
-                  访问官网 →
-                </a>
+                {constructor.constructor_url && (
+                  <a
+                    href={constructor.constructor_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline"
+                  >
+                    访问官网 →
+                  </a>
+                )}
               </div>
             </div>
           ))}
