@@ -36,12 +36,15 @@
 - ✅ 完整的数据同步功能
 - ✅ 基于 FastF1 实际数据结构
 - ✅ 支持冲刺赛结果同步 🆕
+- ✅ 动态年份支持 🆕
 
-## 📁 脚本说明
+## 📁 脚本分类
 
-### 1. `sync_all_data.py` - 完整数据同步脚本 ⭐ **推荐使用**
+### 🔄 数据同步脚本
 
-**功能**: 使用统一同步服务同步所有 F1 数据
+#### 1. `sync_all_data.py` - 完整数据同步脚本 ⭐ **推荐使用**
+
+**功能**: 使用统一同步服务同步连续三年的 F1 数据
 **特点**:
 
 - 同步基础数据：赛季、赛道、车队、车手、比赛
@@ -49,6 +52,7 @@
 - 同步排名数据：车手排名、车队排名
 - 智能频率限制处理
 - 完整的错误处理和重试机制
+- **动态年份支持** 🆕 - 自动同步前一年、当前年、后一年
 
 **使用方法**:
 
@@ -57,9 +61,25 @@ cd backend
 python scripts/sync_all_data.py
 ```
 
+**动态年份功能** 🆕:
+
+- 自动获取连续三年的数据：**前一年、当前年、后一年**
+- 无需手动指定年份，脚本会根据当前时间自动确定
+- 提供更全面的数据覆盖范围
+
+**示例**:
+
+```bash
+# 2025年运行时
+python scripts/sync_all_data.py  # 同步2024-2025-2026赛季
+
+# 2026年运行时
+python scripts/sync_all_data.py  # 同步2025-2026-2027赛季
+```
+
 **同步的数据**:
 
-- ✅ 赛季数据 (2023-2025)
+- ✅ 赛季数据 (连续三年)
 - ✅ 赛道数据
 - ✅ 车队数据
 - ✅ 车手数据
@@ -70,25 +90,26 @@ python scripts/sync_all_data.py
 - ✅ 车手排名
 - ✅ 车队排名
 
-### 2. `sync_custom_seasons.py` - 自定义赛季同步脚本 🆕
+#### 2. `sync_custom_seasons.py` - 自定义赛季同步脚本 🆕
 
-**功能**: 允许用户选择要同步的赛季
+**功能**: 允许用户选择要同步的赛季，支持动态年份
 **特点**:
 
 - 支持命令行参数
 - 灵活的赛季选择
 - 多种预设模式
+- **动态年份支持** 🆕
 
 **使用方法**:
 
 ```bash
-# 同步所有默认赛季 (2023-2025)
+# 同步所有默认赛季 (当前年份和前一年)
 python scripts/sync_custom_seasons.py
 
-# 只同步当前赛季 (2025)
+# 只同步当前赛季 (动态年份)
 python scripts/sync_custom_seasons.py --current-only
 
-# 只同步最近两个赛季 (2024-2025)
+# 只同步最近两个赛季 (当前年份和前一年)
 python scripts/sync_custom_seasons.py --recent-only
 
 # 自定义赛季
@@ -98,7 +119,25 @@ python scripts/sync_custom_seasons.py --seasons 2024 2025
 python scripts/sync_custom_seasons.py --cache-dir ./my_cache
 ```
 
-### 3. `init_data.py` - 初始化数据脚本
+**动态年份功能** 🆕:
+
+- `--current-only`: 自动同步**当前年份**的赛季
+- `--recent-only`: 自动同步**当前年份和前一年**的赛季
+- 无需手动更新年份，脚本会自动根据系统时间确定
+
+**示例**:
+
+```bash
+# 2025年运行时
+python scripts/sync_custom_seasons.py --current-only  # 同步2025赛季
+python scripts/sync_custom_seasons.py --recent-only   # 同步2024-2025赛季
+
+# 2026年运行时
+python scripts/sync_custom_seasons.py --current-only  # 同步2026赛季
+python scripts/sync_custom_seasons.py --recent-only   # 同步2025-2026赛季
+```
+
+#### 3. `init_data.py` - 初始化数据脚本
 
 **功能**: 快速初始化基础数据和部分结果数据
 **特点**:
@@ -106,18 +145,74 @@ python scripts/sync_custom_seasons.py --cache-dir ./my_cache
 - 同步基础数据：赛季、赛道、车队、车手、比赛
 - 同步部分结果数据：前 3 轮比赛结果、排位赛结果、冲刺赛结果
 - 适合快速测试和开发环境
+- **动态年份支持** 🆕 - 只同步当前赛季
 
-### 4. `validate_2025_config.py` - 配置验证脚本
+### 🔍 数据检查脚本
+
+#### 4. `check_database_state.py` - 数据库状态检查
+
+**功能**: 检查数据库的当前状态
+**特点**:
+
+- 显示赛季数据统计
+- 检查 2025 赛季数据
+- 显示比赛数据详情
+- 显示赛道数据统计
+
+#### 5. `check_circuits.py` - 赛道数据检查
+
+**功能**: 检查数据库中的赛道数据
+**特点**:
+
+- 按赛道名称排序显示
+- 显示赛道基本信息
+
+#### 6. `check_fastf1_schedule.py` - FastF1 日程检查
+
+**功能**: 检查 FastF1 返回的 2025 赛季日程数据
+**特点**:
+
+- 显示 FastF1 原始数据
+- 按轮次排序显示
+
+#### 7. `check_races.py` - 比赛数据检查
+
+**功能**: 查看 2025 赛季比赛数据
+**特点**:
+
+- 显示比赛详细信息
+- 包含地点、日期、格式等信息
+
+#### 8. `check_db.py` - 数据库基础检查
+
+**功能**: 检查数据库状态
+**特点**:
+
+- 显示赛季总数
+- 显示赛季列表
+
+#### 9. `view_data.py` - 数据可视化查看工具
+
+**功能**: 数据库数据可视化查看工具
+**特点**:
+
+- 表格化显示所有数据
+- 支持赛季、赛道、车队、车手、比赛数据查看
+- 显示数据摘要统计
+
+### 🧪 测试脚本
+
+#### 10. `validate_2025_config.py` - 配置验证脚本
 
 **功能**: 验证所有配置是否正确
 **特点**: 检查数据库、服务、脚本配置
 
-### 5. `test_data_providers.py` - 数据提供者测试脚本
+#### 11. `test_data_providers.py` - 数据提供者测试脚本
 
 **功能**: 测试数据提供者是否正常工作
 **特点**: 详细的数据源测试
 
-### 6. `test_sprint_sync.py` - 冲刺赛同步测试脚本 🆕
+#### 12. `test_sprint_sync.py` - 冲刺赛同步测试脚本 🆕
 
 **功能**: 测试冲刺赛结果同步功能
 **特点**:
@@ -132,11 +227,49 @@ python scripts/sync_custom_seasons.py --cache-dir ./my_cache
 python scripts/test_sprint_sync.py
 ```
 
-### 7. 数据库管理脚本
+#### 13. `test_qualifying_sync.py` - 排位赛同步测试
 
-- **`clear_database.py`**: 清空所有表数据
-- **`drop_all_tables.py`**: 删除所有表
-- **`fix_database_field.py`**: 修复数据库字段
+**功能**: 测试排位赛结果同步功能
+
+#### 14. `test_full_qualifying_sync.py` - 完整排位赛同步测试
+
+**功能**: 测试完整排位赛结果同步功能
+
+#### 15. `test_full_race_results_sync.py` - 完整比赛结果同步测试
+
+**功能**: 测试完整比赛结果同步功能
+
+#### 16. `test_standings_sync.py` - 积分榜同步测试
+
+**功能**: 测试积分榜同步功能
+
+### 🛠️ 数据库管理脚本
+
+#### 17. `clear_database.py` - 清空数据库
+
+**功能**: 清空所有表数据
+**特点**: 保留表结构，只删除数据
+
+#### 18. `drop_all_tables.py` - 删除所有表
+
+**功能**: 删除所有表
+**特点**: 完全重置数据库结构
+
+#### 19. `fix_database_field.py` - 修复数据库字段
+
+**功能**: 修复数据库字段类型
+**特点**: 修复 season 字段类型问题
+
+### 📊 数据探索工具
+
+#### 20. `data_explorer.py` - FastF1 数据探索工具
+
+**功能**: 分析 FastF1 的实际数据结构
+**特点**:
+
+- 为数据建模提供依据
+- 生成详细的 Markdown 报告
+- 分析多个赛季的数据结构
 
 ## 🚀 推荐使用流程
 
@@ -149,45 +282,70 @@ python scripts/validate_2025_config.py
 # 2. 测试数据提供者
 python scripts/test_data_providers.py --verbose
 
-# 3. 同步所有数据
+# 3. 同步连续三年数据（推荐）
 python scripts/sync_all_data.py
 
 # 4. 或者只同步当前赛季
 python scripts/sync_custom_seasons.py --current-only
+
+# 5. 检查数据状态
+python scripts/check_database_state.py
 ```
 
 ### 日常同步（推荐）
 
 ```bash
-# 同步所有数据
+# 同步连续三年数据
 python scripts/sync_all_data.py
 
 # 或者只同步当前赛季
 python scripts/sync_custom_seasons.py --current-only
+
+# 检查数据状态
+python scripts/view_data.py
+```
+
+### 数据检查（推荐）
+
+```bash
+# 查看完整数据状态
+python scripts/view_data.py
+
+# 检查数据库状态
+python scripts/check_database_state.py
+
+# 检查特定数据
+python scripts/check_races.py
+python scripts/check_circuits.py
 ```
 
 ## 赛季选择说明
 
-### 为什么选择 2023-2025 赛季？
+### 动态年份功能 🆕
 
-1. **2025 赛季** - 当前赛季 ⭐
+脚本现在支持动态年份，无需手动更新：
 
-   - 正在进行中的赛季
-   - 数据最完整和最新
-   - 用户最关心的数据
-   - 支持实时更新
+1. **连续三年数据** (`sync_all_data.py`) - 前一年、当前年、后一年
 
-2. **2024 赛季** - 刚结束的赛季 ⭐
+   - 2025 年运行时：同步 2024-2025-2026 赛季
+   - 2026 年运行时：同步 2025-2026-2027 赛季
 
-   - 完整的赛季数据
-   - 有历史对比价值
-   - 数据质量高
-   - 支持趋势分析
+2. **当前赛季** - 根据系统时间自动确定
 
-3. **2023 赛季** - 历史赛季
-   - 提供更多历史数据
-   - 支持长期趋势分析
-   - 但数据可能不如新赛季完整
+   - 2025 年运行时：同步 2025 赛季
+   - 2026 年运行时：同步 2026 赛季
+
+3. **最近两个赛季** - 当前年份和前一年
+   - 2025 年运行时：同步 2024-2025 赛季
+   - 2026 年运行时：同步 2025-2026 赛季
+
+### 为什么选择动态年份？
+
+1. **自动化** - 无需手动更新年份
+2. **准确性** - 始终同步正确的赛季
+3. **便利性** - 跨年时自动适应
+4. **维护性** - 减少手动配置错误
+5. **全面性** - 连续三年数据提供更好的历史对比
 
 ### 数据范围控制策略
 
@@ -198,114 +356,35 @@ python scripts/sync_custom_seasons.py --current-only
 - 降低存储空间需求
 - 提高同步效率
 
-**业务价值**:
+## 📝 文件整理说明
 
-- 专注于当前相关赛季
-- 提供更有价值的分析数据
-- 减少数据噪音
-- 提高用户体验
+### 已删除的临时文件
 
-**API 限制**:
+以下文件已被删除，因为它们的功能已经整合到其他脚本中：
 
-- FastF1 API 有频率限制
-- 减少请求数量避免被限制
-- 优化数据获取策略
+- `debug_race_query.py` - 功能已整合到 `check_races.py`
+- `check_sprint_races.py` - 功能已整合到 `check_database_state.py`
+- `debug_sprint_sync.py` - 功能已整合到 `test_sprint_sync.py`
+- `verify_2025_season.py` - 功能已整合到 `check_database_state.py`
+- `fix_sprint_races_correct.py` - 功能已整合到 `sync_all_data.py`
+- `sync_2025_season_complete.py` - 功能已整合到 `sync_all_data.py`
+- `test_sprint_sync_complete.py` - 功能已整合到 `test_sprint_sync.py`
+- `test_sprint_sync_final.py` - 功能已整合到 `test_sprint_sync.py`
+- `test_sprint_results.py` - 功能已整合到 `test_sprint_sync.py`
+- `test_driver_standings_only.py` - 功能已整合到 `test_standings_sync.py`
+- `test_driver_standings.py` - 功能已整合到 `test_standings_sync.py`
 
-## 统一同步服务
+### 已删除的日志文件
 
-我们使用 `UnifiedSyncService` 来统一管理所有数据同步操作：
+以下日志文件已被删除，因为它们占用空间且不再需要：
 
-### 主要特性
+- `custom_sync.log` - 同步日志
+- `fastf1_sync.log` - FastF1 同步日志
+- `data_init_2025.log` - 数据初始化日志
+- `fastf1_data_exploration_20250621_153234.md` - 数据探索报告
 
-1. **智能频率限制**: 根据 API 类型自动调整请求频率
-2. **错误重试**: 自动处理 API 频率限制和网络错误
-3. **数据完整性**: 确保所有相关数据都被正确同步
-4. **缓存支持**: 支持 FastF1 缓存以提高性能
+### 保留的重要文件
 
-### 同步流程
-
-1. **基础数据同步**
-
-   - 赛季数据
-   - 赛道数据
-   - 车队数据
-   - 车手数据
-
-2. **比赛数据同步**
-
-   - 比赛日程
-   - 比赛结果
-   - 排位赛结果
-   - 冲刺赛结果 🆕
-
-3. **排名数据同步**
-   - 车手积分榜
-   - 车队积分榜
-
-## 数据源
-
-- **FastF1**: 主要数据源，提供详细的比赛和结果数据
-- **Ergast API**: 通过 FastF1 访问，提供标准化的 F1 数据
-
-## 注意事项
-
-1. **频率限制**: API 有频率限制，脚本会自动处理
-2. **数据范围**: 默认同步 2023-2025 赛季数据
-3. **缓存**: 建议启用 FastF1 缓存以提高性能
-4. **错误处理**: 脚本包含完整的错误处理和日志记录
-
-## 故障排除
-
-### 常见问题
-
-1. **API 频率限制**
-
-   - 脚本会自动重试
-   - 增加延迟时间
-
-2. **数据不完整**
-
-   - 检查网络连接
-   - 查看日志文件
-
-3. **数据库错误**
-   - 检查数据库连接
-   - 验证模型定义
-
-### 日志文件
-
-- `unified_sync.log`: 统一同步服务的详细日志
-- `custom_sync.log`: 自定义同步的详细日志
-- 控制台输出: 实时同步状态
-
-## 开发说明
-
-### 添加新的同步功能
-
-1. 在 `UnifiedSyncService` 中添加新方法
-2. 在 `sync_all_data()` 中调用新方法
-3. 更新文档和测试
-
-### 自定义同步
-
-```python
-from app.services.unified_sync_service import UnifiedSyncService
-
-# 创建同步服务
-sync_service = UnifiedSyncService(db, cache_dir="./cache")
-
-# 同步特定赛季
-sync_service.sync_all_data(target_seasons=[2025])
-
-# 同步特定数据类型
-sync_service.sync_race_results(2025)
-sync_service.sync_driver_standings(2025)
-```
-
-## 🔄 更新日志
-
-- **v3.0**: 统一同步服务，删除冗余脚本
-- **v2.1**: 添加配置验证和模型修复脚本
-- **v2.0**: 针对 2025 赛季优化
-- **v1.5**: 增加智能延迟和错误恢复
-- **v1.0**: 基础数据同步功能
+- `schedule_data/` - 2025 赛季日程数据文件
+- `data_modeling_plan.md` - 数据建模计划文档
+- `scripts/` - 所有整理后的脚本文件

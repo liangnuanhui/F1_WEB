@@ -11,9 +11,11 @@ import logging
 import pandas as pd
 from datetime import datetime
 from io import StringIO
+from pathlib import Path
 
 # 添加项目根目录到 Python 路径
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 # 配置日志
 logging.basicConfig(
@@ -201,268 +203,212 @@ def explore_data_structure(data, name):
                 except Exception as e:
                     log_and_capture(f"   数值列统计失败: {e}", "ERROR")
             else:
-                log_and_capture(f"   数据为空")
+                log_and_capture("❌ 数据为空")
         
         else:
-            log_and_capture(f"📋 数据类型: {type(data)}")
-            log_and_capture(f"📝 数据内容: {data}")
+            log_and_capture(f"📋 数据类型: {type(data).__name__}")
+            log_and_capture(f"📏 数据长度: {len(data) if hasattr(data, '__len__') else 'N/A'}")
             
+            # 尝试转换为 DataFrame
+            try:
+                if hasattr(data, 'to_dataframe'):
+                    df = data.to_dataframe()
+                    log_and_capture(f"✅ 成功转换为 DataFrame")
+                    explore_data_structure(df, f"{name} (转换后)")
+                else:
+                    log_and_capture(f"❌ 无法转换为 DataFrame")
+            except Exception as e:
+                log_and_capture(f"❌ 转换失败: {e}", "ERROR")
+    
     except Exception as e:
-        log_and_capture(f"❌ 数据结构分析失败: {e}", "ERROR")
-        import traceback
-        error_trace = traceback.format_exc()
-        log_and_capture(f"错误详情:\n{error_trace}", "ERROR")
+        log_and_capture(f"❌ 探索数据结构失败: {e}", "ERROR")
 
 def explore_fastf1_data():
     """探索 FastF1 数据"""
+    log_and_capture("🚀 开始探索 FastF1 数据结构")
+    log_and_capture("="*80)
+    
     try:
         import fastf1
-        from fastf1.ergast import Ergast
         
-        log_and_capture("🔍 开始探索 FastF1 数据结构...")
-        log_and_capture(f"🎯 目标赛季: {TARGET_SEASONS}")
-        
-        # 启用缓存
-        fastf1.Cache.enable_cache('./cache')
-        ergast = Ergast()
-        
-        # 1. 探索赛季数据 (只获取目标赛季)
-        log_and_capture("📅 1. 探索赛季数据...")
-        try:
-            # 获取所有赛季，然后过滤出我们需要的
-            all_seasons = ergast.get_seasons()
-            target_seasons = all_seasons[all_seasons['season'].isin(TARGET_SEASONS)]
+        for season in TARGET_SEASONS:
+            log_and_capture(f"\n🏆 探索 {season} 赛季数据")
+            log_and_capture("-"*40)
             
-            log_and_capture(f"\n🎯 目标赛季数据:")
-            log_and_capture(f"📏 数据形状: {target_seasons.shape}")
-            log_and_capture(f"📝 列名: {list(target_seasons.columns)}")
-            log_and_capture(f"📋 目标赛季: {list(target_seasons['season'].values)}")
-            
-            explore_data_structure(target_seasons, "目标赛季数据 (Target Seasons)")
-        except Exception as e:
-            log_and_capture(f"❌ 获取赛季数据失败: {e}", "ERROR")
-        
-        # 2. 探索赛道数据 (使用2025赛季作为示例)
-        log_and_capture("🏁 2. 探索赛道数据...")
-        try:
-            circuits = ergast.get_circuits(season=2025)
-            explore_data_structure(circuits, "赛道数据 (Circuits - 2025)")
-        except Exception as e:
-            log_and_capture(f"❌ 获取赛道数据失败: {e}", "ERROR")
-        
-        # 3. 探索车队数据 (使用2025赛季作为示例)
-        log_and_capture("🏎️ 3. 探索车队数据...")
-        try:
-            constructors = ergast.get_constructor_info(season=2025)
-            explore_data_structure(constructors, "车队数据 (Constructors - 2025)")
-        except Exception as e:
-            log_and_capture(f"❌ 获取车队数据失败: {e}", "ERROR")
-        
-        # 4. 探索车手数据 (使用2025赛季作为示例)
-        log_and_capture("👤 4. 探索车手数据...")
-        try:
-            drivers = ergast.get_driver_info(season=2025)
-            explore_data_structure(drivers, "车手数据 (Drivers - 2025)")
-        except Exception as e:
-            log_and_capture(f"❌ 获取车手数据失败: {e}", "ERROR")
-        
-        # 5. 探索比赛日程数据 (使用2025赛季作为示例)
-        log_and_capture("🏁 5. 探索比赛日程数据...")
-        try:
-            # FastF1 方式
-            races_fastf1 = fastf1.get_event_schedule(2025)
-            explore_data_structure(races_fastf1, "比赛日程数据 (FastF1 - 2025)")
-            
-            # Ergast 方式
-            races_ergast = ergast.get_race_schedule(season=2025)
-            explore_data_structure(races_ergast, "比赛日程数据 (Ergast - 2025)")
-        except Exception as e:
-            log_and_capture(f"❌ 获取比赛日程数据失败: {e}", "ERROR")
-        
-        # 6. 探索积分榜数据 (使用2025赛季作为示例)
-        log_and_capture("🏆 6. 探索积分榜数据...")
-        try:
-            driver_standings = ergast.get_driver_standings(season=2025)
-            explore_data_structure(driver_standings, "车手积分榜数据 (Driver Standings - 2025)")
-            
-            constructor_standings = ergast.get_constructor_standings(season=2025)
-            explore_data_structure(constructor_standings, "车队积分榜数据 (Constructor Standings - 2025)")
-        except Exception as e:
-            log_and_capture(f"❌ 获取积分榜数据失败: {e}", "ERROR")
-        
-        # 7. 探索比赛结果数据 (使用2025赛季作为示例)
-        log_and_capture("🏁 7. 探索比赛结果数据...")
-        try:
-            results = ergast.get_race_results(season=2025)
-            explore_data_structure(results, "比赛结果数据 (Race Results - 2025)")
-        except Exception as e:
-            log_and_capture(f"❌ 获取比赛结果数据失败: {e}", "ERROR")
-        
-        # 8. 探索排位赛结果数据 (使用2025赛季作为示例)
-        log_and_capture("🏁 8. 探索排位赛结果数据...")
-        try:
-            qualifying_results = ergast.get_qualifying_results(season=2025)
-            explore_data_structure(qualifying_results, "排位赛结果数据 (Qualifying Results - 2025)")
-        except Exception as e:
-            log_and_capture(f"❌ 获取排位赛结果数据失败: {e}", "ERROR")
-        
-        # 9. 探索冲刺赛结果数据 (使用2025赛季作为示例)
-        log_and_capture("🏁 9. 探索冲刺赛结果数据...")
-        try:
-            sprint_results = ergast.get_sprint_results(season=2025)
-            explore_data_structure(sprint_results, "冲刺赛结果数据 (Sprint Results - 2025)")
-        except Exception as e:
-            log_and_capture(f"❌ 获取冲刺赛结果数据失败: {e}", "ERROR")
-        
-        log_and_capture("✅ 数据探索完成")
-        
+            try:
+                # 1. 探索比赛日程
+                log_and_capture(f"📅 获取 {season} 赛季比赛日程...")
+                schedule = fastf1.get_event_schedule(season)
+                explore_data_structure(schedule, f"{season}赛季比赛日程")
+                
+                # 2. 探索车手信息
+                log_and_capture(f"👨‍🏁 获取 {season} 赛季车手信息...")
+                drivers = fastf1.get_driver_info(season)
+                explore_data_structure(drivers, f"{season}赛季车手信息")
+                
+                # 3. 探索车队信息
+                log_and_capture(f"🏎️ 获取 {season} 赛季车队信息...")
+                constructors = fastf1.get_constructor_info(season)
+                explore_data_structure(constructors, f"{season}赛季车队信息")
+                
+                # 4. 探索积分榜
+                log_and_capture(f"🏆 获取 {season} 赛季积分榜...")
+                standings = fastf1.get_driver_standings(season)
+                explore_data_structure(standings, f"{season}赛季积分榜")
+                
+                # 5. 探索比赛结果
+                log_and_capture(f"🏁 获取 {season} 赛季比赛结果...")
+                results = fastf1.get_race_results(season)
+                explore_data_structure(results, f"{season}赛季比赛结果")
+                
+                # 6. 探索排位赛结果
+                log_and_capture(f"⏱️ 获取 {season} 赛季排位赛结果...")
+                qualifying = fastf1.get_qualifying_results(season)
+                explore_data_structure(qualifying, f"{season}赛季排位赛结果")
+                
+                # 7. 探索冲刺赛结果
+                log_and_capture(f"⚡ 获取 {season} 赛季冲刺赛结果...")
+                sprint = fastf1.get_sprint_results(season)
+                explore_data_structure(sprint, f"{season}赛季冲刺赛结果")
+                
+            except Exception as e:
+                log_and_capture(f"❌ {season} 赛季数据探索失败: {e}", "ERROR")
+                continue
+    
+    except ImportError:
+        log_and_capture("❌ FastF1 库未安装", "ERROR")
     except Exception as e:
-        log_and_capture(f"❌ 数据探索失败: {e}", "ERROR")
-        import traceback
-        traceback.print_exc()
+        log_and_capture(f"❌ 探索失败: {e}", "ERROR")
 
 def generate_model_suggestions():
-    """生成模型建议"""
-    log_and_capture(f"\n{'='*60}")
-    log_and_capture(f"💡 数据建模建议")
-    log_and_capture(f"{'='*60}")
+    """生成数据模型建议"""
+    log_and_capture("\n" + "="*80)
+    log_and_capture("🏗️ 数据模型建议")
+    log_and_capture("="*80)
     
-    log_and_capture(f"""
-基于 FastF1 数据结构分析，建议采用以下建模策略：
+    log_and_capture("""
+基于 FastF1 数据结构分析，建议的数据模型设计：
 
-## 1. 基础维度表 (独立实体)
+## 1. 核心实体
 
 ### Season (赛季)
-- 主键: year (INTEGER)
-- 字段: name, description, start_date, end_date
-- 特点: 独立存在，其他表的基础
-- 范围: 2023-2025赛季
+- id: 主键
+- year: 年份
+- name: 赛季名称
+- start_date: 开始日期
+- end_date: 结束日期
+- is_current: 是否当前赛季
 
 ### Circuit (赛道)
-- 主键: circuit_id (VARCHAR)
-- 字段: name, location, country, length, corners
-- 特点: 独立存在，可跨赛季使用
+- id: 主键
+- circuit_name: 赛道名称
+- country: 国家
+- locality: 城市
+- latitude: 纬度
+- longitude: 经度
 
 ### Constructor (车队)
-- 主键: constructor_id (VARCHAR)
-- 字段: name, nationality, base, power_unit
-- 特点: 独立存在，可跨赛季使用
-
-## 2. 依赖维度表 (需要关联)
+- id: 主键
+- constructor_name: 车队名称
+- constructor_nationality: 国籍
+- season_id: 关联赛季
 
 ### Driver (车手)
-- 主键: driver_id (VARCHAR)
-- 外键: constructor_id, season_id
-- 字段: first_name, last_name, nationality, number
-- 特点: 依赖车队和赛季
+- id: 主键
+- driver_number: 车手号码
+- driver_code: 车手代码
+- given_name: 名
+- family_name: 姓
+- driver_nationality: 国籍
+- date_of_birth: 出生日期
 
 ### Race (比赛)
-- 主键: race_id (VARCHAR)
-- 外键: circuit_id, season_id
-- 字段: name, round_number, race_date, status
-- 特点: 依赖赛道和赛季
+- id: 主键
+- season_id: 关联赛季
+- circuit_id: 关联赛道
+- round_number: 轮次
+- official_event_name: 官方比赛名称
+- event_date: 比赛日期
+- event_format: 比赛格式 (conventional, sprint_qualifying)
+- is_sprint: 是否冲刺赛
 
-## 3. 事实表 (业务事件)
+## 2. 结果实体
 
 ### Result (比赛结果)
-- 主键: id (AUTO_INCREMENT)
-- 外键: race_id, driver_id, constructor_id
-- 字段: position, points, status, laps_completed
-- 特点: 记录具体比赛结果
+- id: 主键
+- race_id: 关联比赛
+- driver_id: 关联车手
+- constructor_id: 关联车队
+- position: 名次
+- points: 积分
+- grid_position: 发车位置
+- status: 状态
+- finish_time: 完赛时间
 
 ### QualifyingResult (排位赛结果)
-- 主键: id (AUTO_INCREMENT)
-- 外键: race_id, driver_id, constructor_id
-- 字段: position, q1_time, q2_time, q3_time
-- 特点: 记录排位赛结果
+- id: 主键
+- race_id: 关联比赛
+- driver_id: 关联车手
+- constructor_id: 关联车队
+- position: 名次
+- q1_time: Q1时间
+- q2_time: Q2时间
+- q3_time: Q3时间
 
 ### SprintResult (冲刺赛结果)
-- 主键: id (AUTO_INCREMENT)
-- 外键: race_id, driver_id, constructor_id
-- 字段: position, points, status, laps_completed
-- 特点: 记录冲刺赛结果
+- id: 主键
+- race_id: 关联比赛
+- driver_id: 关联车手
+- constructor_id: 关联车队
+- position: 名次
+- points: 积分
+- grid_position: 发车位置
+- status: 状态
+- finish_time: 完赛时间
 
-### DriverStanding (车手积分榜)
-- 主键: id (AUTO_INCREMENT)
-- 外键: driver_id, constructor_id
-- 字段: season, position, points, wins
-- 特点: 记录积分榜状态
+## 3. 关系设计
 
-### ConstructorStanding (车队积分榜)
-- 主键: id (AUTO_INCREMENT)
-- 外键: constructor_id
-- 字段: season, position, points, wins
-- 特点: 记录车队积分榜状态
+### DriverSeason (车手赛季关系)
+- id: 主键
+- driver_id: 关联车手
+- constructor_id: 关联车队
+- season_id: 关联赛季
+- driver_number: 车手号码
 
-## 4. 同步顺序建议
+## 4. 建议
 
-1. Season (独立) - 2023, 2024, 2025
-2. Circuit (独立)
-3. Constructor (独立)
-4. Driver (依赖 Constructor, Season)
-5. Race (依赖 Circuit, Season)
-6. Result (依赖 Driver, Constructor, Race)
-7. QualifyingResult (依赖 Driver, Constructor, Race)
-8. SprintResult (依赖 Driver, Constructor, Race)
-9. Standings (依赖 Driver, Constructor)
-
-## 5. 关键设计原则
-
-- 使用自然键作为业务标识 (driver_id, constructor_id)
-- 使用自增ID作为物理主键
-- 建立适当的外键约束
-- 考虑数据的历史性和时效性
-- 优化查询性能的索引设计
-- 处理 ErgastMultiResponse 的复杂数据结构
-- 只同步目标赛季数据 (2023-2025)，避免历史数据冗余
-
-## 6. 数据范围控制
-
-- 赛季范围: 2023-2025
-- 避免获取过多历史数据
-- 提高同步效率和性能
-- 减少存储空间占用
+1. 使用外键约束确保数据完整性
+2. 为常用查询字段添加索引
+3. 考虑使用枚举类型定义比赛格式和状态
+4. 实现软删除机制保留历史数据
+5. 添加创建时间和更新时间字段用于审计
 """)
 
 def main():
     """主函数"""
-    log_and_capture("🚀 开始 FastF1 数据探索...")
-    log_and_capture(f"🎯 目标赛季: {TARGET_SEASONS}")
+    log_and_capture("🎯 FastF1 数据探索工具")
+    log_and_capture("="*80)
     
-    # 探索数据结构
+    # 探索数据
     explore_fastf1_data()
     
-    # 生成建模建议
+    # 生成建议
     generate_model_suggestions()
     
-    log_and_capture("✅ 数据探索和建议生成完成")
+    # 保存结果
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = f"fastf1_data_exploration_{timestamp}.md"
     
-    # 保存结果到 Markdown 文件
     try:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"fastf1_data_exploration_{timestamp}.md"
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write("# FastF1 数据结构探索报告\n\n")
+            f.write(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            f.write(output_buffer.getvalue())
         
-        # 创建 Markdown 文件头部
-        markdown_content = f"""# FastF1 数据结构探索报告
-
-生成时间: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-目标赛季: {TARGET_SEASONS}
-
-## 探索结果
-
-"""
-        
-        # 添加捕获的输出内容
-        markdown_content += output_buffer.getvalue()
-        
-        # 写入文件
-        with open(filename, 'w', encoding='utf-8') as f:
-            f.write(markdown_content)
-        
-        log_and_capture(f"📄 结果已保存到: {filename}")
+        log_and_capture(f"✅ 探索报告已保存到: {output_file}")
         
     except Exception as e:
-        log_and_capture(f"❌ 保存 Markdown 文件失败: {e}", "ERROR")
+        log_and_capture(f"❌ 保存报告失败: {e}", "ERROR")
 
 if __name__ == "__main__":
     main() 

@@ -3,6 +3,12 @@
 查看2025赛季比赛数据
 """
 
+import sys
+from pathlib import Path
+
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 from app.core.database import get_db
 from app.models import Race, Season
 from sqlalchemy.orm import Session

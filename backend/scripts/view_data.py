@@ -3,6 +3,12 @@
 数据库数据可视化查看工具
 """
 
+import sys
+from pathlib import Path
+
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 from app.core.database import get_db
 from app.models import Season, Circuit, Constructor, Driver, Race
 from sqlalchemy.orm import Session

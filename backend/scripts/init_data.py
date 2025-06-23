@@ -2,12 +2,14 @@
 """
 数据初始化脚本
 使用统一同步服务初始化F1数据
+支持动态年份
 """
 
 import asyncio
 import logging
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 # 添加项目根目录到 Python 路径
@@ -31,9 +33,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def get_current_year():
+    """获取当前年份"""
+    return datetime.now().year
+
+
 async def main():
     """主函数"""
-    logger.info("🚀 开始初始化F1数据...")
+    current_year = get_current_year()
+    logger.info(f"🚀 开始初始化F1数据 (当前年份: {current_year})...")
     start_time = time.time()
     
     try:
@@ -66,40 +74,40 @@ async def main():
         drivers = sync_service.sync_drivers()
         logger.info(f"✅ 车手数据同步完成，共 {len(drivers)} 个车手")
         
-        # 5. 同步比赛数据（2025赛季）
-        logger.info("5️⃣ 同步比赛数据...")
-        races = sync_service.sync_races(2025)
+        # 5. 同步比赛数据（当前赛季）
+        logger.info(f"5️⃣ 同步比赛数据 ({current_year}赛季)...")
+        races = sync_service.sync_races(current_year)
         logger.info(f"✅ 比赛数据同步完成，共 {len(races)} 场比赛")
         
-        # 6. 同步积分榜数据（2025赛季）
-        logger.info("6️⃣ 同步积分榜数据...")
-        if sync_service.sync_driver_standings(2025):
+        # 6. 同步积分榜数据（当前赛季）
+        logger.info(f"6️⃣ 同步积分榜数据 ({current_year}赛季)...")
+        if sync_service.sync_driver_standings(current_year):
             logger.info("✅ 车手积分榜同步完成")
         else:
             logger.warning("⚠️ 车手积分榜同步跳过")
         
-        if sync_service.sync_constructor_standings(2025):
+        if sync_service.sync_constructor_standings(current_year):
             logger.info("✅ 车队积分榜同步完成")
         else:
             logger.warning("⚠️ 车队积分榜同步跳过")
         
         # 7. 同步比赛结果数据（前3轮）
-        logger.info("7️⃣ 同步比赛结果数据（前3轮）...")
+        logger.info(f"7️⃣ 同步比赛结果数据 ({current_year}赛季，前3轮)...")
         for round_num in range(1, 4):
             logger.info(f"   同步第 {round_num} 轮比赛结果...")
-            if sync_service.sync_race_results(2025):
+            if sync_service.sync_race_results(current_year):
                 logger.info(f"   ✅ 第 {round_num} 轮比赛结果同步完成")
             else:
                 logger.warning(f"   ⚠️ 第 {round_num} 轮比赛结果同步跳过")
             
-            if sync_service.sync_qualifying_results(2025):
+            if sync_service.sync_qualifying_results(current_year):
                 logger.info(f"   ✅ 第 {round_num} 轮排位赛结果同步完成")
             else:
                 logger.warning(f"   ⚠️ 第 {round_num} 轮排位赛结果同步跳过")
         
-        # 8. 同步冲刺赛结果数据（2025赛季）
-        logger.info("8️⃣ 同步冲刺赛结果数据...")
-        if sync_service.sync_sprint_results(2025):
+        # 8. 同步冲刺赛结果数据（当前赛季）
+        logger.info(f"8️⃣ 同步冲刺赛结果数据 ({current_year}赛季)...")
+        if sync_service.sync_sprint_results(current_year):
             logger.info("✅ 冲刺赛结果同步完成")
         else:
             logger.warning("⚠️ 冲刺赛结果同步跳过")
