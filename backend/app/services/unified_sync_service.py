@@ -53,7 +53,7 @@ class UnifiedSyncService:
         time.sleep(delay)
     
     def _handle_api_call(self, func, *args, max_retries=3, **kwargs):
-        """处理API调用的通用方法，支持分页获取完整数据"""
+        """处理API调用的通用方法，支持分页获取完整数据并添加轮次信息"""
         for attempt in range(max_retries):
             try:
                 result = func(*args, **kwargs)
@@ -64,25 +64,38 @@ class UnifiedSyncService:
                     all_dataframes = []
                     current_response = result
                     
+                    page_num = 1
                     while current_response is not None:
-                        # 获取当前页的所有 DataFrame (content 属性)
+                        logger.info(f"📄 正在处理API响应第 {page_num} 页...")
                         if hasattr(current_response, 'content') and current_response.content:
-                            all_dataframes.extend(current_response.content)
-                        
+                            # 关键修复：从 description 中提取 round，并添加到每个 DataFrame
+                            for idx, result_df in enumerate(current_response.content):
+                                if idx < len(current_response.description):
+                                    race_info = current_response.description.iloc[idx]
+                                    round_num = int(race_info['round'])
+                                    
+                                    df_copy = result_df.copy()
+                                    df_copy['round'] = round_num
+                                    all_dataframes.append(df_copy)
+                                else:
+                                    logger.warning(f"⚠️ 无法为第 {idx} 个结果DataFrame找到描述信息")
+
                         # 尝试获取下一页
                         try:
+                            if hasattr(current_response, 'is_complete') and current_response.is_complete:
+                                logger.info("✅ API响应已包含所有结果，无需翻页")
+                                break
                             current_response = current_response.get_next_result_page()
+                            page_num += 1
                         except ValueError:
-                            # 没有更多页面了
-                            break
+                            logger.info("✅ 已到达最后一页")
+                            break # 没有更多页面了
                     
                     # 如果有多个 DataFrame，合并它们
-                    if len(all_dataframes) > 1:
+                    if all_dataframes:
                         return pd.concat(all_dataframes, ignore_index=True)
-                    elif len(all_dataframes) == 1:
-                        return all_dataframes[0]
                     else:
-                        return None
+                        return pd.DataFrame()
                 
                 return result
             except Exception as e:
@@ -96,7 +109,7 @@ class UnifiedSyncService:
                         logger.error(f"达到最大重试次数: {e}")
                         raise
                 else:
-                    logger.error(f"API调用失败: {e}")
+                    logger.error(f"API调用失败: {e}", exc_info=True)
                     raise
         return None
     
@@ -533,72 +546,81 @@ class UnifiedSyncService:
             return False
     
     def sync_qualifying_results(self, season_year: int) -> bool:
-        """同步排位赛结果数据"""
+        """同步排位赛结果数据，并正确处理分页"""
         logger.info(f"🏁 开始同步 {season_year} 赛季排位赛结果...")
         
         try:
-            # 获取排位赛结果数据
-            qualifying_df = self._handle_api_call(
+            season = self.db.query(Season).filter(Season.year == season_year).first()
+            if not season:
+                logger.error(f"❌ 赛季 {season_year} 不存在，无法同步排位赛结果")
+                return False
+
+            # 1. 获取所有比赛的排位赛结果，支持分页
+            all_qualifying_results_df = self._handle_api_call(
                 self.ergast.get_qualifying_results, 
                 season=season_year
             )
-            
-            if qualifying_df is None or qualifying_df.empty:
+
+            if all_qualifying_results_df is None or all_qualifying_results_df.empty:
                 logger.warning(f"没有获取到 {season_year} 赛季的排位赛结果数据")
-                return False
+                return True # 没有数据也算成功
+
+            logger.info(f"📊 成功从API获取 {len(all_qualifying_results_df)} 条排位赛记录")
+
+            # 2. 准备数据库数据
+            races_db = self.db.query(Race).filter(Race.season_id == season.id).all()
+            races_by_round = {race.round_number: race for race in races_db}
             
-            # 清除该赛季的旧排位赛结果数据
-            # 先获取该赛季的所有比赛ID
-            race_ids = [race.id for race in self.db.query(Race).filter(Race.season_id == season_year).all()]
+            # 3. 清除旧数据
+            race_ids = [race.id for race in races_db]
             if race_ids:
                 self.db.query(QualifyingResult).filter(QualifyingResult.race_id.in_(race_ids)).delete()
+                logger.info(f"🧹 清除了赛季 {season_year} 的旧排位赛结果")
             
             total_results = 0
             
-            for _, row in qualifying_df.iterrows():
-                # 获取比赛
-                race = self.db.query(Race).filter(
-                    Race.season_id == season_year,
-                    Race.round_number == row.get('round')
-                ).first()
-                
+            # 按轮次分组处理数据
+            for round_number, group_df in all_qualifying_results_df.groupby('round'):
+                race = races_by_round.get(round_number)
                 if not race:
-                    logger.warning(f"找不到第 {row.get('round')} 轮比赛，跳过排位赛结果")
+                    logger.warning(f"⚠️ 找不到第 {round_number} 轮比赛，跳过该轮排位赛结果")
                     continue
                 
-                # 获取车手和车队
-                driver = self._get_or_create_driver_from_result(row)
-                constructor = self._get_or_create_constructor_from_result(row)
-                
-                if not driver or not constructor:
-                    continue
-                
-                # 创建排位赛结果记录
-                qualifying_result = QualifyingResult(
-                    race_id=race.id,
-                    driver_id=driver.driver_id,
-                    constructor_id=constructor.constructor_id,
-                    position=row.get('position'),
-                    q1_time=row.get('q1'),
-                    q2_time=row.get('q2'),
-                    q3_time=row.get('q3')
-                )
-                
-                self.db.add(qualifying_result)
-                total_results += 1
-                
-                if total_results % 10 == 0:
-                    self.db.commit()
-                    self._smart_delay('results')
-                    logger.info(f"  ✅ 第 {race.round_number} 轮排位赛结果同步完成")
+                logger.info(f"🔄 处理第 {round_number} 轮排位赛: {race.official_event_name} ({len(group_df)}条记录)")
+
+                for _, row in group_df.iterrows():
+                    driver = self._get_or_create_driver_from_result(row)
+                    constructor = self._get_or_create_constructor_from_result(row)
+                    
+                    if not driver or not constructor:
+                        logger.warning(f"⚠️ 无法获取车手或车队信息，跳过记录: {row.get('driverId')}")
+                        continue
+                    
+                    # 使用我们之前定义的 safe_* 函数来处理潜在的 None 或 NaN 值
+                    def safe_str(value):
+                        if pd.isna(value) or value is None: return None
+                        return str(value)
+
+                    qualifying_result = QualifyingResult(
+                        race_id=race.id,
+                        driver_id=driver.driver_id,
+                        constructor_id=constructor.constructor_id,
+                        number=row.get('number'),
+                        position=row.get('position'),
+                        q1_time=safe_str(row.get('q1')),
+                        q2_time=safe_str(row.get('q2')),
+                        q3_time=safe_str(row.get('q3'))
+                    )
+                    
+                    self.db.add(qualifying_result)
+                    total_results += 1
             
             self.db.commit()
-            self._smart_delay('results')
             logger.info(f"✅ {season_year} 赛季排位赛结果同步完成，共 {total_results} 条记录")
             return True
             
         except Exception as e:
-            logger.error(f"❌ 排位赛结果同步失败: {e}")
+            logger.error(f"❌ 排位赛结果同步失败: {e}", exc_info=True)
             self.db.rollback()
             return False
     
