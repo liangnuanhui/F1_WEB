@@ -603,101 +603,144 @@ class UnifiedSyncService:
             return False
     
     def sync_sprint_results(self, season_year: int) -> bool:
-        """同步冲刺赛结果数据"""
+        """同步冲刺赛结果数据，并正确处理分页"""
         logger.info(f"🏁 开始同步 {season_year} 赛季冲刺赛结果...")
         
         try:
-            # 获取冲刺赛结果数据
-            sprint_response = self._handle_api_call(
-                self.ergast.get_sprint_results, 
-                season=season_year
-            )
-            
-            if sprint_response is None:
-                logger.warning(f"没有获取到 {season_year} 赛季的冲刺赛结果数据")
+            # 获取赛季对象
+            season = self.db.query(Season).filter(Season.year == season_year).first()
+            if not season:
+                logger.error(f"❌ 赛季 {season_year} 不存在，无法同步冲刺赛结果")
                 return False
             
-            # 处理ErgastMultiResponse
-            if hasattr(sprint_response, 'content'):
-                sprint_dfs = sprint_response.content
-                logger.info(f"📊 获取到 {len(sprint_dfs)} 个冲刺赛结果DataFrame")
-            else:
-                sprint_dfs = [sprint_response]
-                logger.info("📊 获取到单个冲刺赛结果DataFrame")
+            # 1. 获取所有冲刺赛结果页面，并按轮次组织数据
+            all_sprints_by_round = {}  # {round_number: [df_page1, df_page2, ...]}
             
-            # 清除该赛季的旧冲刺赛结果数据
-            race_ids = [race.id for race in self.db.query(Race).filter(Race.season_id == season_year).all()]
+            try:
+                current_response = self.ergast.get_sprint_results(season=season_year)
+                logger.info("📡 成功从 API 获取第一页冲刺赛数据")
+            except Exception as e:
+                logger.error(f"❌ 调用API获取冲刺赛数据失败: {e}", exc_info=True)
+                return False
+
+            page_num = 1
+            while current_response:
+                logger.info(f"📄 处理第 {page_num} 页API响应...")
+                
+                if hasattr(current_response, 'content') and current_response.content:
+                    logger.info(f"  - 页面包含 {len(current_response.content)} 个冲刺赛事件的DataFrame")
+                    for idx, result_df in enumerate(current_response.content):
+                        if idx < len(current_response.description):
+                            race_info = current_response.description.iloc[idx]
+                            round_number = int(race_info['round'])
+                            if round_number not in all_sprints_by_round:
+                                all_sprints_by_round[round_number] = []
+                            all_sprints_by_round[round_number].append(result_df)
+                            logger.info(f"    - 提取到第 {round_number} 轮的数据")
+                        else:
+                            logger.warning(f"  - ⚠️ 无法为第 {idx} 个结果DataFrame找到描述信息")
+                else:
+                    logger.info("  - 页面没有 'content' 或内容为空")
+
+                # 尝试获取下一页
+                try:
+                    if hasattr(current_response, 'is_complete') and current_response.is_complete:
+                        logger.info("✅ API响应已包含所有结果，无需翻页")
+                        break
+                    
+                    logger.info("  - 尝试获取下一页...")
+                    current_response = current_response.get_next_result_page()
+                    page_num += 1
+                except ValueError:
+                    logger.info("✅ 已到达最后一页")
+                    break
+                except Exception as e:
+                    logger.warning(f"⚠️ 获取下一页数据时出错: {e}")
+                    break
+
+            # 2. 准备数据库数据
+            sprint_races_db = self.db.query(Race).filter(
+                Race.season_id == season.id,
+                Race.is_sprint == True
+            ).all()
+            races_by_round = {race.round_number: race for race in sprint_races_db}
+            logger.info(f"📊 数据库中找到 {len(races_by_round)} 场冲刺赛: {sorted(list(races_by_round.keys()))}")
+            
+            # 3. 清除旧数据
+            race_ids = [race.id for race in sprint_races_db]
             if race_ids:
                 self.db.query(SprintResult).filter(SprintResult.race_id.in_(race_ids)).delete()
-            
+                logger.info(f"🧹 清除了赛季 {season_year} 的旧冲刺赛结果")
+
             total_results = 0
             sprint_count = 0
-            
-            # 获取该赛季的所有冲刺赛
-            sprint_races = self.db.query(Race).filter(
-                Race.season_id == season_year,
-                Race.is_sprint == True
-            ).order_by(Race.round_number).all()
-            
-            logger.info(f"📊 数据库中找到 {len(sprint_races)} 场冲刺赛")
-            
-            for df_idx, sprint_df in enumerate(sprint_dfs):
-                if sprint_df is None or sprint_df.empty:
-                    logger.warning(f"DataFrame {df_idx} 为空，跳过")
+
+            # 4. 处理收集到的所有数据
+            for round_number, dfs in all_sprints_by_round.items():
+                race = races_by_round.get(round_number)
+                if not race:
+                    logger.warning(f"⚠️ 第 {round_number} 轮的冲刺赛在数据库中未找到，跳过")
                     continue
                 
-                logger.info(f"📊 处理DataFrame {df_idx}: {len(sprint_df)} 条记录")
+                # 合并该轮次的所有DataFrame
+                sprint_df = pd.concat(dfs, ignore_index=True)
                 
-                # 根据DataFrame索引匹配冲刺赛
-                if df_idx < len(sprint_races):
-                    race = sprint_races[df_idx]
-                    logger.info(f"📊 匹配到第 {race.round_number} 轮冲刺赛: {race.official_event_name}")
-                else:
-                    logger.warning(f"DataFrame {df_idx} 无法匹配到冲刺赛，跳过")
-                    continue
-                
+                logger.info(f"🔄 处理第 {round_number} 轮冲刺赛: {race.official_event_name} ({len(sprint_df)}条记录)")
                 sprint_count += 1
                 
                 for _, row in sprint_df.iterrows():
-                    # 获取车手和车队
                     driver = self._get_or_create_driver_from_result(row)
                     constructor = self._get_or_create_constructor_from_result(row)
                     
                     if not driver or not constructor:
-                        logger.warning(f"⚠️ 无法获取车手或车队信息，跳过记录")
+                        logger.warning(f"⚠️ 无法获取车手或车队信息，跳过记录: {row.get('driverId')}")
                         continue
                     
-                    # 创建冲刺赛结果记录 - 使用正确的字段名
+                    def safe_int(value):
+                        if pd.isna(value) or value is None: return None
+                        try: return int(float(value))
+                        except (ValueError, TypeError): return None
+                    
+                    def safe_float(value):
+                        if pd.isna(value) or value is None: return 0.0
+                        try: return float(value)
+                        except (ValueError, TypeError): return 0.0
+                    
+                    def safe_str(value):
+                        if pd.isna(value) or value is None: return ''
+                        try: return str(value)
+                        except: return ''
+                    
                     sprint_result = SprintResult(
                         race_id=race.id,
                         driver_id=driver.driver_id,
                         constructor_id=constructor.constructor_id,
-                        number=row.get('number'),
-                        position=row.get('position'),
-                        position_text=str(row.get('positionText', '')),
-                        points=row.get('points', 0),
-                        grid=row.get('grid'),
-                        status=row.get('status', ''),
-                        laps=row.get('laps'),
-                        fastest_lap_time=str(row.get('fastestLapTime', '')),
-                        fastest_lap_rank=row.get('fastestLapRank'),
-                        fastest_lap_number=row.get('fastestLapNumber'),
-                        total_race_time=str(row.get('totalRaceTime', '')),
-                        total_race_time_millis=row.get('totalRaceTimeMillis')
+                        number=safe_int(row.get('number')),
+                        position=safe_int(row.get('position')),
+                        position_text=safe_str(row.get('positionText')),
+                        points=safe_float(row.get('points')),
+                        grid=safe_int(row.get('grid')),
+                        status=safe_str(row.get('status')),
+                        laps=safe_int(row.get('laps')),
+                        fastest_lap_time=safe_str(row.get('fastestLapTime')),
+                        fastest_lap_rank=safe_int(row.get('fastestLapRank')),
+                        fastest_lap_number=safe_int(row.get('fastestLapNumber')),
+                        total_race_time=safe_str(row.get('totalRaceTime')),
+                        total_race_time_millis=safe_int(row.get('totalRaceTimeMillis'))
                     )
                     
                     self.db.add(sprint_result)
                     total_results += 1
                 
-                logger.info(f"  ✅ 第 {race.round_number} 轮冲刺赛结果同步完成，{len(sprint_df)} 条记录")
-            
+                logger.info(f"  ✅ 第 {race.round_number} 轮冲刺赛结果处理完成")
+
             self.db.commit()
             self._smart_delay('results')
             logger.info(f"✅ {season_year} 赛季冲刺赛结果同步完成，共 {sprint_count} 场冲刺赛，{total_results} 条记录")
             return True
             
         except Exception as e:
-            logger.error(f"❌ 冲刺赛结果同步失败: {e}")
+            logger.error(f"❌ 冲刺赛结果同步失败: {e}", exc_info=True)
             self.db.rollback()
             return False
     
