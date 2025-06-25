@@ -5,15 +5,16 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from .config import settings
 
 # 创建数据库引擎
 engine = create_engine(
     settings.database_url,
-    poolclass=StaticPool,
     pool_pre_ping=True,
+    pool_size=10,         # 连接池大小
+    max_overflow=20,      # 超出池大小后可创建的最大连接数
+    pool_timeout=30,      # 连接超时时间（秒）
     echo=settings.debug,
 )
 

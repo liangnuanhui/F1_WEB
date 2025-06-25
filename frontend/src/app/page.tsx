@@ -70,11 +70,9 @@ export default function HomePage() {
     <div className="space-y-8">
       {/* 欢迎区域 */}
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight">
-          欢迎来到 F1 赛事数据
-        </h1>
+        <h1 className="text-4xl font-bold tracking-tight">为热爱而生</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          探索一级方程式赛车的精彩世界，获取最新的赛程、车手、车队和积分榜信息
+          获取F1最新赛程、车手、车队和积分榜信息
         </p>
       </div>
 

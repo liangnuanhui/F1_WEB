@@ -2,42 +2,35 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, Sun, Moon, Monitor } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useAppStore } from "@/store";
-import { useTheme } from "@/components/theme/ThemeProvider";
+import Image from "next/image";
+import { useUpcomingRaces } from "@/hooks/use-races";
+import { getCountryFlag } from "@/lib/utils";
+
+// 自定义日期格式化函数：只显示月和日
+function formatMonthDay(dateStr?: string) {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  // 中文格式：6月27日
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
+}
 
 export function Header() {
-  const { sidebarOpen, setSidebarOpen } = useAppStore();
-  const { theme, setTheme } = useTheme();
-  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
-
-  const toggleTheme = (newTheme: "light" | "dark" | "system") => {
-    setTheme(newTheme);
-    setIsThemeMenuOpen(false);
-  };
+  // 获取即将到来的比赛
+  const { data: upcoming, isLoading } = useUpcomingRaces();
+  const nextRace = upcoming?.data?.[0];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
-        {/* 移动端菜单按钮 */}
-        <button
-          className="mr-2 px-2 py-1 md:hidden"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          {sidebarOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
-          )}
-        </button>
-
         {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white font-bold text-sm">
-            F1
-          </div>
-          <span className="hidden font-bold sm:inline-block">F1 赛事数据</span>
+        <Link href="/" className="flex items-center pl-4">
+          <Image
+            src="/LOGO-race_car.png"
+            alt="F1 Logo"
+            width={50}
+            height={50}
+            className="rounded-lg"
+          />
         </Link>
 
         {/* 导航菜单 */}
@@ -79,56 +72,38 @@ export function Header() {
             赛道
           </Link>
         </nav>
-
-        {/* 右侧工具栏 */}
-        <div className="ml-auto flex items-center space-x-2">
-          {/* 主题切换 */}
-          <div className="relative">
-            <button
-              className="flex h-9 w-9 items-center justify-center rounded-md border transition-colors hover:bg-accent hover:text-accent-foreground"
-              onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
-            >
-              {theme === "light" && <Sun className="h-4 w-4" />}
-              {theme === "dark" && <Moon className="h-4 w-4" />}
-              {theme === "system" && <Monitor className="h-4 w-4" />}
-            </button>
-
-            {isThemeMenuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-32 rounded-md border bg-popover p-1 shadow-md">
-                <button
-                  className={cn(
-                    "flex w-full items-center space-x-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent",
-                    theme === "light" && "bg-accent"
-                  )}
-                  onClick={() => toggleTheme("light")}
-                >
-                  <Sun className="h-4 w-4" />
-                  <span>浅色</span>
-                </button>
-                <button
-                  className={cn(
-                    "flex w-full items-center space-x-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent",
-                    theme === "dark" && "bg-accent"
-                  )}
-                  onClick={() => toggleTheme("dark")}
-                >
-                  <Moon className="h-4 w-4" />
-                  <span>深色</span>
-                </button>
-                <button
-                  className={cn(
-                    "flex w-full items-center space-x-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent",
-                    theme === "system" && "bg-accent"
-                  )}
-                  onClick={() => toggleTheme("system")}
-                >
-                  <Monitor className="h-4 w-4" />
-                  <span>系统</span>
-                </button>
-              </div>
-            )}
+      </div>
+      {/* 顶部下一站信息栏 */}
+      <div
+        className="w-full bg-background flex items-center justify-center border-b border-zinc-200"
+        style={{ minHeight: 38 }}
+      >
+        {isLoading ? (
+          <span className="text-sm text-zinc-400 px-2 py-1">
+            加载下一站信息...
+          </span>
+        ) : nextRace ? (
+          <div className="flex items-center space-x-2 py-1">
+            <span className="text-base font-medium text-zinc-700 tracking-wide">
+              下一站
+            </span>
+            <span className="text-lg font-bold text-zinc-900 flex items-center">
+              {getCountryFlag(
+                nextRace.circuit?.country || nextRace.country || ""
+              )}
+              <span className="ml-1">
+                {nextRace.circuit?.country || nextRace.country || "-"}
+              </span>
+            </span>
+            <span className="bg-zinc-200 text-zinc-700 rounded px-2 py-0.5 text-sm font-semibold ml-2">
+              {formatMonthDay(nextRace.event_date)}
+            </span>
           </div>
-        </div>
+        ) : (
+          <span className="text-sm text-zinc-400 px-2 py-1">
+            暂无下一站信息
+          </span>
+        )}
       </div>
     </header>
   );

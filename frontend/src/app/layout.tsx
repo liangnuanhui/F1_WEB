@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
 import { Header } from "@/components/layout/Header";
-import { Sidebar } from "@/components/layout/Sidebar";
 
 export const metadata: Metadata = {
   title: "F1 赛事数据",
@@ -28,10 +27,7 @@ export default function RootLayout({
         <Providers>
           <div className="min-h-screen bg-background">
             <Header />
-            <Sidebar />
-            <main className="md:ml-64 pt-14">
-              <div className="container mx-auto p-4">{children}</div>
-            </main>
+            <main>{children}</main>
           </div>
         </Providers>
       </body>

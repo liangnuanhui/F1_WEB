@@ -16,8 +16,6 @@ interface AppState {
   selectedConstructor: Constructor | null;
   // 侧边栏是否打开
   sidebarOpen: boolean;
-  // 主题模式
-  theme: "light" | "dark" | "system";
   // 加载状态
   loading: boolean;
   // 错误信息
@@ -40,8 +38,6 @@ interface AppActions {
   toggleSidebar: () => void;
   // 设置侧边栏状态
   setSidebarOpen: (open: boolean) => void;
-  // 设置主题
-  setTheme: (theme: "light" | "dark" | "system") => void;
   // 设置加载状态
   setLoading: (loading: boolean) => void;
   // 设置错误信息
@@ -63,7 +59,6 @@ const initialState: AppState = {
   selectedDriver: null,
   selectedConstructor: null,
   sidebarOpen: false,
-  theme: "system",
   loading: false,
   error: null,
 };
@@ -90,14 +85,6 @@ export const useAppStore = create<AppStore>()(
 
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
 
-      setTheme: (theme) => {
-        set({ theme });
-        // 保存到 localStorage
-        if (typeof window !== "undefined") {
-          localStorage.setItem("theme", theme);
-        }
-      },
-
       setLoading: (loading) => set({ loading }),
 
       setError: (error) => set({ error }),
@@ -111,14 +98,3 @@ export const useAppStore = create<AppStore>()(
     }
   )
 );
-
-// 从 localStorage 恢复主题设置
-if (typeof window !== "undefined") {
-  const savedTheme = localStorage.getItem("theme") as
-    | "light"
-    | "dark"
-    | "system";
-  if (savedTheme) {
-    useAppStore.getState().setTheme(savedTheme);
-  }
-}
