@@ -75,7 +75,7 @@ export function Header() {
       </div>
       {/* 顶部下一站信息栏 */}
       <div
-        className="w-full bg-background flex items-center justify-center border-b border-zinc-200"
+        className="w-full  flex items-center justify-center border-b border-zinc-200"
         style={{ minHeight: 38 }}
       >
         {isLoading ? (

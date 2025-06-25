@@ -26,6 +26,47 @@ function formatMonthDayRange(start?: string, end?: string) {
   return `${month}月${startDay}${endDay !== startDay ? `-${endDay}` : ""}日`;
 }
 
+// 修正版：保证服务端和客户端一致的日期解析
+function parseDateToUTC(dateStr?: string) {
+  if (!dateStr) return undefined;
+  // 兼容 '2025-06-01 13:00:00' 和 '2025-06-01T13:00:00Z'
+  let iso = dateStr.includes("T") ? dateStr : dateStr.replace(" ", "T");
+  if (!iso.endsWith("Z")) iso += "Z";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? undefined : d;
+}
+
+function getRaceWeekendRange(race: Race) {
+  // 收集所有合法 session 日期
+  const sessionDates = [
+    race.session1_date,
+    race.session2_date,
+    race.session3_date,
+    race.session4_date,
+    race.session5_date,
+  ]
+    .map(parseDateToUTC)
+    .filter(Boolean) as Date[];
+
+  if (sessionDates.length === 0) return "-";
+  if (sessionDates.length === 1) {
+    const d = sessionDates[0];
+    return `${d.getMonth() + 1}月${d.getDate()}日`;
+  }
+  const minDate = new Date(Math.min(...sessionDates.map((d) => d.getTime())));
+  const maxDate = new Date(Math.max(...sessionDates.map((d) => d.getTime())));
+  // 跨年情况
+  if (minDate.getFullYear() !== maxDate.getFullYear()) {
+    return `${minDate.getFullYear()}年${minDate.getMonth() + 1}月${minDate.getDate()}日-${maxDate.getFullYear()}年${maxDate.getMonth() + 1}月${maxDate.getDate()}日`;
+  }
+  // 跨月
+  if (minDate.getMonth() !== maxDate.getMonth()) {
+    return `${minDate.getMonth() + 1}月${minDate.getDate()}日-${maxDate.getMonth() + 1}月${maxDate.getDate()}日`;
+  }
+  // 同月
+  return `${minDate.getMonth() + 1}月${minDate.getDate()}日-${maxDate.getDate()}日`;
+}
+
 function RaceCard({
   race,
   wide = false,
@@ -64,7 +105,7 @@ function RaceCard({
           </span>
         </div>
         <div className="text-base font-semibold mb-1">
-          {formatMonthDayRange(race.event_date)}
+          {getRaceWeekendRange(race)}
         </div>
       </div>
     </div>
@@ -179,7 +220,7 @@ export default function RacesPage() {
               {/* 右侧：日期 */}
               <div className="flex flex-col items-end justify-center w-28 pr-4">
                 <span className="text-base font-bold text-primary">
-                  {formatF1DateRange(race.event_date)}
+                  {getRaceWeekendRange(race)}
                 </span>
                 {race.event_date && (
                   <span className="text-xs text-zinc-400 mt-1">
