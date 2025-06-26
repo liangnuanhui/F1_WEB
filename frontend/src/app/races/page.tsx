@@ -164,17 +164,17 @@ function RaceResultCard({ race }: { race: Race }) {
               {showLoc}
             </span>
           </div>
-          <div className="text-lg font-bold text-zinc-500 mb-2">
+          <div className="text-lg font-bold text-zinc-500 mt-2 mb-2 min-h-[3.2rem] line-clamp-2 flex items-end">
             {race.official_event_name}
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-[#F7F4F1] rounded-lg px-4 py-2 text-zinc-700 font-bold text-lg">
+        <div className="flex items-center gap-2 bg-[#F7F4F1] rounded-lg px-4 py-2 text-zinc-700 font-bold text-sm whitespace-nowrap flex-row">
           <CheckerFlag />
           <span>{dateStr}</span>
         </div>
       </div>
       {/* 前三名 */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 mt-auto">
         {isLoading
           ? // 骨架屏
             [1, 2, 3].map((i) => (
@@ -194,28 +194,40 @@ function RaceResultCard({ race }: { race: Race }) {
                   key={p.position}
                   className={`flex-1 rounded-xl ${p.position === 1 ? "bg-[#F7F4F1]" : p.position === 2 ? "bg-orange-100" : "bg-cyan-100"} flex items-center gap-2 px-3 py-2 min-w-[100px]`}
                 >
-                  <div className="flex flex-col items-center mr-2">
+                  <div className="flex flex-col items-center -mr-2 min-w-[24px]">
                     <span className="text-xl font-extrabold text-zinc-700 leading-none">
                       {p.position}
-                      <span className="text-xs align-super font-bold">
-                        {p.position === 1
-                          ? "ST"
-                          : p.position === 2
-                            ? "ND"
-                            : "RD"}
-                      </span>
                     </span>
                   </div>
                   {/* 头像占位 */}
-                  <div className="w-10 h-10 rounded-full bg-zinc-300 flex items-center justify-center font-bold text-lg text-zinc-500">
-                    {p.driver_code ? p.driver_code[0] : "-"}
+                  <div className="w-8 h-8 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
+                    {p.driver_name && p.driver_name !== "-" ? (
+                      <img
+                        src={`/driver_avatar/${p.driver_name.replace(/ /g, "_")}.png`}
+                        alt={p.driver_name}
+                        width={32}
+                        height={32}
+                        className="object-cover w-8 h-8 rounded-full"
+                        style={{ objectPosition: "center" }}
+                        onError={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          img.style.display = "none";
+                          if (img.parentElement) {
+                            img.parentElement.textContent = p.driver_code
+                              ? p.driver_code[0]
+                              : "-";
+                          }
+                        }}
+                      />
+                    ) : p.driver_code ? (
+                      p.driver_code[0]
+                    ) : (
+                      "-"
+                    )}
                   </div>
-                  <div className="flex flex-col ml-1">
+                  <div className="flex flex-col ml-2 min-w-0">
                     <span className="font-extrabold text-lg text-zinc-900">
                       {p.driver_code}
-                    </span>
-                    <span className="text-xs text-zinc-500 font-medium truncate max-w-[80px]">
-                      {p.driver_name}
                     </span>
                     <span className="text-zinc-700 font-mono font-bold text-base">
                       {p.result_time}
@@ -324,7 +336,7 @@ function NextRaceCard({ race }: { race: Race }) {
             {race.official_event_name}
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-white rounded-lg px-4 py-2 text-[#B80000] font-extrabold text-lg shadow cursor-pointer select-none">
+        <div className="flex items-center gap-2 bg-white rounded-lg px-4 py-2 text-[#B80000] font-extrabold text-lg shadow cursor-pointer select-none whitespace-nowrap flex-row">
           NEXT RACE
           <span className="ml-1">&rarr;</span>
         </div>
@@ -500,7 +512,7 @@ export default function RacesPage() {
         </div>
       </div>
       {raceArr.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
+        <div className="max-w-[80vw] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
           {raceArr.map((race: Race, idx) => {
             // 判断比赛状态
             const now = new Date();

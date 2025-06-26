@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap");
 
 :root {
   --background: #f7f4f1;
@@ -23,15 +24,16 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "PingFang SC", "Microsoft YaHei", Arial, Helvetica, sans-serif;
+  font-family:
+    "Titillium Web", "PingFang SC", "Microsoft YaHei", Arial, Helvetica,
+    sans-serif;
 }
 
 /* 英文、数字、符号用 Bebas Neue，中文用 PingFang SC */
 :lang(en),
 :lang(en) *,
 .en-font {
-  font-family:
-    "Bebas Neue", "PingFang SC", "Microsoft YaHei", Arial, Helvetica, sans-serif;
+  font-family: "Titillium Web", Arial, Helvetica, sans-serif !important;
   font-weight: normal;
   letter-spacing: 0.02em;
 }
@@ -39,16 +41,21 @@ body {
 :lang(zh),
 :lang(zh) *,
 .zh-font {
-  font-family: "PingFang SC", "Microsoft YaHei", Arial, Helvetica, sans-serif;
+  font-family:
+    "Titillium Web", "PingFang SC", "Microsoft YaHei", Arial, Helvetica,
+    sans-serif;
   font-weight: normal;
 }
 
 /* 兼容所有元素的英文数字符号混排 */
 body * {
-  font-family: "PingFang SC", "Microsoft YaHei", Arial, Helvetica, sans-serif;
+  font-family:
+    "Titillium Web", "PingFang SC", "Microsoft YaHei", Arial, Helvetica,
+    sans-serif;
 }
 body *:lang(en),
 body *.en-font {
   font-family:
-    "Bebas Neue", "PingFang SC", "Microsoft YaHei", Arial, Helvetica, sans-serif;
+    "Titillium Web", "Bebas Neue", "PingFang SC", "Microsoft YaHei", Arial,
+    Helvetica, sans-serif;
 }

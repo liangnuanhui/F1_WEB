@@ -39,6 +39,7 @@ export default function DriversPage() {
       <div className="flex items-center space-x-2">
         <Users className="h-6 w-6 text-primary" />
         <h1 className="text-3xl font-bold">车手简介</h1>
+        <span className="en-font">ENGLISH TEST</span>
       </div>
 
       {drivers?.data && drivers.data.length > 0 ? (
