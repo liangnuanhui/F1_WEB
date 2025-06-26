@@ -12,6 +12,8 @@ from app.models.season import Season
 from app.models.circuit import Circuit
 from app.schemas.race import RaceResponse
 from app.schemas.base import ApiResponse
+from app.models.result import Result
+from app.models.driver import Driver
 
 router = APIRouter()
 
@@ -190,4 +192,54 @@ async def get_race(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取比赛详情失败: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"获取比赛详情失败: {str(e)}")
+
+
+@router.get("/{race_id}/podium", response_model=ApiResponse[list])
+def get_race_podium(race_id: int, db: Session = Depends(get_db)):
+    """
+    获取指定比赛的前三名结果
+    """
+    try:
+        # 查询前三名结果
+        podium_results = (
+            db.query(Result, Driver)
+            .join(Driver, Result.driver_id == Driver.driver_id)
+            .filter(Result.race_id == race_id, Result.position.in_([1, 2, 3]))
+            .order_by(Result.position.asc())
+            .all()
+        )
+        podium_list = []
+        base_time = None
+        for result, driver in podium_results:
+            # 计算展示用成绩
+            if result.position == 1:
+                # 第一名显示总用时
+                if result.total_race_time:
+                    # 只取时:分:秒.毫秒
+                    t = str(result.total_race_time)
+                    if t.startswith("0 days "):
+                        t = t[7:]
+                    result_time = t.split(".")[0]
+                else:
+                    result_time = "-"
+                base_time = result.total_race_time_millis
+            else:
+                # 其他名次显示与第一名的差值
+                if base_time and result.total_race_time_millis:
+                    diff = int(result.total_race_time_millis) - int(base_time)
+                    sec = diff // 1000
+                    ms = diff % 1000
+                    result_time = f"+{sec // 60}:{sec % 60:02d}.{ms:03d}"
+                else:
+                    result_time = "-"
+            podium_list.append({
+                "position": result.position,
+                "driver_id": driver.driver_id,
+                "driver_code": driver.code or "",
+                "driver_name": f"{driver.forename} {driver.surname}",
+                "result_time": result_time
+            })
+        return ApiResponse(success=True, message="获取比赛前三名成功", data=podium_list)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取比赛前三名失败: {str(e)}") 
