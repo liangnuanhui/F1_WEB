@@ -2,26 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { standingsApi, seasonsApi } from "@/lib/api";
-import { Building2 } from "lucide-react";
 import { ConstructorStanding } from "@/types";
-import { useEffect } from "react";
-
-type ConstructorStandingWithNames = ConstructorStanding & {
-  constructor_name: string;
-};
+import { getTeamLogoFilename } from "@/lib/team-logo-map";
+import { getCountryCode } from "@/lib/utils";
+import Image from "next/image";
 
 export default function ConstructorStandingPage() {
-  // 1. 获取当前活跃赛季
-  const {
-    data: season,
-    isLoading: seasonLoading,
-    error: seasonError,
-  } = useQuery({
+  const { data: season, isLoading: seasonLoading } = useQuery({
     queryKey: ["active-season"],
     queryFn: () => seasonsApi.getActive(),
   });
 
-  // 2. 用当前赛季 id 获取车队积分榜
   const seasonId = season?.data?.id;
   const {
     data: standings,
@@ -32,62 +23,64 @@ export default function ConstructorStandingPage() {
     queryFn: () =>
       seasonId
         ? standingsApi.getConstructorStandings(seasonId)
-        : Promise.resolve({ data: [], success: true }),
-    enabled: !!seasonId, // 只有拿到 seasonId 后才请求
+        : Promise.resolve(null),
+    enabled: !!seasonId,
   });
 
-  useEffect(() => {
-    if (standings?.data) {
-      console.log("constructor_standings.data", standings.data);
-    }
-  }, [standings]);
-
   if (seasonLoading || isLoading) {
-    return <div className="text-center py-8">加载中...</div>;
+    return <div className="text-center py-12">加载中...</div>;
   }
-  if (seasonError || error) {
-    return <div className="text-center py-8 text-red-500">加载失败</div>;
+  if (error || !standings?.data) {
+    return (
+      <div className="text-center py-12 text-red-500">加载车队积分榜失败</div>
+    );
   }
+
+  const standingsData = standings.data as ConstructorStanding[];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <Building2 className="h-6 w-6 text-primary" />
-        <h1 className="text-3xl font-bold">车队排行榜</h1>
+    <div className="container mx-auto px-4 py-8 bg-[#F7F4F1]">
+      <h1 className="text-3xl font-extrabold mb-6 tracking-wider">
+        2025 CONSTRUCTOR'S STANDINGS
+      </h1>
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="grid grid-cols-12 gap-4 px-6 py-3 font-bold text-sm text-zinc-500 border-b">
+          <div className="col-span-1">POS.</div>
+          <div className="col-span-6">TEAM</div>
+          <div className="col-span-4">NATIONALITY</div>
+          <div className="col-span-1 text-right">PTS.</div>
+        </div>
+        <div>
+          {standingsData.map((item) => (
+            <div
+              key={item.constructor_id}
+              className="grid grid-cols-12 gap-4 px-6 py-3 items-center border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50 transition-colors"
+            >
+              <div className="col-span-1 font-bold text-lg">
+                {item.position}
+              </div>
+              <div className="col-span-6 flex items-center gap-4">
+                <Image
+                  src={`/team_logos/${getTeamLogoFilename(item.constructor_id)}.svg`}
+                  alt={item.constructor_name || "Team"}
+                  width={32}
+                  height={32}
+                  className="h-8 w-auto"
+                />
+                <span className="font-bold">
+                  {item.constructor_name || "Unknown Team"}
+                </span>
+              </div>
+              <div className="col-span-4 font-medium text-zinc-600">
+                {getCountryCode(item.nationality || "")?.toUpperCase() || "N/A"}
+              </div>
+              <div className="col-span-1 text-right font-bold text-lg">
+                {item.points}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      {standings?.data && standings.data.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border rounded-lg text-center">
-            <thead>
-              <tr className="bg-muted">
-                <th className="px-4 py-2">排名</th>
-                <th className="px-4 py-2">车队</th>
-                <th className="px-4 py-2">积分</th>
-                <th className="px-4 py-2">胜场</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(standings.data as ConstructorStandingWithNames[]).map(
-                (item) => (
-                  <tr
-                    key={item.constructor_id}
-                    className="border-b hover:bg-accent"
-                  >
-                    <td className="px-4 py-2">{item.position}</td>
-                    <td className="px-4 py-2">{item.constructor_name}</td>
-                    <td className="px-4 py-2">{item.points}</td>
-                    <td className="px-4 py-2">{item.wins}</td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">暂无车队积分榜数据</p>
-        </div>
-      )}
     </div>
   );
 }

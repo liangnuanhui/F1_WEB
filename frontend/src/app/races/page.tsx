@@ -1,11 +1,12 @@
 "use client";
 
 import { useRaces } from "@/hooks/use-races";
-import { formatDate, formatRaceName, getCountryFlag } from "@/lib/utils";
+import { formatDate, formatRaceName, getCountryName } from "@/lib/utils";
 import { Calendar } from "lucide-react";
 import { Race } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import axios, { type AxiosResponse } from "axios";
+import { CountryFlag } from "@/components/CountryFlag";
 
 function formatF1DateRange(dateStr?: string) {
   if (!dateStr) return "-";
@@ -89,11 +90,8 @@ const CheckerFlag = () => (
 // 已完成比赛卡片
 function RaceResultCard({ race }: { race: Race }) {
   // 特殊location显示
-  const specialLoc = [0, 6, 7, 22];
-  const showLoc =
-    specialLoc.includes(race.round_number) && race.location
-      ? race.location
-      : race.circuit?.country || race.country || "-";
+  const displayName = getCountryName(race);
+
   // 日期范围（英文简写）
   const getShortMonth = (date: Date) =>
     date.toLocaleString("en-US", { month: "short" }).toUpperCase();
@@ -157,11 +155,9 @@ function RaceResultCard({ race }: { race: Race }) {
             {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
           </div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">
-              {getCountryFlag(race.circuit?.country || race.country || "")}
-            </span>
+            <CountryFlag country={displayName} className="w-8" />
             <span className="text-2xl font-extrabold text-zinc-900">
-              {showLoc}
+              {displayName}
             </span>
           </div>
           <div className="text-base font-bold text-zinc-500 mt-1 mb-2 min-h-[2.5rem] line-clamp-2 flex items-end">
@@ -192,7 +188,7 @@ function RaceResultCard({ race }: { race: Race }) {
               }) => (
                 <div
                   key={p.position}
-                  className={`flex-1 rounded-xl ${p.position === 1 ? "bg-[#F7F4F1]" : p.position === 2 ? "bg-orange-100" : "bg-cyan-100"} flex items-center gap-1.5 px-2 py-1.5`}
+                  className="flex-1 rounded-xl bg-[#F7F4F1] flex items-center gap-1.5 px-2 py-1.5"
                 >
                   <div className="flex flex-col items-center min-w-[20px]">
                     <span className="text-lg font-extrabold text-zinc-700 leading-none">
@@ -272,10 +268,16 @@ function RaceCard({
           <div className="text-xs font-bold tracking-widest mb-1">
             ROUND {race.round_number}
           </div>
-          <div className="text-3xl font-extrabold mb-2">
-            {race.circuit?.country || race.country || "-"}
+          <div className="flex items-center gap-3">
+            <CountryFlag
+              country={getCountryName(race)}
+              className="w-10 rounded-md"
+            />
+            <span className="text-3xl font-extrabold">
+              {getCountryName(race)}
+            </span>
           </div>
-          <div className="text-lg font-bold mb-2">
+          <div className="text-lg font-bold my-2">
             {getRaceWeekendRange(race)}
           </div>
         </div>
@@ -293,11 +295,8 @@ function RaceCard({
 // 下一场比赛卡片
 function NextRaceCard({ race }: { race: Race }) {
   // 特殊location显示
-  const specialLoc = [0, 6, 7, 22];
-  const showLoc =
-    specialLoc.includes(race.round_number) && race.location
-      ? race.location
-      : race.circuit?.country || race.country || "-";
+  const displayName = getCountryName(race);
+
   // 日期范围（英文简写）
   const getShortMonth = (date: Date) =>
     date.toLocaleString("en-US", { month: "short" }).toUpperCase();
@@ -329,11 +328,9 @@ function NextRaceCard({ race }: { race: Race }) {
             {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
           </div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">
-              {getCountryFlag(race.circuit?.country || race.country || "")}
-            </span>
+            <CountryFlag country={displayName} className="w-8 rounded" />
             <span className="text-3xl font-extrabold text-white drop-shadow">
-              {showLoc}
+              {displayName}
             </span>
           </div>
           <div className="text-lg font-bold text-white mb-2 drop-shadow">
@@ -385,11 +382,8 @@ const TrackPlaceholder = () => (
 // 未进行普通比赛卡片
 function UpcomingRaceCard({ race }: { race: Race }) {
   // 特殊location显示
-  const specialLoc = [0, 6, 7, 22];
-  const showLoc =
-    specialLoc.includes(race.round_number) && race.location
-      ? race.location
-      : race.circuit?.country || race.country || "-";
+  const displayName = getCountryName(race);
+
   // 日期范围（英文简写）
   const getShortMonth = (date: Date) =>
     date.toLocaleString("en-US", { month: "short" }).toUpperCase();
@@ -420,11 +414,9 @@ function UpcomingRaceCard({ race }: { race: Race }) {
           {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
         </div>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-xl">
-            {getCountryFlag(race.circuit?.country || race.country || "")}
-          </span>
+          <CountryFlag country={displayName} className="w-8" />
           <span className="text-3xl font-extrabold text-zinc-900">
-            {showLoc}
+            {displayName}
           </span>
         </div>
         <div className="text-lg font-bold text-zinc-500 mb-2">

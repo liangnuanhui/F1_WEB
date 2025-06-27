@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useUpcomingRaces } from "@/hooks/use-races";
-import { getCountryFlag } from "@/lib/utils";
+import { getCountryName } from "@/lib/utils";
+import { CountryFlag } from "@/components/CountryFlag";
 
 // 自定义日期格式化函数：只显示月和日
 function formatMonthDay(dateStr?: string) {
@@ -88,12 +89,11 @@ export function Header() {
               下一站
             </span>
             <span className="text-lg font-bold text-zinc-900 flex items-center">
-              {getCountryFlag(
-                nextRace.circuit?.country || nextRace.country || ""
-              )}
-              <span className="ml-1">
-                {nextRace.circuit?.country || nextRace.country || "-"}
-              </span>
+              <CountryFlag
+                country={getCountryName(nextRace)}
+                className="w-5 mr-1.5"
+              />
+              <span className="ml-1">{getCountryName(nextRace)}</span>
             </span>
             <span className="bg-zinc-200 text-zinc-700 rounded px-2 py-0.5 text-sm font-semibold ml-2">
               {formatMonthDay(nextRace.event_date)}

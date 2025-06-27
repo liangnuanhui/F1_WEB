@@ -2,9 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { constructorsApi } from "@/lib/api";
-import { formatConstructorName, getCountryFlag } from "@/lib/utils";
+import { formatConstructorName } from "@/lib/utils";
 import { Building2, Flag, Globe } from "lucide-react";
 import { Constructor } from "@/types";
+import { CountryFlag } from "@/components/CountryFlag";
 
 export default function ConstructorPage() {
   const {
@@ -60,7 +61,10 @@ export default function ConstructorPage() {
                 </div>
 
                 <div className="flex items-center space-x-1 text-lg">
-                  <span>{getCountryFlag(constructor.nationality || "")}</span>
+                  <CountryFlag
+                    country={constructor.nationality || ""}
+                    className="w-8 h-auto rounded-sm"
+                  />
                 </div>
               </div>
 

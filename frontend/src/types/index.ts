@@ -24,6 +24,7 @@ export interface Season {
   description?: string;
   start_date?: string;
   end_date?: string;
+  is_active: boolean;
 }
 
 // 赛道类型 - 基于实际数据库模型
@@ -43,6 +44,8 @@ export interface Circuit {
   description?: string;
   characteristics?: string;
   is_active: boolean;
+  id: string;
+  name: string;
 }
 
 // 比赛类型 - 基于实际数据库模型
@@ -81,6 +84,10 @@ export interface Driver {
   surname: string;
   date_of_birth?: string;
   nationality?: string;
+  id: string;
+  driver_number: number;
+  dob: string;
+  url: string;
 }
 
 // 车队类型 - 与数据库一致
@@ -100,6 +107,8 @@ export interface Constructor {
   podiums: number;
   poles: number;
   fastest_laps: number;
+  id: string;
+  url: string;
 }
 
 // 比赛结果类型 - 基于实际数据库模型
@@ -168,26 +177,24 @@ export interface SprintResult {
 
 // 车手积分榜类型 - 与后端 schema/database 一致
 export interface DriverStanding {
-  id: number;
-  season_id: number;
-  position?: number;
+  position: number;
   points: number;
   wins: number;
   driver_id: string;
-  constructor_id: string;
-  driver?: Driver;
-  constructor?: Constructor;
+  driver_name: string;
+  nationality: string | null;
+  constructor_id: string | null;
+  constructor_name: string | null;
 }
 
 // 车队积分榜类型 - 与后端 schema/database 一致
 export interface ConstructorStanding {
-  id: number;
-  season_id: number;
-  position?: number;
+  position: number;
   points: number;
   wins: number;
   constructor_id: string;
-  constructor?: Constructor;
+  constructor_name: string;
+  nationality: string | null;
 }
 
 // 积分榜历史类型 - 与后端 schema/database 一致

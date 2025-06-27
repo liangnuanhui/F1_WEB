@@ -2,27 +2,30 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { standingsApi, seasonsApi } from "@/lib/api";
-import { Users } from "lucide-react";
 import { DriverStanding } from "@/types";
-import { useEffect } from "react";
+import { getTeamColor } from "@/lib/team-colors";
+import Image from "next/image";
+import { availableAvatarSet } from "@/lib/available-avatars";
+import { getTeamLogoFilename } from "@/lib/team-logo-map";
+import { getCountryCode } from "@/lib/utils";
+import { Users } from "lucide-react";
 
-type DriverStandingWithNames = DriverStanding & {
-  driver_name: string;
-  constructor_name: string;
+// 工具函数，从全名生成头像路径
+const getAvatarPath = (fullName: string) => {
+  if (!fullName) return "/driver_avatar/default.svg";
+  const sanitizedName = fullName.replace(/ /g, "_");
+  if (availableAvatarSet.has(sanitizedName)) {
+    return `/driver_avatar/${sanitizedName}.png`;
+  }
+  return "/driver_avatar/default.svg";
 };
 
 export default function DriverStandingPage() {
-  // 1. 获取当前活跃赛季
-  const {
-    data: season,
-    isLoading: seasonLoading,
-    error: seasonError,
-  } = useQuery({
+  const { data: season, isLoading: seasonLoading } = useQuery({
     queryKey: ["active-season"],
     queryFn: () => seasonsApi.getActive(),
   });
 
-  // 2. 用当前赛季 id 获取积分榜
   const seasonId = season?.data?.id;
   const {
     data: standings,
@@ -33,59 +36,84 @@ export default function DriverStandingPage() {
     queryFn: () =>
       seasonId
         ? standingsApi.getDriverStandings(seasonId)
-        : Promise.resolve({ data: [], success: true }),
-    enabled: !!seasonId, // 只有拿到 seasonId 后才请求
+        : Promise.resolve(null),
+    enabled: !!seasonId,
   });
 
-  useEffect(() => {
-    if (standings?.data) {
-      console.log("standings.data", standings.data);
-    }
-  }, [standings]);
-
   if (seasonLoading || isLoading) {
-    return <div className="text-center py-8">加载中...</div>;
+    return <div className="text-center py-12">加载中...</div>;
   }
-  if (seasonError || error) {
-    return <div className="text-center py-8 text-red-500">加载失败</div>;
+  if (error || !standings?.data) {
+    return (
+      <div className="text-center py-12 text-red-500">加载车手积分榜失败</div>
+    );
   }
+  const standingsData = standings.data as DriverStanding[];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <Users className="h-6 w-6 text-primary" />
-        <h1 className="text-3xl font-bold">车手排行榜</h1>
+    <div className="container mx-auto px-4 py-8 bg-[#F7F4F1]">
+      <h1 className="text-3xl font-extrabold mb-6 tracking-wider">
+        2025 DRIVER'S STANDINGS
+      </h1>
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="grid grid-cols-12 gap-4 px-6 py-3 font-bold text-sm text-zinc-500 border-b">
+          <div className="col-span-1">POS.</div>
+          <div className="col-span-4">DRIVER</div>
+          <div className="col-span-2">NATIONALITY</div>
+          <div className="col-span-4">TEAM</div>
+          <div className="col-span-1 text-right">PTS.</div>
+        </div>
+        <div>
+          {standingsData.map((item) => (
+            <div
+              key={item.driver_id}
+              className="grid grid-cols-12 gap-4 px-6 py-3 items-center border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50 transition-colors"
+            >
+              <div className="col-span-1 font-bold text-lg">
+                {item.position}
+              </div>
+              <div className="col-span-4 flex items-center gap-4">
+                <div
+                  className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden"
+                  style={{
+                    backgroundColor: getTeamColor(
+                      item.constructor_id || undefined
+                    ),
+                  }}
+                >
+                  <Image
+                    src={getAvatarPath(item.driver_name)}
+                    alt={item.driver_name || "Driver"}
+                    width={40}
+                    height={40}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+                <span className="font-bold">
+                  {item.driver_name || "Unknown Driver"}
+                </span>
+              </div>
+              <div className="col-span-2 font-medium text-zinc-600">
+                {getCountryCode(item.nationality || "")?.toUpperCase() || "N/A"}
+              </div>
+              <div className="col-span-4 flex items-center gap-3">
+                <Image
+                  src={`/team_logos/${getTeamLogoFilename(item.constructor_id || "")}.svg`}
+                  alt={item.constructor_name || "Team"}
+                  width={28}
+                  height={28}
+                />
+                <span className="font-medium">
+                  {item.constructor_name || "Unknown Team"}
+                </span>
+              </div>
+              <div className="col-span-1 text-right font-bold text-lg">
+                {item.points}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      {standings?.data && standings.data.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border rounded-lg text-center">
-            <thead>
-              <tr className="bg-muted">
-                <th className="px-4 py-2">排名</th>
-                <th className="px-4 py-2">车手</th>
-                <th className="px-4 py-2">所属车队</th>
-                <th className="px-4 py-2">积分</th>
-                <th className="px-4 py-2">胜场</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(standings.data as DriverStandingWithNames[]).map((item) => (
-                <tr key={item.driver_id} className="border-b hover:bg-accent">
-                  <td className="px-4 py-2">{item.position}</td>
-                  <td className="px-4 py-2">{item.driver_name}</td>
-                  <td className="px-4 py-2">{item.constructor_name}</td>
-                  <td className="px-4 py-2">{item.points}</td>
-                  <td className="px-4 py-2">{item.wins}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">暂无车手积分榜数据</p>
-        </div>
-      )}
     </div>
   );
 }
