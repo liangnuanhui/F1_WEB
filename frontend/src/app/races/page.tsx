@@ -149,38 +149,38 @@ function RaceResultCard({ race }: { race: Race }) {
           { position: 3, driver_code: "-", driver_name: "-", result_time: "-" },
         ];
   return (
-    <div className="relative rounded-2xl bg-[#FFFFFF] p-6 shadow flex flex-col gap-6 min-h-[220px]">
+    <div className="relative rounded-2xl bg-[#FFFFFF] p-6 shadow flex flex-col gap-6 min-h-[220px] h-64">
       {/* 头部信息 */}
       <div className="flex justify-between items-start">
         <div>
-          <div className="text-base font-bold text-zinc-600 mb-2">
+          <div className="text-sm font-bold text-zinc-600 mb-1">
             {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
           </div>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">
               {getCountryFlag(race.circuit?.country || race.country || "")}
             </span>
-            <span className="text-3xl font-extrabold text-zinc-900">
+            <span className="text-2xl font-extrabold text-zinc-900">
               {showLoc}
             </span>
           </div>
-          <div className="text-lg font-bold text-zinc-500 mt-2 mb-2 min-h-[3.2rem] line-clamp-2 flex items-end">
+          <div className="text-base font-bold text-zinc-500 mt-1 mb-2 min-h-[2.5rem] line-clamp-2 flex items-end">
             {race.official_event_name}
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-[#F7F4F1] rounded-lg px-4 py-2 text-zinc-700 font-bold text-sm whitespace-nowrap flex-row">
+        <div className="flex items-center gap-2 bg-[#F7F4F1] rounded-lg px-3 py-1.5 text-zinc-700 font-bold text-xs whitespace-nowrap flex-row">
           <CheckerFlag />
           <span>{dateStr}</span>
         </div>
       </div>
       {/* 前三名 */}
-      <div className="flex gap-3 mt-auto">
+      <div className="flex gap-2 mt-auto">
         {isLoading
           ? // 骨架屏
             [1, 2, 3].map((i) => (
               <div
                 key={i}
-                className={`flex-1 rounded-xl bg-zinc-100 animate-pulse flex items-center gap-2 px-3 py-2 min-w-[100px] h-[56px]`}
+                className={`flex-1 rounded-xl bg-zinc-100 animate-pulse flex items-center gap-2 px-2 py-1.5 h-[52px]`}
               />
             ))
           : podium.map(
@@ -192,22 +192,22 @@ function RaceResultCard({ race }: { race: Race }) {
               }) => (
                 <div
                   key={p.position}
-                  className={`flex-1 rounded-xl ${p.position === 1 ? "bg-[#F7F4F1]" : p.position === 2 ? "bg-orange-100" : "bg-cyan-100"} flex items-center gap-2 px-3 py-2 min-w-[100px]`}
+                  className={`flex-1 rounded-xl ${p.position === 1 ? "bg-[#F7F4F1]" : p.position === 2 ? "bg-orange-100" : "bg-cyan-100"} flex items-center gap-1.5 px-2 py-1.5`}
                 >
-                  <div className="flex flex-col items-center -mr-2 min-w-[24px]">
-                    <span className="text-xl font-extrabold text-zinc-700 leading-none">
+                  <div className="flex flex-col items-center min-w-[20px]">
+                    <span className="text-lg font-extrabold text-zinc-700 leading-none">
                       {p.position}
                     </span>
                   </div>
                   {/* 头像占位 */}
-                  <div className="w-8 h-8 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
                     {p.driver_name && p.driver_name !== "-" ? (
                       <img
                         src={`/driver_avatar/${p.driver_name.replace(/ /g, "_")}.png`}
                         alt={p.driver_name}
-                        width={32}
-                        height={32}
-                        className="object-cover w-8 h-8 rounded-full"
+                        width={28}
+                        height={28}
+                        className="object-cover w-7 h-7 rounded-full"
                         style={{ objectPosition: "center" }}
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
@@ -225,11 +225,11 @@ function RaceResultCard({ race }: { race: Race }) {
                       "-"
                     )}
                   </div>
-                  <div className="flex flex-col ml-2 min-w-0">
-                    <span className="font-extrabold text-lg text-zinc-900">
+                  <div className="flex flex-col ml-1 min-w-0">
+                    <span className="font-extrabold text-sm text-zinc-900">
                       {p.driver_code}
                     </span>
-                    <span className="text-zinc-700 font-mono font-bold text-base">
+                    <span className="text-zinc-700 font-mono font-medium text-xs">
                       {p.result_time}
                     </span>
                   </div>
@@ -251,35 +251,39 @@ function RaceCard({
   if (!race)
     return (
       <div
-        className={`rounded-xl bg-zinc-200 flex items-center justify-center text-zinc-400 ${wide ? "basis-[36%] min-w-[320px] max-w-xl" : "basis-[24%] min-w-[200px] max-w-sm"} h-56 mr-4 last:mr-0`}
+        className={`rounded-xl bg-zinc-200 flex items-center justify-center text-zinc-400 h-80 w-full`}
       >
         暂无数据
       </div>
     );
+  // 假设 race.circuit?.image_url 为背景图片
+  const bgImage = race.circuit
+    ? `/circuit_img/${race.circuit.circuit_id}.jpg`
+    : "/default_race_bg.jpg";
   return (
     <div
-      className={`relative rounded-xl shadow-md overflow-hidden flex flex-col justify-end text-white transition-all duration-200 ${
-        wide
-          ? "basis-[36%] min-w-[320px] max-w-xl"
-          : "basis-[24%] min-w-[200px] max-w-sm"
-      } h-56 bg-gradient-to-br from-zinc-400 to-zinc-600 mr-4 last:mr-0`}
+      className={`relative rounded-xl shadow-md overflow-hidden flex flex-col justify-end text-white transition-all duration-200 h-80 w-full bg-cover bg-center`}
+      style={{ backgroundImage: `url('${bgImage}')` }}
     >
-      {/* 占位背景，可替换为图片 */}
-      <div className="absolute inset-0 bg-zinc-300/60" />
-      <div className="relative z-10 p-4">
-        <div className="text-xs font-bold tracking-widest mb-1">
-          ROUND {race.round_number}
-        </div>
-        <div className="flex items-center mb-2">
-          <span className="text-2xl mr-2">
-            {getCountryFlag(race.circuit?.country || race.country || "")}
-          </span>
-          <span className="text-lg font-bold">
+      {/* 半透明遮罩 */}
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative z-10 p-6 flex flex-col h-full justify-between">
+        <div>
+          <div className="text-xs font-bold tracking-widest mb-1">
+            ROUND {race.round_number}
+          </div>
+          <div className="text-3xl font-extrabold mb-2">
             {race.circuit?.country || race.country || "-"}
-          </span>
+          </div>
+          <div className="text-lg font-bold mb-2">
+            {getRaceWeekendRange(race)}
+          </div>
         </div>
-        <div className="text-base font-semibold mb-1">
-          {getRaceWeekendRange(race)}
+        {/* 左下角 logo 占位 */}
+        <div className="absolute left-6 bottom-6 opacity-90">
+          <span className="font-logo text-white text-lg tracking-widest">
+            LOGO
+          </span>
         </div>
       </div>
     </div>
@@ -317,7 +321,7 @@ function NextRaceCard({ race }: { race: Race }) {
     }
   }
   return (
-    <div className="relative rounded-2xl bg-gradient-to-br from-[#FF1E00] to-[#B80000] p-6 shadow flex flex-col min-h-[220px] overflow-hidden">
+    <div className="relative rounded-2xl bg-gradient-to-br from-[#FF1E00] to-[#B80000] p-6 shadow flex flex-col min-h-[220px] h-64 overflow-hidden">
       {/* 头部信息 */}
       <div className="flex justify-between items-start">
         <div>
@@ -409,7 +413,7 @@ function UpcomingRaceCard({ race }: { race: Race }) {
     }
   }
   return (
-    <div className="relative rounded-2xl bg-white p-6 shadow flex flex-col min-h-[220px] overflow-hidden">
+    <div className="relative rounded-2xl bg-white p-6 shadow flex flex-col min-h-[220px] h-64 overflow-hidden">
       {/* 头部信息 */}
       <div>
         <div className="text-base font-bold text-zinc-600 mb-2">
@@ -488,31 +492,48 @@ export default function RacesPage() {
 
   return (
     <div className="space-y-6 bg-background min-h-screen pb-10">
-      <div
-        className="w-screen max-w-none bg-white flex flex-col items-center justify-center"
-        style={{
-          marginLeft: "calc(50% - 50vw)",
-          marginRight: "calc(50% - 50vw)",
-        }}
-      >
-        <div className="w-full max-w-10xl mx-auto px-4 pt-6 pb-8">
+      <div className="relative w-screen bg-white">
+        <div className="w-[90vw] mx-auto pt-4 pb-8">
           <div className="flex items-center space-x-2 justify-center mb-6">
-            <Calendar className="h-7 w-7 text-primary" />
-            <h1 className="text-4xl font-extrabold tracking-tight">
+            <img src="/calendar.png" alt="logo" className="h-10 w-10" />
+            <span className="text-4xl font-extrabold tracking-tight">
               2025 赛历
-            </h1>
+            </span>
           </div>
-          <div className="flex flex-row gap-6 justify-center">
-            <RaceCard race={prevRace} />
-            <RaceCard race={nextRace} />
-            {upcoming.map((race) => (
-              <RaceCard key={race.id} race={race} />
-            ))}
+          <div className="flex flex-row gap-x-6">
+            {/* Previous */}
+            <div className="flex flex-col flex-[1_1_0%]">
+              <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
+                Previous
+              </span>
+              <RaceCard race={prevRace} wide={false} />
+            </div>
+            {/* Next */}
+            <div className="flex flex-col flex-[2_2_0%]">
+              <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
+                Next
+              </span>
+              <RaceCard race={nextRace} wide={true} />
+            </div>
+            {/* Upcoming1 */}
+            <div className="flex flex-col flex-[1_1_0%]">
+              <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
+                {upcoming.length > 0 ? "Upcoming" : ""}
+              </span>
+              {upcoming[0] && <RaceCard race={upcoming[0]} wide={false} />}
+            </div>
+            {/* Upcoming2 */}
+            <div className="flex flex-col flex-[1_1_0%]">
+              <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
+                &nbsp;
+              </span>
+              {upcoming[1] && <RaceCard race={upcoming[1]} wide={false} />}
+            </div>
           </div>
         </div>
       </div>
       {raceArr.length > 0 ? (
-        <div className="max-w-[80vw] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
+        <div className="max-w-[90vw] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
           {raceArr.map((race: Race, idx) => {
             // 判断比赛状态
             const now = new Date();
