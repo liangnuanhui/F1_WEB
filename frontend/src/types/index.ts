@@ -93,22 +93,9 @@ export interface Driver {
 // 车队类型 - 与数据库一致
 export interface Constructor {
   constructor_id: string;
-  constructor_url?: string;
+  constructor_url: string;
   name: string;
-  nationality?: string;
-  season_id: number;
-  base?: string;
-  team_chief?: string;
-  technical_chief?: string;
-  power_unit?: string;
-  is_active?: boolean;
-  championships: number;
-  wins: number;
-  podiums: number;
-  poles: number;
-  fastest_laps: number;
-  id: string;
-  url: string;
+  nationality: string;
 }
 
 // 比赛结果类型 - 基于实际数据库模型
@@ -189,12 +176,12 @@ export interface DriverStanding {
 
 // 车队积分榜类型 - 与后端 schema/database 一致
 export interface ConstructorStanding {
+  constructor_id: string;
+  constructor_name: string;
+  constructor_url: string | null;
   position: number;
   points: number;
   wins: number;
-  constructor_id: string;
-  constructor_name: string;
-  nationality: string | null;
 }
 
 // 积分榜历史类型 - 与后端 schema/database 一致

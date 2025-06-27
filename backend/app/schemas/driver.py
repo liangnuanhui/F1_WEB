@@ -53,16 +53,6 @@ class DriverListResponse(BaseModel):
     total: int = Field(description="总数")
 
 
-class DriverStandingResponse(BaseModel):
-    """车手积分榜响应模式"""
-    
-    position: int = Field(description="排名")
-    driver: DriverResponse = Field(description="车手信息")
-    points: float = Field(description="积分")
-    wins: int = Field(description="获胜次数")
-    podiums: int = Field(description="领奖台次数")
-
-
 class DriverListPaginatedResponse(BaseModel):
     data: List[DriverResponse] = Field(description="车手列表")
     total: int = Field(description="总数")

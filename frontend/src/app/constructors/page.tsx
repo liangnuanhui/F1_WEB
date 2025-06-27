@@ -1,34 +1,171 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { constructorsApi } from "@/lib/api";
-import { formatConstructorName } from "@/lib/utils";
-import { Building2, Flag, Globe } from "lucide-react";
-import { Constructor } from "@/types";
-import { CountryFlag } from "@/components/CountryFlag";
+import { standingsApi } from "@/lib/api";
+import { getTeamColor } from "@/lib/team-colors";
+import { ConstructorStanding, DriverStanding } from "@/types";
+import Image from "next/image";
+import { ChevronRight } from "lucide-react";
+import { teamLogoMap } from "@/lib/team-logo-map";
+import { availableAvatarSet } from "@/lib/available-avatars";
+
+// Helper to format driver names for avatar lookup
+const formatAvatarName = (driverName: string) => {
+  // Normalize to handle special characters (e.g., ü -> u) and replace spaces with underscores.
+  const normalizedName = driverName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return normalizedName.replace(/ /g, "_");
+};
+
+// Helper to format driver names for display (bold surname)
+const formatDriverDisplayName = (driverName: string) => {
+  const parts = driverName.split(" ");
+  if (parts.length > 1) {
+    const firstName = parts.slice(0, -1).join(" ");
+    const lastName = parts[parts.length - 1];
+    return (
+      <>
+        {firstName} <span className="font-bold">{lastName.toUpperCase()}</span>
+      </>
+    );
+  }
+  return <span className="font-bold">{driverName.toUpperCase()}</span>;
+};
+
+const TeamCard = ({
+  constructor,
+  drivers,
+}: {
+  constructor: ConstructorStanding;
+  drivers: DriverStanding[];
+}) => {
+  const color = getTeamColor(constructor.constructor_id);
+  const logoFilename = teamLogoMap[constructor.constructor_id] || null;
+  const logoUrl = logoFilename ? `/team_logos/${logoFilename}.svg` : null;
+
+  const cardStyle = {
+    background: `linear-gradient(135deg, ${color} 40%, rgba(0,0,0,0.5) 100%)`,
+    color: "#fff",
+  };
+
+  const handleCardClick = () => {
+    if (constructor.constructor_url) {
+      window.open(constructor.constructor_url, "_blank");
+    }
+  };
+
+  return (
+    <div
+      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl transition-transform duration-300 hover:scale-105"
+      style={cardStyle}
+      onClick={handleCardClick}
+    >
+      <div className="relative z-10 p-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">
+              {constructor.constructor_name}
+            </h2>
+            <div className="flex space-x-4">
+              {drivers.map((driver) => {
+                const avatarName = formatAvatarName(driver.driver_name);
+                const hasAvatar = availableAvatarSet.has(avatarName);
+                const avatarUrl = hasAvatar
+                  ? `/driver_avatar/${avatarName}.png`
+                  : `/driver_avatar/default.svg`;
+
+                return (
+                  <div
+                    key={driver.driver_id}
+                    className="flex items-center space-x-2"
+                  >
+                    <div
+                      className="rounded-full w-8 h-8 flex-shrink-0"
+                      style={{ backgroundColor: color }}
+                    >
+                      <Image
+                        src={avatarUrl}
+                        alt={driver.driver_name}
+                        width={32}
+                        height={32}
+                        className="rounded-full"
+                      />
+                    </div>
+                    <p className="text-sm tracking-wide">
+                      {formatDriverDisplayName(driver.driver_name)}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {logoUrl && (
+            <div className="bg-white/20 rounded-full p-2">
+              <Image
+                src={logoUrl}
+                alt={`${constructor.constructor_name} logo`}
+                width={24}
+                height={24}
+                className="opacity-80"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="relative mt-4 px-6 pb-4">
+        <Image
+          src={`/2025_constructor_car_photo/${constructor.constructor_id}.png`}
+          alt={`${constructor.constructor_name} car`}
+          width={450}
+          height={225}
+          className="transform-gpu opacity-90 transition-transform duration-500 group-hover:scale-110"
+        />
+      </div>
+
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-black/30 p-2 opacity-0 transition-opacity group-hover:opacity-100">
+        <ChevronRight className="h-6 w-6" />
+      </div>
+
+      <div className="absolute inset-0 bg-black/10 opacity-50 group-hover:opacity-0 transition-opacity duration-300"></div>
+    </div>
+  );
+};
 
 export default function ConstructorPage() {
+  const year = 2025;
+
   const {
-    data: constructors,
-    isLoading,
-    error,
+    data: constructorStandings,
+    isLoading: isLoadingConstructors,
+    error: errorConstructors,
   } = useQuery({
-    queryKey: ["constructors"],
-    queryFn: () => constructorsApi.getAll(),
+    queryKey: ["constructorStandings", year],
+    queryFn: () => standingsApi.getConstructorStandings({ year }),
   });
 
-  if (isLoading) {
+  const {
+    data: driverStandings,
+    isLoading: isLoadingDrivers,
+    error: errorDrivers,
+  } = useQuery({
+    queryKey: ["driverStandings", year],
+    queryFn: () => standingsApi.getDriverStandings({ year }),
+  });
+
+  if (isLoadingConstructors || isLoadingDrivers) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">加载车队信息中...</p>
+          <p className="text-muted-foreground">加载 {year} 赛季车队信息中...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (errorConstructors || errorDrivers) {
     return (
       <div className="text-center py-8">
         <p className="text-red-500">加载车队信息失败，请稍后重试</p>
@@ -36,68 +173,48 @@ export default function ConstructorPage() {
     );
   }
 
+  const driversByConstructor = driverStandings?.data.reduce(
+    (acc, driver) => {
+      if (driver.constructor_id) {
+        if (!acc[driver.constructor_id]) {
+          acc[driver.constructor_id] = [];
+        }
+        // Temporary fix: Exclude Jack Doohan from Alpine
+        if (
+          driver.constructor_id === "alpine" &&
+          driver.driver_id === "doohan"
+        ) {
+          return acc;
+        }
+        acc[driver.constructor_id].push(driver);
+      }
+      return acc;
+    },
+    {} as Record<string, DriverStanding[]>
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <Building2 className="h-6 w-6 text-primary" />
-        <h1 className="text-3xl font-bold">车队简介</h1>
+    <div className="container mx-auto p-4">
+      <div className="mb-8">
+        <h1 className="text-4xl font-black tracking-tight">F1 TEAMS {year}</h1>
+        <p className="text-lg text-muted-foreground">
+          Find the current Formula 1 teams for the {year} season
+        </p>
       </div>
 
-      {constructors?.data && constructors.data.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {constructors.data.map((constructor: Constructor) => (
-            <div
+      {constructorStandings?.data && constructorStandings.data.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {constructorStandings.data.map((constructor) => (
+            <TeamCard
               key={constructor.constructor_id}
-              className="rounded-lg border bg-card p-6 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="space-y-2">
-                  <h2 className="text-xl font-semibold">
-                    {formatConstructorName(constructor.name)}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {constructor.name}
-                  </p>
-                </div>
-
-                <div className="flex items-center space-x-1 text-lg">
-                  <CountryFlag
-                    country={constructor.nationality || ""}
-                    className="w-8 h-auto rounded-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <div className="flex items-center space-x-2">
-                  <Flag className="h-4 w-4" />
-                  <span>{constructor.nationality}</span>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Globe className="h-4 w-4" />
-                  <span>车队代码: {constructor.constructor_id}</span>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t">
-                {constructor.constructor_url && (
-                  <a
-                    href={constructor.constructor_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary hover:underline"
-                  >
-                    访问官网 →
-                  </a>
-                )}
-              </div>
-            </div>
+              constructor={constructor}
+              drivers={driversByConstructor?.[constructor.constructor_id] || []}
+            />
           ))}
         </div>
       ) : (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">暂无车队数据</p>
+          <p className="text-muted-foreground">暂无 {year} 赛季的车队数据</p>
         </div>
       )}
     </div>

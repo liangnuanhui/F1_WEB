@@ -34,7 +34,6 @@ from .driver import (
     DriverUpdate,
     DriverResponse,
     DriverListResponse,
-    DriverStandingResponse
 )
 from .constructor import (
     ConstructorBase,
@@ -42,11 +41,10 @@ from .constructor import (
     ConstructorUpdate,
     ConstructorResponse,
     ConstructorListResponse,
-    ConstructorStandingResponse
 )
 from .standings import (
-    DriverStandingResponse as StandingsDriverResponse,
-    ConstructorStandingResponse as StandingsConstructorResponse,
+    DriverStandingResponse,
+    ConstructorStandingResponse,
     DriverStandingList,
     ConstructorStandingList
 )
@@ -86,7 +84,6 @@ __all__ = [
     "DriverUpdate",
     "DriverResponse",
     "DriverListResponse",
-    "DriverStandingResponse",
     
     # Constructor schemas
     "ConstructorBase",
@@ -94,11 +91,10 @@ __all__ = [
     "ConstructorUpdate",
     "ConstructorResponse",
     "ConstructorListResponse",
-    "ConstructorStandingResponse",
     
     # Standings schemas
-    "StandingsDriverResponse",
-    "StandingsConstructorResponse",
+    "DriverStandingResponse",
+    "ConstructorStandingResponse",
     "DriverStandingList",
     "ConstructorStandingList",
 ] 

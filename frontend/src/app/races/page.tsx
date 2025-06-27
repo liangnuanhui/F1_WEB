@@ -161,7 +161,7 @@ function RaceResultCard({ race }: { race: Race }) {
               {displayName}
             </span>
           </div>
-          <div className="text-base font-bold text-zinc-500 mt-1 mb-2 min-h-[2.5rem] line-clamp-2 flex items-end">
+          <div className="text-base font-bold text-zinc-500 mt-1 mb-2 min-h-[2.5rem] line-clamp-2">
             {race.official_event_name}
           </div>
         </div>
@@ -283,9 +283,7 @@ function RaceCard({
         </div>
         {/* 左下角 logo 占位 */}
         <div className="absolute left-6 bottom-6 opacity-90">
-          <span className="font-logo text-white text-lg tracking-widest">
-            LOGO
-          </span>
+          <span className="font-logo text-white text-lg tracking-widest"></span>
         </div>
       </div>
     </div>

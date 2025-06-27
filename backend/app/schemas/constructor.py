@@ -56,13 +56,3 @@ class ConstructorListResponse(BaseModel):
     """车队列表响应模式"""
     constructors: List[ConstructorResponse] = Field(description="车队列表")
     total: int = Field(description="总数")
-
-
-class ConstructorStandingResponse(BaseModel):
-    """车队积分榜响应模式"""
-    
-    position: int = Field(description="排名")
-    constructor: ConstructorResponse = Field(description="车队信息")
-    points: float = Field(description="积分")
-    wins: int = Field(description="获胜次数")
-    podiums: int = Field(description="领奖台次数") 

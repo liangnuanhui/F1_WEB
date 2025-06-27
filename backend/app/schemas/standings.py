@@ -4,18 +4,20 @@
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
+
 class DriverStandingBase(BaseModel):
     position: int = Field(..., description="排名")
     points: float = Field(..., description="积分")
     wins: int = Field(..., description="胜场")
     driver_id: str = Field(..., description="车手ID")
     driver_name: str = Field(..., description="车手姓名")
-    nationality: Optional[str] = Field(None, description="国籍")
-    constructor_id: Optional[str] = Field(None, description="所属车队ID")
-    constructor_name: Optional[str] = Field(None, description="所属车队名称")
+    nationality: str = Field(..., description="国籍")
+    constructor_id: str = Field(..., description="所属车队ID")
+    constructor_name: str = Field(..., description="所属车队名称")
 
-class DriverStandingResponse(DriverStandingBase):
-    pass
+    class Config:
+        from_attributes = True
+
 
 class ConstructorStandingBase(BaseModel):
     position: int = Field(..., description="排名")
@@ -23,18 +25,30 @@ class ConstructorStandingBase(BaseModel):
     wins: int = Field(..., description="胜场")
     constructor_id: str = Field(..., description="车队ID")
     constructor_name: str = Field(..., description="车队名称")
-    nationality: Optional[str] = Field(None, description="国籍")
+    nationality: str = Field(..., description="国籍")
+    constructor_url: Optional[str] = Field(None, description="车队维基百科链接")
+
+    class Config:
+        from_attributes = True
+
+
+class DriverStandingList(BaseModel):
+    standings: List[DriverStandingBase]
+    total: int
+
+
+class ConstructorStandingList(BaseModel):
+    standings: List[ConstructorStandingBase]
+    total: int
+
+
+class DriverStandingResponse(DriverStandingBase):
+    pass
+
 
 class ConstructorStandingResponse(ConstructorStandingBase):
     pass
 
-class DriverStandingList(BaseModel):
-    standings: List[DriverStandingResponse] = Field(description="车手积分榜")
-    total: int = Field(description="总数")
-
-class ConstructorStandingList(BaseModel):
-    standings: List[ConstructorStandingResponse] = Field(description="车队积分榜")
-    total: int = Field(description="总数")
 
 class StandingHistoryResponse(BaseModel):
     """积分榜历史响应模式"""
@@ -47,4 +61,18 @@ class StandingHistoryResponse(BaseModel):
     constructor_id: str
     driver_name: str
     driver_code: str
-    constructor_name: str 
+    constructor_name: str
+
+
+# Properties to return to client
+class ConstructorStanding(ConstructorStandingBase):
+    constructor_id: str
+    constructor_name: str
+    constructor_url: str | None = None
+
+    class Config:
+        orm_mode = True
+
+
+class ConstructorStandingsResponse(BaseModel):
+    pass 

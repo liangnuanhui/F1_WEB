@@ -10,6 +10,7 @@ from app.api.deps import get_db
 from app.models.standings import DriverStanding, ConstructorStanding
 from app.models.driver import Driver
 from app.models.constructor import Constructor
+from app.models.season import Season  # 导入 Season 模型
 from app.schemas.standings import DriverStandingResponse, ConstructorStandingResponse, StandingHistoryResponse
 from app.schemas.base import ApiResponse
 
@@ -19,59 +20,141 @@ router = APIRouter()
 @router.get("/drivers", response_model=ApiResponse[List[DriverStandingResponse]])
 def get_driver_standings(
     db: Session = Depends(get_db),
-    season_id: int = Query(..., description="赛季ID"),
+    season_id: Optional[int] = Query(None, description="赛季ID (优先)"),
+    year: Optional[int] = Query(None, description="赛季年份"),
 ):
     """
-    获取车手积分榜
+    获取车手积分榜.
+    可通过 season_id 或 year 查询.
+    如果两者都未提供, 则返回当前活跃赛季的数据.
     """
     try:
-        standings = db.query(DriverStanding)\
-            .options(joinedload(DriverStanding.constructor))\
-            .filter(DriverStanding.season_id == season_id)\
-            .order_by(DriverStanding.position.asc())\
+        final_season_id = season_id
+        if final_season_id is None:
+            query_year = year
+            if query_year is None:
+                # 默认逻辑：按年份降序查找最新的赛季
+                active_season = db.query(Season).order_by(Season.year.desc()).first()
+                if not active_season:
+                    raise HTTPException(status_code=404, detail="未找到任何赛季")
+                final_season_id = active_season.id
+            else:
+                season = db.query(Season).filter(Season.year == query_year).first()
+                if not season:
+                    return ApiResponse(
+                        success=True, message=f"未找到 {query_year} 赛季", data=[]
+                    )
+                final_season_id = season.id
+
+        if final_season_id is None:
+            raise HTTPException(
+                status_code=400, detail="无法确定赛季，请提供 season_id 或 year"
+            )
+
+        standings = (
+            db.query(DriverStanding)
+            .options(
+                joinedload(DriverStanding.driver),
+                joinedload(DriverStanding.constructor),
+            )
+            .filter(DriverStanding.season_id == final_season_id)
+            .order_by(DriverStanding.position.asc())
             .all()
-        result = []
-        for s in standings:
-            # 保险做法：直接查 driver 表，确保 driver_name 一定有值
-            driver = db.query(Driver).filter(Driver.driver_id == s.driver_id).first()
-            result.append({
-                "position": s.position,
-                "points": s.points,
-                "wins": s.wins,
-                "driver_id": s.driver_id,
-                "driver_name": f"{driver.forename} {driver.surname}" if driver else "",
-                "nationality": driver.nationality if driver else "",
-                "constructor_id": s.constructor_id,
-                "constructor_name": s.constructor.name if s.constructor else "",
-            })
+        )
+
+        result = [
+            DriverStandingResponse(
+                position=s.position,
+                points=s.points,
+                wins=s.wins,
+                driver_id=s.driver.driver_id,
+                driver_name=f"{s.driver.forename} {s.driver.surname}",
+                nationality=s.driver.nationality,
+                constructor_id=s.constructor.constructor_id,
+                constructor_name=s.constructor.name,
+            )
+            for s in standings
+            if s.driver and s.constructor
+        ]
+
         return ApiResponse(success=True, message="获取车手积分榜成功", data=result)
+
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取车手积分榜失败: {str(e)}")
+        # For debugging purposes, you might want to log the error
+        # import logging
+        # logging.exception("Error fetching driver standings")
+        raise HTTPException(
+            status_code=500, detail=f"获取车手积分榜失败: An unexpected error occurred."
+        )
 
 
 @router.get("/constructors", response_model=ApiResponse[List[ConstructorStandingResponse]])
 def get_constructor_standings(
     db: Session = Depends(get_db),
-    season_id: int = Query(..., description="赛季ID"),
+    season_id: Optional[int] = Query(None, description="赛季ID (优先)"),
+    year: Optional[int] = Query(None, description="赛季年份"),
 ):
     """
-    获取车队积分榜
+    获取车队积分榜.
+    可通过 season_id 或 year 查询.
+    如果两者都未提供, 则返回当前活跃赛季的数据.
     """
     try:
-        standings = db.query(ConstructorStanding).filter(ConstructorStanding.season_id == season_id).order_by(ConstructorStanding.position.asc()).all()
-        result = []
-        for s in standings:
-            result.append({
-                "position": s.position,
-                "points": s.points,
-                "wins": s.wins,
-                "constructor_id": s.constructor_id,
-                "constructor_name": s.constructor.name if s.constructor else "",
-                "nationality": s.constructor.nationality if s.constructor else "",
-            })
+        final_season_id = season_id
+        if final_season_id is None:
+            query_year = year
+            if query_year is None:
+                # 默认逻辑：按年份降序查找最新的赛季
+                active_season = db.query(Season).order_by(Season.year.desc()).first()
+                if not active_season:
+                    raise HTTPException(status_code=404, detail="未找到任何赛季")
+                final_season_id = active_season.id
+            else:
+                season = db.query(Season).filter(Season.year == query_year).first()
+                if not season:
+                    return ApiResponse(
+                        success=True, message=f"未找到 {query_year} 赛季", data=[]
+                    )
+                final_season_id = season.id
+
+        if final_season_id is None:
+            raise HTTPException(
+                status_code=400, detail="无法确定赛季，请提供 season_id 或 year"
+            )
+
+        standings = (
+            db.query(ConstructorStanding)
+            .options(joinedload(ConstructorStanding.constructor))
+            .filter(ConstructorStanding.season_id == final_season_id)
+            .order_by(ConstructorStanding.position.asc())
+            .all()
+        )
+
+        result = [
+            ConstructorStandingResponse(
+                position=s.position,
+                points=s.points,
+                wins=s.wins,
+                constructor_id=s.constructor.constructor_id,
+                constructor_name=s.constructor.name,
+                nationality=s.constructor.nationality,
+            )
+            for s in standings
+            if s.constructor
+        ]
+
         return ApiResponse(success=True, message="获取车队积分榜成功", data=result)
+
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取车队积分榜失败: {str(e)}")
+        # import logging
+        # logging.exception("Error fetching constructor standings")
+        raise HTTPException(
+            status_code=500, detail=f"获取车队积分榜失败: An unexpected error occurred."
+        )
 
 
 @router.get("/drivers/{driver_id}/history")
