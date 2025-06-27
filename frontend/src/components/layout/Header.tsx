@@ -21,7 +21,7 @@ export function Header() {
   const nextRace = upcoming?.data?.[0];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b-2 border-zinc-100 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         {/* Logo */}
         <Link href="/" className="flex items-center pl-4">
@@ -66,17 +66,11 @@ export function Header() {
           >
             车队排行榜
           </Link>
-          <Link
-            href="/circuits"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            赛道
-          </Link>
         </nav>
       </div>
       {/* 顶部下一站信息栏 */}
       <div
-        className="w-full  flex items-center justify-center border-b border-zinc-200"
+        className="w-full  flex items-center justify-center"
         style={{ minHeight: 38 }}
       >
         {isLoading ? (

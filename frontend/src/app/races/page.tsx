@@ -7,6 +7,7 @@ import { Race } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import axios, { type AxiosResponse } from "axios";
 import { CountryFlag } from "@/components/CountryFlag";
+import Image from "next/image";
 
 function formatF1DateRange(dateStr?: string) {
   if (!dateStr) return "-";
@@ -346,11 +347,25 @@ function NextRaceCard({ race }: { race: Race }) {
       <div className="absolute left-6 bottom-6 text-3xl font-extrabold text-white drop-shadow">
         {dateStr}
       </div>
-      {/* 右下角赞助商Logo占位 */}
-      <div className="absolute right-6 bottom-6 opacity-80">
-        <span className="font-logo text-white text-lg tracking-widest">
-          LOGO占位符
-        </span>
+      {/* 右下角赛道图 */}
+      <div className="absolute right-6 bottom-6 opacity-90">
+        {race.circuit_id ? (
+          <Image
+            src={`/circuits_svg/${race.circuit_id}.svg`}
+            alt={race.circuit?.circuit_name || "赛道布局"}
+            width={80}
+            height={48}
+            className="h-12 w-auto brightness-0 invert"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = "none";
+            }}
+          />
+        ) : (
+          <span className="font-logo text-white text-lg tracking-widest">
+            LOGO
+          </span>
+        )}
       </div>
     </div>
   );
@@ -427,9 +442,25 @@ function UpcomingRaceCard({ race }: { race: Race }) {
       <div className="absolute left-6 bottom-6 text-3xl font-extrabold text-zinc-900">
         {dateStr}
       </div>
-      {/* 右下角赛道图占位符 */}
+      {/* 右下角赛道图 */}
       <div className="absolute right-6 bottom-6 opacity-90">
-        <TrackPlaceholder />
+        {race.circuit_id ? (
+          <Image
+            src={`/circuits_svg/${race.circuit_id}.svg`}
+            alt={race.circuit?.circuit_name || "赛道布局"}
+            width={80}
+            height={48}
+            className="h-12 w-auto"
+            // 如果图片加载失败，显示占位符
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = "none";
+              // 可以在这里插入一个显示占位符的逻辑
+            }}
+          />
+        ) : (
+          <TrackPlaceholder />
+        )}
       </div>
     </div>
   );
