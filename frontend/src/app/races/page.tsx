@@ -241,9 +241,11 @@ function RaceResultCard({ race }: { race: Race }) {
 function RaceCard({
   race,
   wide = false,
+  bgImageUrl,
 }: {
   race: Race | null;
   wide?: boolean;
+  bgImageUrl: string;
 }) {
   if (!race)
     return (
@@ -253,14 +255,11 @@ function RaceCard({
         暂无数据
       </div>
     );
-  // 假设 race.circuit?.image_url 为背景图片
-  const bgImage = race.circuit
-    ? `/circuit_img/${race.circuit.circuit_id}.jpg`
-    : "/default_race_bg.jpg";
+
   return (
     <div
       className={`relative rounded-xl shadow-md overflow-hidden flex flex-col justify-end text-white transition-all duration-200 h-80 w-full bg-cover bg-center`}
-      style={{ backgroundImage: `url('${bgImage}')` }}
+      style={{ backgroundImage: `url('${bgImageUrl}')` }}
     >
       {/* 半透明遮罩 */}
       <div className="absolute inset-0 bg-black/40" />
@@ -513,6 +512,30 @@ export default function RacesPage() {
     }
   }
 
+  // 为顶部卡片准备随机背景图
+  const backgroundImages = [
+    "random_photo_1.jpg",
+    "random_photo_2.jpg",
+    "random_photo_3.jpg",
+    "random_photo_4.jpg",
+    "random_photo_5.jpg",
+    "random_photo_6.jpg",
+    "random_photo_7.jpg",
+    "random_photo_8.jpg",
+    "random_photo_9.jpg",
+    "random_photo_10.jpg",
+    "random_photo_11.jpg",
+    "random_photo_12.jpg",
+    "random_photo_13.jpg",
+    "random_photo_14.jpg",
+    "random_photo_15.jpg",
+    "random_photo_16.jpg",
+  ];
+
+  const shuffle = (arr: string[]) => arr.sort(() => 0.5 - Math.random());
+  const randomBgs = shuffle([...backgroundImages]).slice(0, 4);
+  const bgUrls = randomBgs.map((img) => `/random_backgroud/${img}`);
+
   return (
     <div className="space-y-6 bg-background min-h-screen pb-10">
       <div className="relative w-screen bg-white">
@@ -529,28 +552,40 @@ export default function RacesPage() {
               <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
                 Previous
               </span>
-              <RaceCard race={prevRace} wide={false} />
+              <RaceCard race={prevRace} wide={false} bgImageUrl={bgUrls[0]} />
             </div>
             {/* Next */}
             <div className="flex flex-col flex-[2_2_0%]">
               <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
                 Next
               </span>
-              <RaceCard race={nextRace} wide={true} />
+              <RaceCard race={nextRace} wide={true} bgImageUrl={bgUrls[1]} />
             </div>
             {/* Upcoming1 */}
             <div className="flex flex-col flex-[1_1_0%]">
               <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
                 {upcoming.length > 0 ? "Upcoming" : ""}
               </span>
-              {upcoming[0] && <RaceCard race={upcoming[0]} wide={false} />}
+              {upcoming[0] && (
+                <RaceCard
+                  race={upcoming[0]}
+                  wide={false}
+                  bgImageUrl={bgUrls[2]}
+                />
+              )}
             </div>
             {/* Upcoming2 */}
             <div className="flex flex-col flex-[1_1_0%]">
               <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
                 &nbsp;
               </span>
-              {upcoming[1] && <RaceCard race={upcoming[1]} wide={false} />}
+              {upcoming[1] && (
+                <RaceCard
+                  race={upcoming[1]}
+                  wide={false}
+                  bgImageUrl={bgUrls[3]}
+                />
+              )}
             </div>
           </div>
         </div>
