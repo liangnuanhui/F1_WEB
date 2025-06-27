@@ -1,25 +1,30 @@
 "use client";
 
-import { getCountryCode } from "@/lib/utils";
+import { getFlagCodeByNationality } from "@/lib/utils";
+import ReactCountryFlag from "react-country-flag";
 
 interface CountryFlagProps {
-  country: string;
+  nationality: string;
   className?: string;
 }
 
-export function CountryFlag({ country, className }: CountryFlagProps) {
-  const countryCode = getCountryCode(country);
+export function CountryFlag({ nationality, className }: CountryFlagProps) {
+  const countryCode = getFlagCodeByNationality(nationality);
 
   if (!countryCode) {
-    return null; // Or a placeholder
+    return null; // Or a placeholder for missing flags
   }
 
   return (
-    <img
-      src={`/country_flags/${countryCode}.svg`}
-      alt={`${country} flag`}
-      className={className || "w-6 h-auto"}
-      title={country}
+    <ReactCountryFlag
+      countryCode={countryCode}
+      svg
+      className={className}
+      title={nationality}
+      style={{
+        width: "100%",
+        height: "100%",
+      }}
     />
   );
 }

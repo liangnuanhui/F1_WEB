@@ -36,9 +36,11 @@ const formatDriverDisplayName = (driverName: string) => {
 const TeamCard = ({
   constructor,
   drivers,
+  priority = false,
 }: {
   constructor: ConstructorStanding;
   drivers: DriverStanding[];
+  priority?: boolean;
 }) => {
   const color = getTeamColor(constructor.constructor_id);
   const logoFilename = teamLogoMap[constructor.constructor_id] || null;
@@ -120,7 +122,8 @@ const TeamCard = ({
           alt={`${constructor.constructor_name} car`}
           width={450}
           height={225}
-          className="transform-gpu opacity-90 transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-auto transform-gpu opacity-90 transition-transform duration-500 group-hover:scale-110"
+          priority={priority}
         />
       </div>
 
@@ -233,11 +236,12 @@ export default function ConstructorPage() {
 
       {mergedConstructorStandings && mergedConstructorStandings.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {mergedConstructorStandings.map((constructor) => (
+          {mergedConstructorStandings.map((constructor, index) => (
             <TeamCard
               key={constructor.constructor_id}
               constructor={constructor}
               drivers={driversByConstructor?.[constructor.constructor_id] || []}
+              priority={index < 2}
             />
           ))}
         </div>

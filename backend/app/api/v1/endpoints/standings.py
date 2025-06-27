@@ -11,6 +11,7 @@ from app.models.standings import DriverStanding, ConstructorStanding
 from app.models.driver import Driver
 from app.models.constructor import Constructor
 from app.models.season import Season  # 导入 Season 模型
+from app.models.driver_season import DriverSeason # 导入 DriverSeason 模型
 from app.schemas.standings import DriverStandingResponse, ConstructorStandingResponse, StandingHistoryResponse
 from app.schemas.base import ApiResponse
 
@@ -29,6 +30,7 @@ def get_driver_standings(
     如果两者都未提供, 则返回当前活跃赛季的数据.
     """
     try:
+        current_year = year
         final_season_id = season_id
         if final_season_id is None:
             query_year = year
@@ -38,6 +40,7 @@ def get_driver_standings(
                 if not active_season:
                     raise HTTPException(status_code=404, detail="未找到任何赛季")
                 final_season_id = active_season.id
+                current_year = active_season.year
             else:
                 season = db.query(Season).filter(Season.year == query_year).first()
                 if not season:
@@ -45,11 +48,32 @@ def get_driver_standings(
                         success=True, message=f"未找到 {query_year} 赛季", data=[]
                     )
                 final_season_id = season.id
+        else:
+            # 如果提供了season_id，也需要获取对应的年份
+            season_from_id = db.query(Season).filter(Season.id == final_season_id).first()
+            if season_from_id:
+                current_year = season_from_id.year
+
 
         if final_season_id is None:
             raise HTTPException(
                 status_code=400, detail="无法确定赛季，请提供 season_id 或 year"
             )
+
+        # 1. 获取官方指定车队信息
+        official_teams_query = (
+            db.query(DriverSeason)
+            .options(
+                joinedload(DriverSeason.driver),
+                joinedload(DriverSeason.constructor)
+            )
+            .filter(DriverSeason.season_id == final_season_id)
+        )
+        official_teams_list = official_teams_query.all()
+        official_teams_map = {
+            item.driver_id: item.constructor for item in official_teams_list
+        }
+
 
         standings = (
             db.query(DriverStanding)
@@ -62,20 +86,28 @@ def get_driver_standings(
             .all()
         )
 
-        result = [
-            DriverStandingResponse(
+        result = []
+        for s in standings:
+            if not s.driver:
+                continue
+
+            # 2. 检查是否有官方指定的车队，并进行覆盖
+            final_constructor = official_teams_map.get(s.driver.driver_id, s.constructor)
+
+            if not final_constructor:
+                continue
+
+            result.append(DriverStandingResponse(
                 position=s.position,
                 points=s.points,
                 wins=s.wins,
                 driver_id=s.driver.driver_id,
                 driver_name=f"{s.driver.forename} {s.driver.surname}",
                 nationality=s.driver.nationality,
-                constructor_id=s.constructor.constructor_id,
-                constructor_name=s.constructor.name,
-            )
-            for s in standings
-            if s.driver and s.constructor
-        ]
+                constructor_id=final_constructor.constructor_id,
+                constructor_name=final_constructor.name,
+            ))
+
 
         return ApiResponse(success=True, message="获取车手积分榜成功", data=result)
 
