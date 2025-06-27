@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { standingsApi } from "@/lib/api";
+import { standingsApi, constructorsApi } from "@/lib/api";
 import { getTeamColor } from "@/lib/team-colors";
-import { ConstructorStanding, DriverStanding } from "@/types";
+import { Constructor, ConstructorStanding, DriverStanding } from "@/types";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { teamLogoMap } from "@/lib/team-logo-map";
@@ -154,7 +154,20 @@ export default function ConstructorPage() {
     queryFn: () => standingsApi.getDriverStandings({ year }),
   });
 
-  if (isLoadingConstructors || isLoadingDrivers) {
+  const {
+    data: constructors,
+    isLoading: isLoadingConstructorsData,
+    error: errorConstructorsData,
+  } = useQuery({
+    queryKey: ["constructors"],
+    queryFn: () => constructorsApi.getConstructors(),
+  });
+
+  const isLoading =
+    isLoadingConstructors || isLoadingDrivers || isLoadingConstructorsData;
+  const error = errorConstructors || errorDrivers || errorConstructorsData;
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-center">
@@ -165,13 +178,21 @@ export default function ConstructorPage() {
     );
   }
 
-  if (errorConstructors || errorDrivers) {
+  if (error) {
     return (
       <div className="text-center py-8">
         <p className="text-red-500">加载车队信息失败，请稍后重试</p>
       </div>
     );
   }
+
+  const constructorMap = constructors?.data.reduce(
+    (acc, constructor) => {
+      acc[constructor.constructor_id] = constructor;
+      return acc;
+    },
+    {} as Record<string, Constructor>
+  );
 
   const driversByConstructor = driverStandings?.data.reduce(
     (acc, driver) => {
@@ -193,6 +214,14 @@ export default function ConstructorPage() {
     {} as Record<string, DriverStanding[]>
   );
 
+  const mergedConstructorStandings = constructorStandings?.data.map(
+    (standing) => ({
+      ...standing,
+      constructor_url:
+        constructorMap?.[standing.constructor_id]?.constructor_url || null,
+    })
+  );
+
   return (
     <div className="container mx-auto p-4">
       <div className="mb-8">
@@ -202,9 +231,9 @@ export default function ConstructorPage() {
         </p>
       </div>
 
-      {constructorStandings?.data && constructorStandings.data.length > 0 ? (
+      {mergedConstructorStandings && mergedConstructorStandings.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {constructorStandings.data.map((constructor) => (
+          {mergedConstructorStandings.map((constructor) => (
             <TeamCard
               key={constructor.constructor_id}
               constructor={constructor}
