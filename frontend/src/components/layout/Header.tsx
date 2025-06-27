@@ -79,17 +79,17 @@ export function Header() {
           </span>
         ) : nextRace ? (
           <div className="flex items-center space-x-2 py-1">
-            <span className="text-base font-medium text-zinc-700 tracking-wide">
+            <span className="bg-[rgb(225,6,0)] text-white text-base font-bold px-3 py-1 rounded-lg tracking-wide">
               下一站
             </span>
             <span className="text-lg font-bold text-zinc-900 flex items-center">
               <CountryFlag
                 country={getCountryName(nextRace)}
-                className="w-5 mr-1.5"
+                className="w-5 h-5 mr-1.5"
               />
               <span className="ml-1">{getCountryName(nextRace)}</span>
             </span>
-            <span className="bg-zinc-200 text-zinc-700 rounded px-2 py-0.5 text-sm font-semibold ml-2">
+            <span className="bg-zinc-200 text-zinc-700 rounded-lg px-3 py-1 text-base font-medium ml-2">
               {formatMonthDay(nextRace.event_date)}
             </span>
           </div>

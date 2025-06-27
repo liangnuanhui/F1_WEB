@@ -148,30 +148,30 @@ function RaceResultCard({ race }: { race: Race }) {
           { position: 3, driver_code: "-", driver_name: "-", result_time: "-" },
         ];
   return (
-    <div className="relative rounded-2xl bg-[#FFFFFF] p-6 shadow flex flex-col gap-6 min-h-[220px] h-64">
+    <div className="relative rounded-2xl bg-white p-6 shadow flex flex-col justify-between min-h-[220px] h-64">
       {/* 头部信息 */}
       <div className="flex justify-between items-start">
         <div>
-          <div className="text-sm font-bold text-zinc-600 mb-1">
+          <p className="text-xs text-zinc-400 font-semibold tracking-wider mb-1">
             {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
-          </div>
-          <div className="flex items-center gap-2 mb-2">
-            <CountryFlag country={displayName} className="w-8" />
-            <span className="text-2xl font-extrabold text-zinc-900">
+          </p>
+          <div className="flex items-center gap-3">
+            <CountryFlag country={displayName} className="w-8 h-6 rounded" />
+            <h2 className="text-3xl font-extrabold text-zinc-900">
               {displayName}
-            </span>
+            </h2>
           </div>
-          <div className="text-base font-bold text-zinc-500 mt-1 mb-2 min-h-[2.5rem] line-clamp-2">
+          <p className="text-sm text-zinc-500 font-medium mt-1 min-h-[2.5rem] line-clamp-2">
             {race.official_event_name}
-          </div>
+          </p>
         </div>
-        <div className="flex items-center gap-2 bg-[#F7F4F1] rounded-lg px-3 py-1.5 text-zinc-700 font-bold text-xs whitespace-nowrap flex-row">
+        <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-zinc-500 font-semibold text-xs whitespace-nowrap flex-row bg-[#F7F4F1]">
           <CheckerFlag />
           <span>{dateStr}</span>
         </div>
       </div>
       {/* 前三名 */}
-      <div className="flex gap-2 mt-auto">
+      <div className="flex gap-2 w-full">
         {isLoading
           ? // 骨架屏
             [1, 2, 3].map((i) => (
@@ -189,22 +189,25 @@ function RaceResultCard({ race }: { race: Race }) {
               }) => (
                 <div
                   key={p.position}
-                  className="flex-1 rounded-xl bg-[#F7F4F1] flex items-center gap-1.5 px-2 py-1.5"
+                  className="flex-1 rounded-xl bg-zinc-100 flex items-center gap-2 p-2"
                 >
-                  <div className="flex flex-col items-center min-w-[20px]">
-                    <span className="text-lg font-extrabold text-zinc-700 leading-none">
+                  <div className="flex flex-col items-center justify-center w-6 text-zinc-500">
+                    <span className="text-xl font-bold leading-none">
                       {p.position}
+                    </span>
+                    <span className="text-[10px] font-semibold leading-none">
+                      {["ST", "ND", "RD"][p.position - 1] || "TH"}
                     </span>
                   </div>
                   {/* 头像占位 */}
-                  <div className="w-7 h-7 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
+                  <div className="w-8 h-8 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
                     {p.driver_name && p.driver_name !== "-" ? (
                       <img
                         src={`/driver_avatar/${p.driver_name.replace(/ /g, "_")}.png`}
                         alt={p.driver_name}
-                        width={28}
-                        height={28}
-                        className="object-cover w-7 h-7 rounded-full"
+                        width={32}
+                        height={32}
+                        className="object-cover w-8 h-8 rounded-full"
                         style={{ objectPosition: "center" }}
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
@@ -222,11 +225,11 @@ function RaceResultCard({ race }: { race: Race }) {
                       "-"
                     )}
                   </div>
-                  <div className="flex flex-col ml-1 min-w-0">
-                    <span className="font-extrabold text-sm text-zinc-900">
+                  <div className="flex flex-col ml-1.5 min-w-0">
+                    <span className="font-bold text-sm text-zinc-900 truncate">
                       {p.driver_code}
                     </span>
-                    <span className="text-zinc-700 font-mono font-medium text-xs">
+                    <span className="text-zinc-500 font-mono font-medium text-xs">
                       {p.result_time}
                     </span>
                   </div>
@@ -268,15 +271,7 @@ function RaceCard({
           <div className="text-xs font-bold tracking-widest mb-1">
             ROUND {race.round_number}
           </div>
-          <div className="flex items-center gap-3">
-            <CountryFlag
-              country={getCountryName(race)}
-              className="w-10 rounded-md"
-            />
-            <span className="text-3xl font-extrabold">
-              {getCountryName(race)}
-            </span>
-          </div>
+          <div className="text-3xl font-extrabold">{getCountryName(race)}</div>
           <div className="text-lg font-bold my-2">
             {getRaceWeekendRange(race)}
           </div>
@@ -326,7 +321,7 @@ function NextRaceCard({ race }: { race: Race }) {
             {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
           </div>
           <div className="flex items-center gap-2 mb-2">
-            <CountryFlag country={displayName} className="w-8 rounded" />
+            <CountryFlag country={displayName} className="w-8 h-6 rounded" />
             <span className="text-3xl font-extrabold text-white drop-shadow">
               {displayName}
             </span>
@@ -419,45 +414,43 @@ function UpcomingRaceCard({ race }: { race: Race }) {
     }
   }
   return (
-    <div className="relative rounded-2xl bg-white p-6 shadow flex flex-col min-h-[220px] h-64 overflow-hidden">
+    <div className="relative rounded-2xl bg-white p-6 shadow flex flex-col justify-between min-h-[220px] h-64">
       {/* 头部信息 */}
       <div>
-        <div className="text-base font-bold text-zinc-600 mb-2">
+        <p className="text-xs text-zinc-400 font-semibold tracking-wider mb-1">
           {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
-        </div>
-        <div className="flex items-center gap-2 mb-2">
-          <CountryFlag country={displayName} className="w-8" />
-          <span className="text-3xl font-extrabold text-zinc-900">
+        </p>
+        <div className="flex items-center gap-3">
+          <CountryFlag country={displayName} className="w-8 h-6 rounded" />
+          <h2 className="text-3xl font-extrabold text-zinc-900">
             {displayName}
-          </span>
+          </h2>
         </div>
-        <div className="text-lg font-bold text-zinc-500 mb-2">
+        <p className="text-sm text-zinc-500 font-medium mt-1 min-h-[2.5rem] line-clamp-2">
           {race.official_event_name}
+        </p>
+      </div>
+
+      {/* 底部信息 */}
+      <div className="flex justify-between items-end">
+        <div className="text-2xl font-bold text-zinc-900">{dateStr}</div>
+        <div className="opacity-90">
+          {race.circuit_id ? (
+            <Image
+              src={`/circuits_svg/${race.circuit_id}.svg`}
+              alt={race.circuit?.circuit_name || "赛道布局"}
+              width={80}
+              height={48}
+              className="h-12 w-auto"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+              }}
+            />
+          ) : (
+            <TrackPlaceholder />
+          )}
         </div>
-      </div>
-      {/* 左下角日期 */}
-      <div className="absolute left-6 bottom-6 text-3xl font-extrabold text-zinc-900">
-        {dateStr}
-      </div>
-      {/* 右下角赛道图 */}
-      <div className="absolute right-6 bottom-6 opacity-90">
-        {race.circuit_id ? (
-          <Image
-            src={`/circuits_svg/${race.circuit_id}.svg`}
-            alt={race.circuit?.circuit_name || "赛道布局"}
-            width={80}
-            height={48}
-            className="h-12 w-auto"
-            // 如果图片加载失败，显示占位符
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-              // 可以在这里插入一个显示占位符的逻辑
-            }}
-          />
-        ) : (
-          <TrackPlaceholder />
-        )}
       </div>
     </div>
   );
@@ -536,14 +529,14 @@ export default function RacesPage() {
 
   return (
     <div className="space-y-6 bg-background min-h-screen pb-10">
-      <div className="relative w-screen bg-white">
-        <div className="w-[90vw] mx-auto pt-4 pb-8">
-          <div className="flex items-center space-x-2 justify-center mb-6">
+      <div className="relative w-screen ">
+        <div className="w-[90vw] mx-auto px-2 pt-6 pb-8">
+          {/* <div className="flex items-center space-x-2 justify-center mb-6">
             <img src="/calendar.png" alt="logo" className="h-10 w-10" />
             <span className="text-4xl font-extrabold tracking-tight">
               2025 赛历
             </span>
-          </div>
+          </div> */}
           <div className="flex flex-row gap-x-6">
             {/* Previous */}
             <div className="flex flex-col flex-[1_1_0%]">
