@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useUpcomingRaces } from "@/hooks/use-races";
 import { getCountryName } from "@/lib/utils";
 import { CountryFlag } from "@/components/CountryFlag";
+import { usePathname } from "next/navigation";
 
 // 自定义日期格式化函数：只显示月和日
 function formatMonthDay(dateStr?: string) {
@@ -19,18 +20,19 @@ export function Header() {
   // 获取即将到来的比赛
   const { data: upcoming, isLoading } = useUpcomingRaces();
   const nextRace = upcoming?.data?.[0];
+  const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-3 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         {/* Logo */}
         <Link href="/" className="flex items-center pl-4">
           <Image
             src="/LOGO-race_car.png"
             alt="F1 Logo"
-            width={50}
-            height={50}
-            className="rounded-lg"
+            width={70}
+            height={70}
+            className="rounded-lg transition-transform duration-300 hover:scale-110 hover:rotate-6 drop-shadow-lg"
             priority
           />
         </Link>
@@ -39,25 +41,41 @@ export function Header() {
         <nav className="hidden md:flex items-center space-x-6 ml-6">
           <Link
             href="/races"
-            className="text-sm font-medium transition-colors hover:text-primary"
+            className={`text-xl font-semibold tracking-wider px-2 py-1 transition-all border-b-2 ${
+              pathname === "/races"
+                ? "border-[rgb(225,6,0)] text-primary"
+                : "border-transparent hover:border-current hover:text-primary"
+            }`}
           >
             赛程
           </Link>
           <Link
             href="/drivers"
-            className="text-sm font-medium transition-colors hover:text-primary"
+            className={`text-xl font-semibold tracking-wider px-2 py-1 transition-all border-b-2 ${
+              pathname === "/drivers"
+                ? "border-[rgb(225,6,0)] text-primary"
+                : "border-transparent hover:border-current hover:text-primary"
+            }`}
           >
             车手
           </Link>
           <Link
             href="/constructors"
-            className="text-sm font-medium transition-colors hover:text-primary"
+            className={`text-xl font-semibold tracking-wider px-2 py-1 transition-all border-b-2 ${
+              pathname === "/constructors"
+                ? "border-[rgb(225,6,0)] text-primary"
+                : "border-transparent hover:border-current hover:text-primary"
+            }`}
           >
             车队
           </Link>
           <Link
             href="/standings"
-            className="text-sm font-medium transition-colors hover:text-primary"
+            className={`text-xl font-semibold tracking-wider px-2 py-1 transition-all border-b-2 ${
+              pathname === "/standings"
+                ? "border-[rgb(225,6,0)] text-primary"
+                : "border-transparent hover:border-current hover:text-primary"
+            }`}
           >
             排行榜
           </Link>
@@ -73,7 +91,7 @@ export function Header() {
             加载下一站信息...
           </span>
         ) : nextRace ? (
-          <div className="flex items-center space-x-2 py-1">
+          <div className="flex items-center space-x-2 py-1 pt-4 pb-2">
             <span className="bg-[rgb(225,6,0)] text-white text-base font-bold px-3 py-1 rounded-lg tracking-wide">
               下一站
             </span>
