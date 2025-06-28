@@ -1,41 +1,24 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { standingsApi, seasonsApi } from "@/lib/api";
-import { ConstructorStanding } from "@/types";
-import { getTeamLogoFilename } from "@/lib/team-logo-map";
 import Image from "next/image";
+import { useConstructorStandings } from "@/hooks/use-constructor-standings";
+import { getTeamLogoFilename } from "@/lib/team-logo-map";
 
 export function ConstructorStandings() {
-  const { data: season, isLoading: seasonLoading } = useQuery({
-    queryKey: ["active-season"],
-    queryFn: () => seasonsApi.getActive(),
-  });
-
-  const seasonId = season?.data?.id;
   const {
-    data: standings,
+    standings: standingsData,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ["constructor-standings", seasonId],
-    queryFn: () =>
-      seasonId
-        ? standingsApi.getConstructorStandings({ seasonId })
-        : Promise.resolve(null),
-    enabled: !!seasonId,
-  });
+  } = useConstructorStandings();
 
-  if (seasonLoading || isLoading) {
+  if (isLoading) {
     return <div className="text-center py-12">加载中...</div>;
   }
-  if (error || !standings?.data) {
+  if (error || !standingsData) {
     return (
       <div className="text-center py-12 text-red-500">加载车队积分榜失败</div>
     );
   }
-
-  const standingsData = standings.data as ConstructorStanding[];
 
   return (
     <div className="bg-white rounded-lg shadow-sm">

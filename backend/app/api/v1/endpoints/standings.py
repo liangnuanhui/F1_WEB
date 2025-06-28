@@ -17,6 +17,32 @@ from app.schemas.base import ApiResponse
 
 router = APIRouter()
 
+def _get_season_id(db: Session, season_id: Optional[int], year: Optional[int]) -> tuple[int, int]:
+    """
+    根据传入的 season_id 或 year 确定最终的赛季ID和年份.
+    - 如果提供了 season_id, 直接使用.
+    - 如果提供了 year, 查询对应的 season_id.
+    - 如果都未提供, 获取最新的赛季.
+    """
+    if season_id:
+        season = db.query(Season).filter(Season.id == season_id).first()
+        if not season:
+            raise HTTPException(status_code=404, detail=f"未找到 ID 为 {season_id} 的赛季")
+        return season.id, season.year
+
+    if year:
+        season = db.query(Season).filter(Season.year == year).first()
+        if not season:
+            # 兼容前端：如果某年没有数据，返回空列表而不是404
+            raise HTTPException(status_code=200, detail=f"未找到 {year} 赛季")
+        return season.id, season.year
+
+    # 默认获取最新赛季
+    active_season = db.query(Season).order_by(Season.year.desc()).first()
+    if not active_season:
+        raise HTTPException(status_code=404, detail="未找到任何赛季")
+    return active_season.id, active_season.year
+
 
 @router.get("/drivers", response_model=ApiResponse[List[DriverStandingResponse]])
 def get_driver_standings(
@@ -30,35 +56,7 @@ def get_driver_standings(
     如果两者都未提供, 则返回当前活跃赛季的数据.
     """
     try:
-        current_year = year
-        final_season_id = season_id
-        if final_season_id is None:
-            query_year = year
-            if query_year is None:
-                # 默认逻辑：按年份降序查找最新的赛季
-                active_season = db.query(Season).order_by(Season.year.desc()).first()
-                if not active_season:
-                    raise HTTPException(status_code=404, detail="未找到任何赛季")
-                final_season_id = active_season.id
-                current_year = active_season.year
-            else:
-                season = db.query(Season).filter(Season.year == query_year).first()
-                if not season:
-                    return ApiResponse(
-                        success=True, message=f"未找到 {query_year} 赛季", data=[]
-                    )
-                final_season_id = season.id
-        else:
-            # 如果提供了season_id，也需要获取对应的年份
-            season_from_id = db.query(Season).filter(Season.id == final_season_id).first()
-            if season_from_id:
-                current_year = season_from_id.year
-
-
-        if final_season_id is None:
-            raise HTTPException(
-                status_code=400, detail="无法确定赛季，请提供 season_id 或 year"
-            )
+        final_season_id, current_year = _get_season_id(db, season_id, year)
 
         # 1. 获取官方指定车队信息
         official_teams_query = (
@@ -134,27 +132,7 @@ def get_constructor_standings(
     如果两者都未提供, 则返回当前活跃赛季的数据.
     """
     try:
-        final_season_id = season_id
-        if final_season_id is None:
-            query_year = year
-            if query_year is None:
-                # 默认逻辑：按年份降序查找最新的赛季
-                active_season = db.query(Season).order_by(Season.year.desc()).first()
-                if not active_season:
-                    raise HTTPException(status_code=404, detail="未找到任何赛季")
-                final_season_id = active_season.id
-            else:
-                season = db.query(Season).filter(Season.year == query_year).first()
-                if not season:
-                    return ApiResponse(
-                        success=True, message=f"未找到 {query_year} 赛季", data=[]
-                    )
-                final_season_id = season.id
-
-        if final_season_id is None:
-            raise HTTPException(
-                status_code=400, detail="无法确定赛季，请提供 season_id 或 year"
-            )
+        final_season_id, _ = _get_season_id(db, season_id, year)
 
         standings = (
             db.query(ConstructorStanding)
@@ -179,7 +157,10 @@ def get_constructor_standings(
 
         return ApiResponse(success=True, message="获取车队积分榜成功", data=result)
 
-    except HTTPException:
+    except HTTPException as e:
+        # 特殊处理 _get_season_id 抛出的 200 "错误"
+        if e.status_code == 200:
+            return ApiResponse(success=True, message=e.detail, data=[])
         raise
     except Exception as e:
         # import logging

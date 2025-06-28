@@ -1,10 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { standingsApi, seasonsApi } from "@/lib/api";
-import { DriverStanding } from "@/types";
-import { getTeamColor } from "@/lib/team-colors";
 import Image from "next/image";
+import { useDriverStandings } from "@/hooks/use-driver-standings";
+import { getTeamColor } from "@/lib/team-colors";
 import { availableAvatarSet } from "@/lib/available-avatars";
 import { getTeamLogoFilename } from "@/lib/team-logo-map";
 import { getCountryCode } from "@/lib/utils";
@@ -24,36 +22,16 @@ const getAvatarPath = (fullName: string) => {
 };
 
 export function DriverStandings() {
-  const { data: season, isLoading: seasonLoading } = useQuery({
-    queryKey: ["active-season"],
-    queryFn: () => seasonsApi.getActive(),
-  });
+  const { standings: standingsData, isLoading, error } = useDriverStandings();
 
-  const seasonYear = season?.data?.year;
-  const {
-    data: standings,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["driver-standings", seasonYear],
-    queryFn: () =>
-      seasonYear
-        ? standingsApi.getDriverStandings({ year: seasonYear })
-        : Promise.resolve(null),
-    enabled: !!seasonYear,
-  });
-
-  if (seasonLoading || isLoading) {
+  if (isLoading) {
     return <div className="text-center py-12">加载中...</div>;
   }
-  if (error || !standings?.data) {
+  if (error || !standingsData) {
     return (
       <div className="text-center py-12 text-red-500">加载车手积分榜失败</div>
     );
   }
-  const standingsData = (standings.data as DriverStanding[]).filter(
-    (driver) => driver.driver_id !== "doohan"
-  );
 
   return (
     <div className="bg-white rounded-lg shadow-sm">
@@ -97,7 +75,9 @@ export function DriverStandings() {
             </div>
             <div className="col-span-4 flex items-center gap-3">
               <Image
-                src={`/team_logos/${getTeamLogoFilename(item.constructor_id || "")}.svg`}
+                src={`/team_logos/${getTeamLogoFilename(
+                  item.constructor_id || ""
+                )}.svg`}
                 alt={item.constructor_name || "Team"}
                 width={28}
                 height={28}
