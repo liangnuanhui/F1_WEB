@@ -1,21 +1,7 @@
 import type { Metadata } from "next";
-import { Inter, Titillium_Web } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
 import { Header } from "@/components/layout/Header";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const titillium_web = Titillium_Web({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-titillium-web",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "F1 赛事数据",
@@ -36,13 +22,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="zh-CN"
-      suppressHydrationWarning
-      className={`${inter.variable} ${titillium_web.variable}`}
-    >
+    <html lang="zh-CN" suppressHydrationWarning>
       <head />
-      <body className="font-sans antialiased" suppressHydrationWarning>
+      <body className="antialiased" suppressHydrationWarning>
         <Providers>
           <div className="min-h-screen bg-background">
             <Header />
