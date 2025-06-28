@@ -71,7 +71,7 @@ const DriverCard = ({
           )}
         </div>
       </div>
-      <div className="absolute -bottom-8 -right-4 h-60 w-60">
+      <div className="absolute -bottom-8 -right-4 h-60 w-60 z-20">
         <Image
           src={`/driver_photo_avif/${driverPhoto}.avif`}
           alt={driver.driver_name}
