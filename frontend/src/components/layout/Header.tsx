@@ -23,8 +23,8 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-3 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container pt-6 flex h-14 items-center">
         {/* Logo */}
         <Link href="/" className="flex items-center pl-4">
           <Image
