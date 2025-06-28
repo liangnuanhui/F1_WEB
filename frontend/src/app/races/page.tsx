@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios, { type AxiosResponse } from "axios";
 import { CountryFlag } from "@/components/CountryFlag";
 import Image from "next/image";
+import React from "react";
 
 function formatF1DateRange(dateStr?: string) {
   if (!dateStr) return "-";
@@ -88,8 +89,38 @@ const CheckerFlag = () => (
   </svg>
 );
 
+// 赛道图渲染组件，自动处理懒加载和onError
+const CircuitImage = React.memo(function CircuitImage({
+  src,
+  alt,
+  className,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+}) {
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={120}
+      height={72}
+      className={className || "h-[72px] w-auto"}
+      loading="lazy"
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        target.style.display = "none";
+      }}
+    />
+  );
+});
+
 // 已完成比赛卡片
-function RaceResultCard({ race }: { race: Race }) {
+const RaceResultCard = React.memo(function RaceResultCard({
+  race,
+}: {
+  race: Race;
+}) {
   // 特殊location显示
   const displayName = getCountryName(race);
 
@@ -171,13 +202,13 @@ function RaceResultCard({ race }: { race: Race }) {
         </div>
       </div>
       {/* 前三名 */}
-      <div className="flex gap-2 w-full">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-1 w-full overflow-hidden">
         {isLoading
           ? // 骨架屏
             [1, 2, 3].map((i) => (
               <div
                 key={i}
-                className={`flex-1 rounded-xl bg-zinc-100 animate-pulse flex items-center gap-2 px-2 py-1.5 h-[52px]`}
+                className={`w-full sm:flex-1 rounded-xl bg-zinc-100 animate-pulse flex items-center gap-1 px-1 py-1 h-[48px]`}
               />
             ))
           : podium.map(
@@ -189,10 +220,10 @@ function RaceResultCard({ race }: { race: Race }) {
               }) => (
                 <div
                   key={p.position}
-                  className="flex-1 rounded-xl bg-zinc-100 flex items-center gap-2 p-2"
+                  className="w-full sm:flex-1 rounded-xl bg-[#F7F4F1] flex items-center gap-1 p-1 min-w-0 overflow-hidden"
                 >
                   <div className="flex flex-col items-center justify-center w-6 text-zinc-500">
-                    <span className="text-xl font-bold leading-none">
+                    <span className="text-lg font-bold leading-none">
                       {p.position}
                     </span>
                     <span className="text-[10px] font-semibold leading-none">
@@ -200,15 +231,16 @@ function RaceResultCard({ race }: { race: Race }) {
                     </span>
                   </div>
                   {/* 头像占位 */}
-                  <div className="w-8 h-8 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
                     {p.driver_name && p.driver_name !== "-" ? (
                       <img
                         src={`/driver_avatar/${p.driver_name.replace(/ /g, "_")}.png`}
                         alt={p.driver_name}
-                        width={32}
-                        height={32}
-                        className="object-cover w-8 h-8 rounded-full"
+                        width={30}
+                        height={30}
+                        className="object-cover w-7 h-7 rounded-full"
                         style={{ objectPosition: "center" }}
+                        loading="lazy"
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
                           img.style.display = "none";
@@ -225,11 +257,11 @@ function RaceResultCard({ race }: { race: Race }) {
                       "-"
                     )}
                   </div>
-                  <div className="flex flex-col ml-1.5 min-w-0">
-                    <span className="font-bold text-sm text-zinc-900 truncate">
+                  <div className="flex flex-col ml-1 min-w-0 overflow-hidden">
+                    <span className="font-bold text-[13px] text-zinc-900 truncate">
                       {p.driver_code}
                     </span>
-                    <span className="text-zinc-500 font-mono font-medium text-xs">
+                    <span className="text-zinc-500 font-mono font-medium text-[11px] truncate">
                       {p.result_time}
                     </span>
                   </div>
@@ -239,9 +271,9 @@ function RaceResultCard({ race }: { race: Race }) {
       </div>
     </div>
   );
-}
+});
 
-function RaceCard({
+const RaceCard = React.memo(function RaceCard({
   race,
   wide = false,
   bgImageUrl,
@@ -283,10 +315,14 @@ function RaceCard({
       </div>
     </div>
   );
-}
+});
 
 // 下一场比赛卡片
-function NextRaceCard({ race }: { race: Race }) {
+const NextRaceCard = React.memo(function NextRaceCard({
+  race,
+}: {
+  race: Race;
+}) {
   // 特殊location显示
   const displayName = getCountryName(race);
 
@@ -342,16 +378,10 @@ function NextRaceCard({ race }: { race: Race }) {
       {/* 右下角赛道图 */}
       <div className="absolute right-6 bottom-6 opacity-90">
         {race.circuit_id ? (
-          <Image
+          <CircuitImage
             src={`/circuits_svg/${race.circuit_id}.svg`}
             alt={race.circuit?.circuit_name || "赛道布局"}
-            width={80}
-            height={48}
-            className="h-12 w-auto brightness-0 invert"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-            }}
+            className="h-[72px] w-auto brightness-0 invert"
           />
         ) : (
           <span className="font-logo text-white text-lg tracking-widest">
@@ -361,7 +391,7 @@ function NextRaceCard({ race }: { race: Race }) {
       </div>
     </div>
   );
-}
+});
 
 // 赛道图占位符SVG
 const TrackPlaceholder = () => (
@@ -387,7 +417,11 @@ const TrackPlaceholder = () => (
 );
 
 // 未进行普通比赛卡片
-function UpcomingRaceCard({ race }: { race: Race }) {
+const UpcomingRaceCard = React.memo(function UpcomingRaceCard({
+  race,
+}: {
+  race: Race;
+}) {
   // 特殊location显示
   const displayName = getCountryName(race);
 
@@ -436,16 +470,10 @@ function UpcomingRaceCard({ race }: { race: Race }) {
         <div className="text-2xl font-bold text-zinc-900">{dateStr}</div>
         <div className="opacity-90">
           {race.circuit_id ? (
-            <Image
+            <CircuitImage
               src={`/circuits_svg/${race.circuit_id}.svg`}
               alt={race.circuit?.circuit_name || "赛道布局"}
-              width={80}
-              height={48}
-              className="h-12 w-auto"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-              }}
+              className="h-[65px] w-auto"
             />
           ) : (
             <TrackPlaceholder />
@@ -454,7 +482,7 @@ function UpcomingRaceCard({ race }: { race: Race }) {
       </div>
     </div>
   );
-}
+});
 
 export default function RacesPage() {
   const {
@@ -521,6 +549,19 @@ export default function RacesPage() {
     "random_photo_14.jpg",
     "random_photo_15.jpg",
     "random_photo_16.jpg",
+    "random_photo_17.jpg",
+    "random_photo_18.jpg",
+    "random_photo_19.jpg",
+    "random_photo_20.jpg",
+    "random_photo_21.jpg",
+    "random_photo_22.jpg",
+    "random_photo_23.jpg",
+    "random_photo_24.jpg",
+    "random_photo_25.jpg",
+    "random_photo_26.jpg",
+    "random_photo_27.jpg",
+    "random_photo_28.jpg",
+    "random_photo_29.jpg",
   ];
 
   const shuffle = (arr: string[]) => arr.sort(() => 0.5 - Math.random());
