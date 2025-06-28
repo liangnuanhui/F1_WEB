@@ -50,22 +50,16 @@ export function Header() {
             车手
           </Link>
           <Link
-            href="/driver_standing"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            车手排行榜
-          </Link>
-          <Link
             href="/constructors"
             className="text-sm font-medium transition-colors hover:text-primary"
           >
             车队
           </Link>
           <Link
-            href="/constructor_standing"
+            href="/standings"
             className="text-sm font-medium transition-colors hover:text-primary"
           >
-            车队排行榜
+            排行榜
           </Link>
         </nav>
       </div>

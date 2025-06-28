@@ -1,0 +1,55 @@
+"use client";
+
+import { useState } from "react";
+import { DriverStandings } from "./DriverStandings";
+import { ConstructorStandings } from "./ConstructorStandings";
+
+type StandingType = "drivers" | "teams";
+
+export default function StandingsPage() {
+  const [activeTab, setActiveTab] = useState<StandingType>("drivers");
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case "drivers":
+        return <DriverStandings />;
+      case "teams":
+        return <ConstructorStandings />;
+      default:
+        return null;
+    }
+  };
+
+  const getButtonClass = (tabName: StandingType) => {
+    return `px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+      activeTab === tabName
+        ? "bg-zinc-800 text-white"
+        : "bg-transparent text-zinc-600 hover:bg-zinc-200"
+    }`;
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8 bg-[#F7F4F1]">
+      <div className="flex items-center mb-6">
+        <h1 className="text-3xl font-extrabold tracking-wider mr-6">
+          2025 STANDINGS
+        </h1>
+        <div className="flex items-center p-1 bg-zinc-100 rounded-lg">
+          <button
+            onClick={() => setActiveTab("drivers")}
+            className={getButtonClass("drivers")}
+          >
+            Drivers
+          </button>
+          <button
+            onClick={() => setActiveTab("teams")}
+            className={getButtonClass("teams")}
+          >
+            Teams
+          </button>
+        </div>
+      </div>
+      <div>{renderContent()}</div>
+    </div>
+  );
+}
