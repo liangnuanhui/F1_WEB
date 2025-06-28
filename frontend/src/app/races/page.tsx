@@ -179,7 +179,7 @@ const RaceResultCard = React.memo(function RaceResultCard({
           { position: 3, driver_code: "-", driver_name: "-", result_time: "-" },
         ];
   return (
-    <div className="relative rounded-2xl bg-white p-6 shadow flex flex-col justify-between min-h-[220px] h-64">
+    <div className="relative rounded-2xl bg-white p-6 shadow flex flex-col justify-between sm:h-64 h-[320px] min-h-[220px]">
       {/* 头部信息 */}
       <div className="flex justify-between items-start">
         <div>
@@ -212,61 +212,86 @@ const RaceResultCard = React.memo(function RaceResultCard({
               />
             ))
           : podium.map(
-              (p: {
-                position: number;
-                driver_code: string;
-                driver_name: string;
-                result_time: string;
-              }) => (
-                <div
-                  key={p.position}
-                  className="w-full sm:flex-1 rounded-xl bg-[#F7F4F1] flex items-center gap-1 p-1 min-w-0 overflow-hidden"
-                >
-                  <div className="flex flex-col items-center justify-center w-6 text-zinc-500">
-                    <span className="text-lg font-bold leading-none">
-                      {p.position}
-                    </span>
-                    <span className="text-[10px] font-semibold leading-none">
-                      {["ST", "ND", "RD"][p.position - 1] || "TH"}
-                    </span>
+              (
+                p: {
+                  position: number;
+                  driver_code: string;
+                  driver_name: string;
+                  result_time: string;
+                },
+                idx: number
+              ) => {
+                // 小屏下前三名卡片宽度错落
+                let baseClass =
+                  "rounded-xl bg-[#F7F4F1] flex items-center gap-1 p-1 min-w-0 overflow-hidden ";
+                let widthClass = "";
+                if (typeof window !== "undefined" && window.innerWidth < 640) {
+                  if (idx === 0) widthClass = "w-full";
+                  else if (idx === 1) widthClass = "w-[90%] self-end";
+                  else if (idx === 2) widthClass = "w-[80%] self-end";
+                } else {
+                  widthClass = "w-full sm:flex-1";
+                }
+                // SSR/CSR兼容，tailwind建议直接写class
+                return (
+                  <div
+                    key={p.position}
+                    className={
+                      (idx === 0
+                        ? "w-full sm:w-auto sm:flex-1"
+                        : idx === 1
+                          ? "w-full ml-6 sm:w-auto sm:ml-0 sm:flex-1"
+                          : idx === 2
+                            ? "w-full ml-12 sm:w-auto sm:ml-0 sm:flex-1"
+                            : "sm:w-auto sm:flex-1") + baseClass
+                    }
+                  >
+                    <div className="flex flex-col items-center justify-center w-6 text-zinc-500">
+                      <span className="text-lg font-bold leading-none">
+                        {p.position}
+                      </span>
+                      <span className="text-[10px] font-semibold leading-none">
+                        {["ST", "ND", "RD"][p.position - 1] || "TH"}
+                      </span>
+                    </div>
+                    {/* 头像占位 */}
+                    <div className="w-7 h-7 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
+                      {p.driver_name && p.driver_name !== "-" ? (
+                        <img
+                          src={`/driver_avatar/${p.driver_name.replace(/ /g, "_")}.png`}
+                          alt={p.driver_name}
+                          width={30}
+                          height={30}
+                          className="object-cover w-7 h-7 rounded-full"
+                          style={{ objectPosition: "center" }}
+                          loading="lazy"
+                          onError={(e) => {
+                            const img = e.target as HTMLImageElement;
+                            img.style.display = "none";
+                            if (img.parentElement) {
+                              img.parentElement.textContent = p.driver_code
+                                ? p.driver_code[0]
+                                : "-";
+                            }
+                          }}
+                        />
+                      ) : p.driver_code ? (
+                        p.driver_code[0]
+                      ) : (
+                        "-"
+                      )}
+                    </div>
+                    <div className="flex flex-col ml-1 min-w-0 overflow-hidden">
+                      <span className="font-bold text-[13px] text-zinc-900 truncate">
+                        {p.driver_code}
+                      </span>
+                      <span className="text-zinc-500 font-mono font-medium text-[11px] truncate">
+                        {p.result_time}
+                      </span>
+                    </div>
                   </div>
-                  {/* 头像占位 */}
-                  <div className="w-7 h-7 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
-                    {p.driver_name && p.driver_name !== "-" ? (
-                      <img
-                        src={`/driver_avatar/${p.driver_name.replace(/ /g, "_")}.png`}
-                        alt={p.driver_name}
-                        width={30}
-                        height={30}
-                        className="object-cover w-7 h-7 rounded-full"
-                        style={{ objectPosition: "center" }}
-                        loading="lazy"
-                        onError={(e) => {
-                          const img = e.target as HTMLImageElement;
-                          img.style.display = "none";
-                          if (img.parentElement) {
-                            img.parentElement.textContent = p.driver_code
-                              ? p.driver_code[0]
-                              : "-";
-                          }
-                        }}
-                      />
-                    ) : p.driver_code ? (
-                      p.driver_code[0]
-                    ) : (
-                      "-"
-                    )}
-                  </div>
-                  <div className="flex flex-col ml-1 min-w-0 overflow-hidden">
-                    <span className="font-bold text-[13px] text-zinc-900 truncate">
-                      {p.driver_code}
-                    </span>
-                    <span className="text-zinc-500 font-mono font-medium text-[11px] truncate">
-                      {p.result_time}
-                    </span>
-                  </div>
-                </div>
-              )
+                );
+              }
             )}
       </div>
     </div>
