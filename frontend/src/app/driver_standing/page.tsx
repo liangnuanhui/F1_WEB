@@ -13,7 +13,11 @@ import { Users } from "lucide-react";
 // 工具函数，从全名生成头像路径
 const getAvatarPath = (fullName: string) => {
   if (!fullName) return "/driver_avatar/default.svg";
-  const sanitizedName = fullName.replace(/ /g, "_");
+  // 规范化名称以处理特殊字符 (例如 ü -> u)
+  const normalizedName = fullName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const sanitizedName = normalizedName.replace(/ /g, "_");
   if (availableAvatarSet.has(sanitizedName)) {
     return `/driver_avatar/${sanitizedName}.png`;
   }
@@ -26,18 +30,18 @@ export default function DriverStandingPage() {
     queryFn: () => seasonsApi.getActive(),
   });
 
-  const seasonId = season?.data?.id;
+  const seasonYear = season?.data?.year;
   const {
     data: standings,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["driver-standings", seasonId],
+    queryKey: ["driver-standings", seasonYear],
     queryFn: () =>
-      seasonId
-        ? standingsApi.getDriverStandings(seasonId)
+      seasonYear
+        ? standingsApi.getDriverStandings({ year: seasonYear })
         : Promise.resolve(null),
-    enabled: !!seasonId,
+    enabled: !!seasonYear,
   });
 
   if (seasonLoading || isLoading) {
@@ -48,7 +52,9 @@ export default function DriverStandingPage() {
       <div className="text-center py-12 text-red-500">加载车手积分榜失败</div>
     );
   }
-  const standingsData = standings.data as DriverStanding[];
+  const standingsData = (standings.data as DriverStanding[]).filter(
+    (driver) => driver.driver_id !== "doohan"
+  );
 
   return (
     <div className="container mx-auto px-4 py-8 bg-[#F7F4F1]">

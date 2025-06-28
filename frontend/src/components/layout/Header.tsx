@@ -31,6 +31,7 @@ export function Header() {
             width={50}
             height={50}
             className="rounded-lg"
+            priority
           />
         </Link>
 
