@@ -67,8 +67,13 @@ class Settings(BaseSettings):
     
     # CORS配置
     backend_cors_origins: List[str] = Field(
-        default=["http://localhost:3000", "http://127.0.0.1:3000"],
-        description="CORS允许的源"
+        default=[
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3001",
+        ],
+        description="CORS允许的源",
     )
     
     # 日志配置
