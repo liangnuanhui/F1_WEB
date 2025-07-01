@@ -344,11 +344,25 @@ class UnifiedSyncService:
             races = []
             for _, row in schedule_df.iterrows():
                 if source == 'fastf1':
-                    circuit_id = row['Circuit'].get('circuitId')
-                    circuit_name = row['Circuit'].get('circuitName')
-                    race_name = row['EventName']
+                    # FastF1数据处理
+                    location = row['Location']
+                    country = row['Country']
+                    # 统一使用简化的比赛名称，确保命名一致性
+                    # EventName: 简化名称 (如 "Australian Grand Prix")
+                    # OfficialEventName: 完整官方名称 (如 "FORMULA 1 LOUIS VUITTON AUSTRALIAN GRAND PRIX 2025")
+                    race_name = row['EventName']  # 使用简化名称保持一致性
                     round_number = row['RoundNumber']
                     race_date = pd.to_datetime(row['EventDate']).date()
+                    
+                    # 通过位置和国家查找赛道
+                    circuit = self.db.query(Circuit).filter(
+                        Circuit.locality == location,
+                        Circuit.country == country
+                    ).first()
+                    
+                    if not circuit:
+                        logger.warning(f"⚠️ 找不到赛道 {location}, {country}，跳过此比赛")
+                        continue
                     
                     # 处理会话时间
                     def handle_session_date(date_value):
@@ -367,20 +381,21 @@ class UnifiedSyncService:
                     race_time = handle_session_date(row.get('EventDate')) # 使用 EventDate 作为比赛时间
                     
                 else: # ergast
-                    circuit_id = row['Circuit']['circuitId']
-                    circuit_name = row['Circuit']['circuitName']
+                    # Ergast数据处理
+                    circuit_id = row['circuitId']
+                    # 使用Ergast的raceName，通常也是简化名称，与FastF1的EventName一致
                     race_name = row['raceName']
                     round_number = row['round']
-                    race_date = pd.to_datetime(row['date']).date()
-                    race_time = pd.to_datetime(f"{row['date']}T{row['time']}") if 'time' in row and row['time'] else pd.to_datetime(row['date'])
+                    race_date = pd.to_datetime(row['raceDate']).date() if 'raceDate' in row else pd.to_datetime(row['date']).date()
+                    race_time = pd.to_datetime(f"{row['raceDate']}T{row['raceTime']}") if 'raceTime' in row and row['raceTime'] else None
                     
                     fp1_date, fp2_date, fp3_date, qualifying_date, sprint_date = None, None, None, None, None
 
-                # 查找赛道，并将其激活
-                circuit = self.db.query(Circuit).filter(Circuit.circuit_id == circuit_id).first()
-                if not circuit:
-                    logger.warning(f"⚠️ 赛道 {circuit_name} (ID: {circuit_id}) 不在数据库中，跳过此比赛")
-                    continue
+                    # 查找赛道，并将其激活
+                    circuit = self.db.query(Circuit).filter(Circuit.circuit_id == circuit_id).first()
+                    if not circuit:
+                        logger.warning(f"⚠️ 赛道 (ID: {circuit_id}) 不在数据库中，跳过此比赛")
+                        continue
                 
                 # 激活赛道
                 circuit.is_active = True
@@ -394,16 +409,18 @@ class UnifiedSyncService:
                 if existing_race:
                     # 更新已有比赛信息
                     logger.info(f"  - 更新比赛: 第 {round_number} 轮 - {race_name}")
-                    existing_race.race_name = race_name
-                    existing_race.circuit_id = circuit.id
-                    existing_race.race_date = race_date
-                    existing_race.race_time = race_time
-                    existing_race.fp1_date = fp1_date
-                    existing_race.fp2_date = fp2_date
-                    existing_race.fp3_date = fp3_date
-                    existing_race.qualifying_date = qualifying_date
-                    existing_race.sprint_date = sprint_date
-                    existing_race.is_sprint = 'sprint' in row.get('EventFormat', '')
+                    existing_race.official_event_name = race_name
+                    existing_race.circuit_id = circuit.circuit_id if hasattr(circuit, 'circuit_id') else circuit.id
+                    existing_race.country = country if source == 'fastf1' else row.get('country')
+                    existing_race.location = location if source == 'fastf1' else row.get('locality')
+                    existing_race.event_date = race_date
+                    existing_race.event_format = row.get('EventFormat', '') if source == 'fastf1' else 'standard'
+                    existing_race.session1_date = fp1_date
+                    existing_race.session2_date = fp2_date
+                    existing_race.session3_date = fp3_date
+                    existing_race.session4_date = qualifying_date
+                    existing_race.session5_date = sprint_date
+                    existing_race.is_sprint = 'sprint' in row.get('EventFormat', '') if source == 'fastf1' else False
                     races.append(existing_race)
                 else:
                     # 创建新比赛
@@ -411,16 +428,18 @@ class UnifiedSyncService:
                     new_race = Race(
                         season_id=season.id,
                         round_number=round_number,
-                        race_name=race_name,
-                        circuit_id=circuit.id,
-                        race_date=race_date,
-                        race_time=race_time,
-                        fp1_date=fp1_date,
-                        fp2_date=fp2_date,
-                        fp3_date=fp3_date,
-                        qualifying_date=qualifying_date,
-                        sprint_date=sprint_date,
-                        is_sprint='sprint' in row.get('EventFormat', '')
+                        official_event_name=race_name,
+                        circuit_id=circuit.circuit_id if hasattr(circuit, 'circuit_id') else circuit.id,
+                        country=country if source == 'fastf1' else row.get('country'),
+                        location=location if source == 'fastf1' else row.get('locality'),
+                        event_date=race_date,
+                        event_format=row.get('EventFormat', '') if source == 'fastf1' else 'standard',
+                        session1_date=fp1_date,
+                        session2_date=fp2_date,
+                        session3_date=fp3_date,
+                        session4_date=qualifying_date,
+                        session5_date=sprint_date,
+                        is_sprint='sprint' in row.get('EventFormat', '') if source == 'fastf1' else False
                     )
                     self.db.add(new_race)
                     races.append(new_race)
@@ -464,7 +483,7 @@ class UnifiedSyncService:
                     logger.info(f"  - 第 {race.round_number} 轮比赛结果已存在 {existing_count} 条，跳过")
                     continue
 
-                logger.info(f"🔄 处理第 {round_number} 轮比赛结果: {race.race_name} ({len(group_df)}条记录)")
+                logger.info(f"🔄 处理第 {round_number} 轮比赛结果: {race.official_event_name} ({len(group_df)}条记录)")
 
                 for _, row in group_df.iterrows():
                     driver = self._get_or_create_driver_from_result(row)
@@ -485,13 +504,16 @@ class UnifiedSyncService:
                         return str(value) if pd.notna(value) else None
 
                     result = Result(
-                        race_id=race.id, driver_id=driver.id, constructor_id=constructor.id,
+                        race_id=race.id, driver_id=driver.driver_id, constructor_id=constructor.constructor_id,
                         number=safe_int(row.get('number')), position=safe_int(row.get('position')),
                         position_text=safe_str(row.get('positionText')), points=safe_float(row.get('points')),
                         grid=safe_int(row.get('grid')), laps=safe_int(row.get('laps')),
-                        status=safe_str(row.get('status')), time=safe_str(row.get('time')),
-                        fastest_lap=safe_int(row.get('fastestLap')), fastest_lap_time=safe_str(row.get('fastestLapTime')),
-                        fastest_lap_speed=safe_float(row.get('fastestLapSpeed'))
+                        status=safe_str(row.get('status')),
+                        total_race_time_millis=safe_int(row.get('totalRaceTimeMillis')),
+                        total_race_time=safe_str(row.get('totalRaceTime')),
+                        fastest_lap_rank=safe_int(row.get('fastestLapRank')),
+                        fastest_lap_number=safe_int(row.get('fastestLapNumber')),
+                        fastest_lap_time=safe_str(row.get('fastestLapTime'))
                     )
                     self.db.add(result)
             
@@ -534,7 +556,7 @@ class UnifiedSyncService:
                     logger.info(f"  - 第 {race.round_number} 轮排位赛结果已存在 {existing_count} 条，跳过")
                     continue
                 
-                logger.info(f"🔄 处理第 {round_number} 轮排位赛: {race.race_name} ({len(group_df)}条记录)")
+                logger.info(f"🔄 处理第 {round_number} 轮排位赛: {race.official_event_name} ({len(group_df)}条记录)")
 
                 for _, row in group_df.iterrows():
                     driver = self._get_or_create_driver_from_result(row)
@@ -547,9 +569,9 @@ class UnifiedSyncService:
                         return str(value) if pd.notna(value) else None
 
                     qualifying_result = QualifyingResult(
-                        race_id=race.id, driver_id=driver.id, constructor_id=constructor.id,
+                        race_id=race.id, driver_id=driver.driver_id, constructor_id=constructor.constructor_id,
                         number=int(row['number']), position=int(row['position']),
-                        q1=safe_str(row.get('Q1')), q2=safe_str(row.get('Q2')), q3=safe_str(row.get('Q3'))
+                        q1_time=safe_str(row.get('Q1')), q2_time=safe_str(row.get('Q2')), q3_time=safe_str(row.get('Q3'))
                     )
                     self.db.add(qualifying_result)
 
@@ -595,7 +617,7 @@ class UnifiedSyncService:
                     logger.info(f"  - 第 {race.round_number} 轮冲刺赛结果已存在 {existing_count} 条，跳过")
                     continue
                 
-                logger.info(f"🔄 处理第 {round_number} 轮冲刺赛: {race.race_name} ({len(group_df)}条记录)")
+                logger.info(f"🔄 处理第 {round_number} 轮冲刺赛: {race.official_event_name} ({len(group_df)}条记录)")
                 
                 for _, row in group_df.iterrows():
                     driver = self._get_or_create_driver_from_result(row)
@@ -616,11 +638,16 @@ class UnifiedSyncService:
                         return str(value) if pd.notna(value) else None
 
                     sprint_result = SprintResult(
-                        race_id=race.id, driver_id=driver.id, constructor_id=constructor.id,
+                        race_id=race.id, driver_id=driver.driver_id, constructor_id=constructor.constructor_id,
                         number=safe_int(row.get('number')), position=safe_int(row.get('position')),
                         position_text=safe_str(row.get('positionText')), points=safe_float(row.get('points')),
                         grid=safe_int(row.get('grid')), laps=safe_int(row.get('laps')),
-                        status=safe_str(row.get('status')), time=safe_str(row.get('time')),
+                        status=safe_str(row.get('status')),
+                        total_race_time=safe_str(row.get('totalRaceTime')),
+                        total_race_time_millis=safe_int(row.get('totalRaceTimeMillis')),
+                        fastest_lap_rank=safe_int(row.get('fastestLapRank')),
+                        fastest_lap_number=safe_int(row.get('fastestLapNumber')),
+                        fastest_lap_time=safe_str(row.get('fastestLapTime'))
                     )
                     self.db.add(sprint_result)
             
@@ -663,11 +690,10 @@ class UnifiedSyncService:
 
                 standing = DriverStanding(
                     season_id=season.id,
-                    driver_id=driver.id,
-                    constructor_id=constructor.id,
-                    round=int(row['round']),
+                    driver_id=driver.driver_id,
+                    constructor_id=constructor.constructor_id,
                     position=int(row['position']),
-                    position_text=str(row['positionText']),
+                    position_text=str(row.get('positionText', '')),
                     points=float(row['points']),
                     wins=int(row['wins'])
                 )
@@ -710,10 +736,9 @@ class UnifiedSyncService:
                 
                 standing = ConstructorStanding(
                     season_id=season.id,
-                    constructor_id=constructor.id,
-                    round=int(row['round']),
+                    constructor_id=constructor.constructor_id,
                     position=int(row['position']),
-                    position_text=str(row['positionText']),
+                    position_text=str(row.get('positionText', '')),
                     points=float(row['points']),
                     wins=int(row['wins'])
                 )
@@ -738,13 +763,13 @@ class UnifiedSyncService:
             # 创建新车手
             driver = Driver(
                 driver_id=driver_id,
-                driver_number=row.get('driverNumber'),
-                driver_code=row.get('driverCode'),
+                number=row.get('driverNumber'),
+                code=row.get('driverCode'),
                 driver_url=row.get('driverUrl', ''),
-                given_name=row.get('givenName', ''),
-                family_name=row.get('familyName', ''),
+                forename=row.get('givenName', ''),
+                surname=row.get('familyName', ''),
                 date_of_birth=row.get('dateOfBirth'),
-                driver_nationality=row.get('nationality', '')
+                nationality=row.get('driverNationality', '')
             )
             self.db.add(driver)
             self.db.commit()

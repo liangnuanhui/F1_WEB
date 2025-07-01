@@ -23,6 +23,14 @@ def get_redis():
     return redis_client
 
 
+def get_redis_client():
+    """
+    获取Redis客户端
+    兼容调度器使用
+    """
+    return redis_client
+
+
 def init_redis():
     """
     初始化Redis连接

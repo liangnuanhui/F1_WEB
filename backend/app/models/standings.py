@@ -19,8 +19,9 @@ class DriverStanding(Base):
     driver_id = Column(String(50), ForeignKey("drivers.driver_id"), nullable=False)
     constructor_id = Column(String(50), ForeignKey("constructors.constructor_id"), nullable=False)
     
-    # 积分榜信息
+    # 积分榜信息 - 匹配 FastF1 字段
     position = Column(Integer, nullable=True)  # 积分榜位置
+    position_text = Column(String(10), nullable=True)  # 位置文本（如"1"、"DNF"等）
     points = Column(Float, default=0, nullable=False)  # 总积分
     wins = Column(Integer, default=0, nullable=False)  # 获胜次数
     
@@ -51,8 +52,9 @@ class ConstructorStanding(Base):
     season_id = Column(Integer, ForeignKey("seasons.id"), nullable=False)
     constructor_id = Column(String(50), ForeignKey("constructors.constructor_id"), nullable=False)
     
-    # 积分榜信息
+    # 积分榜信息 - 匹配 FastF1 字段
     position = Column(Integer, nullable=True)  # 积分榜位置
+    position_text = Column(String(10), nullable=True)  # 位置文本（如"1"、"DNF"等）
     points = Column(Float, default=0, nullable=False)  # 总积分
     wins = Column(Integer, default=0, nullable=False)  # 获胜次数
     
