@@ -1,13 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { DriverStandings } from "./DriverStandings";
 import { ConstructorStandings } from "./ConstructorStandings";
 
 type StandingType = "drivers" | "teams";
 
 export default function StandingsPage() {
-  const [activeTab, setActiveTab] = useState<StandingType>("drivers");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab") as StandingType;
+
+  // 根据URL参数设置初始状态，如果参数是有效的，使用参数值，否则默认为"drivers"
+  const [activeTab, setActiveTab] = useState<StandingType>(
+    tabParam === "drivers" || tabParam === "teams" ? tabParam : "drivers"
+  );
 
   const renderContent = () => {
     switch (activeTab) {
