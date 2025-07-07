@@ -1,5 +1,77 @@
 # F1 比赛后数据更新系统
 
+## 🚀 快速启动
+
+### 1. 启动系统
+
+```bash
+cd backend
+
+# 启动后端API服务
+poetry run uvicorn app.main:app --reload --port 8000
+
+# 启动Celery worker（新终端）
+poetry run celery -A app.tasks.celery_app worker --loglevel=info --pool=eventlet
+
+# 启动Celery Beat调度器（新终端）
+poetry run celery -A app.tasks.celery_app beat --loglevel=info
+```
+
+### 2. 典型使用流程
+
+#### 为奥地利大奖赛安排赛后同步（比赛结束后 6、12、24 小时执行）
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/post-race-sync/2025/10/schedule" \
+  -H "Content-Type: application/json"
+```
+
+#### 查看同步计划状态
+
+```bash
+curl "http://localhost:8000/api/v1/post-race-sync/2025/10/schedule" | jq
+```
+
+#### 查看所有调度计划
+
+```bash
+curl "http://localhost:8000/api/v1/post-race-sync/schedules" | jq
+```
+
+#### 获取系统统计信息
+
+```bash
+curl "http://localhost:8000/api/v1/post-race-sync/stats" | jq
+```
+
+### 3. 监控和维护
+
+#### 查看待执行的同步任务
+
+```bash
+curl "http://localhost:8000/api/v1/post-race-sync/pending" | jq
+```
+
+#### 手动触发监控（检查遗漏的任务）
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/post-race-sync/monitor"
+```
+
+#### 清理过期的同步计划
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/post-race-sync/cleanup"
+```
+
+#### 批量安排未来 7 天的比赛
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/post-race-sync/batch-schedule?season_year=2025&days_ahead=7"
+```
+
+---
+
 ## 🎯 系统概述
 
 这是一个专为 F1 比赛后数据更新设计的自动化系统，在比赛结束后的特定时间点自动更新关键数据。
@@ -63,30 +135,29 @@ poetry run celery -A app.tasks.celery_app beat --loglevel=info
 #### 安排比赛后更新
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/scheduler/post-race-updates/2025_round_10_austria" \
+curl -X POST "http://localhost:8000/api/v1/post-race-sync/2025/10/schedule" \
   -H "Content-Type: application/json" \
   -d '{
-    "race_end_time": "2025-06-29T15:00:00Z",
-    "season_year": 2025
+    "retry_intervals": [6, 12, 24]
   }'
 ```
 
 #### 查看调度状态
 
 ```bash
-curl "http://localhost:8000/api/v1/scheduler/post-race-updates/2025_round_10_austria"
+curl "http://localhost:8000/api/v1/post-race-sync/2025/10/schedule"
 ```
 
-#### 手动触发同步
+#### 立即执行同步
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/scheduler/manual-post-race-sync?season_year=2025"
+curl -X POST "http://localhost:8000/api/v1/post-race-sync/2025/10/execute/1"
 ```
 
 #### 取消调度
 
 ```bash
-curl -X DELETE "http://localhost:8000/api/v1/scheduler/post-race-updates/2025_round_10_austria"
+curl -X DELETE "http://localhost:8000/api/v1/post-race-sync/2025/10/schedule"
 ```
 
 ### 3. 使用场景示例
@@ -130,12 +201,15 @@ curl -X DELETE "http://localhost:8000/api/v1/scheduler/post-race-updates/2025_ro
 #### 3. API 端点
 
 ```python
-# 位置: app/api/v1/endpoints/scheduler.py
+# 位置: app/api/v1/endpoints/post_race_sync.py
 # 端点:
-#   POST /scheduler/post-race-updates/{race_id}
-#   GET  /scheduler/post-race-updates/{race_id}
-#   DELETE /scheduler/post-race-updates/{race_id}
-#   POST /scheduler/manual-post-race-sync
+#   POST /post-race-sync/{season_year}/{race_round}/schedule
+#   GET  /post-race-sync/{season_year}/{race_round}/schedule
+#   DELETE /post-race-sync/{season_year}/{race_round}/schedule
+#   POST /post-race-sync/{season_year}/{race_round}/execute/{attempt_number}
+#   GET  /post-race-sync/schedules          # 获取所有调度
+#   GET  /post-race-sync/pending           # 获取待执行任务
+#   GET  /post-race-sync/stats             # 获取统计信息
 ```
 
 #### 4. 数据存储

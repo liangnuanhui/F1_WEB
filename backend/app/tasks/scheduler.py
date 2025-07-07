@@ -121,7 +121,12 @@ class RaceScheduler:
                 if data:
                     try:
                         import ast
-                        schedule_data = ast.literal_eval(data.decode('utf-8'))
+                        # 处理Redis返回的数据类型差异
+                        if isinstance(data, bytes):
+                            data_str = data.decode('utf-8')
+                        else:
+                            data_str = data
+                        schedule_data = ast.literal_eval(data_str)
                         scheduled_races.append(schedule_data)
                     except Exception as e:
                         logger.warning(f"解析调度数据失败: {e}")
@@ -142,7 +147,12 @@ class RaceScheduler:
             data = self.redis_client.get(schedule_key)
             if data:
                 import ast
-                schedule_data = ast.literal_eval(data.decode('utf-8'))
+                # 处理Redis返回的数据类型差异
+                if isinstance(data, bytes):
+                    data_str = data.decode('utf-8')
+                else:
+                    data_str = data
+                schedule_data = ast.literal_eval(data_str)
                 task_id = schedule_data.get("task_id")
                 
                 # 撤销 Celery 任务
@@ -273,7 +283,13 @@ class RaceScheduler:
             if not data:
                 return {"success": False, "error": "未找到调度信息"}
             
-            schedule_data = json.loads(data)
+            # 处理Redis返回的数据类型差异
+            if isinstance(data, bytes):
+                data_str = data.decode('utf-8')
+            else:
+                data_str = str(data)
+            
+            schedule_data = json.loads(data_str)
             return {"success": True, "data": schedule_data}
             
         except Exception as e:
@@ -386,7 +402,12 @@ def cleanup_expired_schedules(self):
                 data = scheduler.redis_client.get(key)
                 if data:
                     import ast
-                    schedule_data = ast.literal_eval(data.decode('utf-8'))
+                    # 处理Redis返回的数据类型差异
+                    if isinstance(data, bytes):
+                        data_str = data.decode('utf-8')
+                    else:
+                        data_str = str(data)
+                    schedule_data = ast.literal_eval(data_str)
                     update_time = datetime.fromisoformat(schedule_data["update_time"])
                     
                     # 如果更新时间已过期超过7天，清理记录

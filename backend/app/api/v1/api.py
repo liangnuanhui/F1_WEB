@@ -13,6 +13,7 @@ from .endpoints import (
     standings,
     data_init,
     scheduler,  # 新增调度器端点
+    post_race_sync,  # 比赛后数据同步端点
 )
 
 api_router = APIRouter()
@@ -25,4 +26,5 @@ api_router.include_router(standings.router, prefix="/standings", tags=["standing
 api_router.include_router(seasons.router, prefix="/seasons", tags=["seasons"])
 api_router.include_router(races.router, prefix="/races", tags=["races"])
 api_router.include_router(constructors.router, prefix="/constructors", tags=["constructors"])
-api_router.include_router(scheduler.router, prefix="/scheduler", tags=["scheduler"])  # 新增 
+api_router.include_router(scheduler.router, prefix="/scheduler", tags=["scheduler"])  # 新增
+api_router.include_router(post_race_sync.router, prefix="/post-race-sync", tags=["post-race-sync"])  # 比赛后同步 

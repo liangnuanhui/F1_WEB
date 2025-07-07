@@ -67,52 +67,52 @@ class DataProvider(ABC):
     """数据提供者抽象基类"""
     
     @abstractmethod
-    def get_circuits(self, season: int = None) -> pd.DataFrame:
+    def get_circuits(self, season: Optional[int] = None) -> pd.DataFrame:
         """获取赛道数据"""
         pass
     
     @abstractmethod
-    def get_drivers(self, season: int = None) -> pd.DataFrame:
+    def get_drivers(self, season: Optional[int] = None) -> pd.DataFrame:
         """获取车手数据"""
         pass
     
     @abstractmethod
-    def get_constructors(self, season: int = None) -> pd.DataFrame:
+    def get_constructors(self, season: Optional[int] = None) -> pd.DataFrame:
         """获取车队数据"""
         pass
     
     @abstractmethod
-    def get_races(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_races(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取比赛数据"""
         pass
     
     @abstractmethod
-    def get_race_results(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_race_results(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取比赛结果"""
         pass
     
     @abstractmethod
-    def get_qualifying_results(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_qualifying_results(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取排位赛结果"""
         pass
     
     @abstractmethod
-    def get_sprint_results(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_sprint_results(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取冲刺赛结果"""
         pass
     
     @abstractmethod
-    def get_driver_standings(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_driver_standings(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取车手积分榜"""
         pass
     
     @abstractmethod
-    def get_constructor_standings(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_constructor_standings(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取车队积分榜"""
         pass
 
     @abstractmethod
-    def get_seasons(self, start_year: int = None, end_year: int = None) -> pd.DataFrame:
+    def get_seasons(self, start_year: Optional[int] = None, end_year: Optional[int] = None) -> pd.DataFrame:
         """获取赛季数据"""
         pass
 
@@ -120,7 +120,7 @@ class DataProvider(ABC):
 class FastF1Provider(DataProvider):
     """统一的 FastF1 数据提供者"""
     
-    def __init__(self, cache_dir: str = None):
+    def __init__(self, cache_dir: Optional[str] = None):
         import fastf1
         from fastf1.ergast import Ergast
         
@@ -140,40 +140,43 @@ class FastF1Provider(DataProvider):
         logger.info("初始化 FastF1 数据提供者，启用频率限制处理")
         logger.info("当前配置: 延迟1.0秒，最大重试3次")
     
-    def get_circuits(self, season: int = None) -> pd.DataFrame:
+    def get_circuits(self, season: Optional[int] = None) -> pd.DataFrame:
         """获取赛道数据 - 使用 fastf1.ergast"""
         try:
             def _get_circuits():
                 return self.ergast.get_circuits(season=season)
             
-            return self.rate_limiter.execute_with_retry(_get_circuits)
+            result = self.rate_limiter.execute_with_retry(_get_circuits)
+            return result if result is not None else pd.DataFrame()
         except Exception as e:
             logger.error(f"获取赛道数据失败: {e}")
             return pd.DataFrame()
     
-    def get_drivers(self, season: int = None) -> pd.DataFrame:
+    def get_drivers(self, season: Optional[int] = None) -> pd.DataFrame:
         """获取车手数据 - 使用 fastf1.ergast"""
         try:
             def _get_drivers():
                 return self.ergast.get_driver_info(season=season)
             
-            return self.rate_limiter.execute_with_retry(_get_drivers)
+            result = self.rate_limiter.execute_with_retry(_get_drivers)
+            return result if result is not None else pd.DataFrame()
         except Exception as e:
             logger.error(f"获取车手数据失败: {e}")
             return pd.DataFrame()
     
-    def get_constructors(self, season: int = None) -> pd.DataFrame:
+    def get_constructors(self, season: Optional[int] = None) -> pd.DataFrame:
         """获取车队数据 - 使用 fastf1.ergast"""
         try:
             def _get_constructors():
                 return self.ergast.get_constructor_info(season=season)
             
-            return self.rate_limiter.execute_with_retry(_get_constructors)
+            result = self.rate_limiter.execute_with_retry(_get_constructors)
+            return result if result is not None else pd.DataFrame()
         except Exception as e:
             logger.error(f"获取车队数据失败: {e}")
             return pd.DataFrame()
     
-    def get_seasons(self, start_year: int = None, end_year: int = None) -> pd.DataFrame:
+    def get_seasons(self, start_year: Optional[int] = None, end_year: Optional[int] = None) -> pd.DataFrame:
         """获取赛季数据 - 支持年份范围过滤，使用分页机制获取所有数据"""
         try:
             def _get_seasons():
@@ -221,12 +224,13 @@ class FastF1Provider(DataProvider):
                 
                 return complete_seasons
             
-            return self.rate_limiter.execute_with_retry(_get_seasons)
+            result = self.rate_limiter.execute_with_retry(_get_seasons)
+            return result if result is not None else pd.DataFrame()
         except Exception as e:
             logger.error(f"获取赛季数据失败: {e}")
             return pd.DataFrame()
     
-    def get_races(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_races(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取比赛数据 - 优先使用 FastF1，失败时降级到 Ergast"""
         try:
             def _get_races():
@@ -272,18 +276,22 @@ class FastF1Provider(DataProvider):
                         logger.error(f"Ergast 获取也失败: {ergast_error}")
                         return pd.DataFrame()
             
-            return self.rate_limiter.execute_with_retry(_get_races)
+            result = self.rate_limiter.execute_with_retry(_get_races)
+            return result if result is not None else pd.DataFrame()
         except Exception as e:
             logger.error(f"获取比赛数据失败: {e}")
             return pd.DataFrame()
     
-    def get_race_results(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_race_results(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取比赛结果 - 正确处理 ErgastMultiResponse 数据结构并支持分页"""
         try:
             def _get_race_results():
                 return self.ergast.get_race_results(season=season, round=round_number)
             
             results = self.rate_limiter.execute_with_retry(_get_race_results)
+            
+            if results is None:
+                return pd.DataFrame()
             
             # 正确处理 ErgastMultiResponse 数据结构并支持分页
             if hasattr(results, 'content') and results.content:
@@ -358,13 +366,16 @@ class FastF1Provider(DataProvider):
             logger.error(f"获取比赛结果失败: {e}")
             return pd.DataFrame()
     
-    def get_qualifying_results(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_qualifying_results(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取排位赛结果 - 正确处理 ErgastMultiResponse 数据结构并支持分页"""
         try:
             def _get_qualifying_results():
                 return self.ergast.get_qualifying_results(season=season, round=round_number)
             
             results = self.rate_limiter.execute_with_retry(_get_qualifying_results)
+            
+            if results is None:
+                return pd.DataFrame()
             
             # 正确处理 ErgastMultiResponse 数据结构并支持分页
             if hasattr(results, 'content') and results.content:
@@ -439,13 +450,16 @@ class FastF1Provider(DataProvider):
             logger.error(f"获取排位赛结果失败: {e}")
             return pd.DataFrame()
     
-    def get_sprint_results(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_sprint_results(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取冲刺赛结果 - 正确处理 ErgastMultiResponse 数据结构并支持分页"""
         try:
             def _get_sprint_results():
                 return self.ergast.get_sprint_results(season=season, round=round_number)
             
             results = self.rate_limiter.execute_with_retry(_get_sprint_results)
+            
+            if results is None:
+                return pd.DataFrame()
             
             # 正确处理 ErgastMultiResponse 数据结构并支持分页
             if hasattr(results, 'content') and results.content:
@@ -520,13 +534,16 @@ class FastF1Provider(DataProvider):
             logger.error(f"获取冲刺赛结果失败: {e}")
             return pd.DataFrame()
     
-    def get_driver_standings(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_driver_standings(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取车手积分榜 - 使用 fastf1.ergast"""
         try:
             def _get_driver_standings():
                 return self.ergast.get_driver_standings(season=season, round=round_number)
             
             standings = self.rate_limiter.execute_with_retry(_get_driver_standings)
+            
+            if standings is None:
+                return pd.DataFrame()
             
             if hasattr(standings, 'content') and standings.content:
                 all_results = []
@@ -542,13 +559,16 @@ class FastF1Provider(DataProvider):
             logger.error(f"获取车手积分榜失败: {e}")
             return pd.DataFrame()
     
-    def get_constructor_standings(self, season: int, round_number: int = None) -> pd.DataFrame:
+    def get_constructor_standings(self, season: int, round_number: Optional[int] = None) -> pd.DataFrame:
         """获取车队积分榜 - 使用 fastf1.ergast"""
         try:
             def _get_constructor_standings():
                 return self.ergast.get_constructor_standings(season=season, round=round_number)
             
             standings = self.rate_limiter.execute_with_retry(_get_constructor_standings)
+            
+            if standings is None:
+                return pd.DataFrame()
             
             if hasattr(standings, 'content') and standings.content:
                 all_results = []
@@ -578,12 +598,12 @@ class DataProviderFactory:
             **kwargs: 额外参数
         """
         if provider_type.lower() == 'fastf1':
-            cache_dir = kwargs.get('cache_dir')
+            cache_dir: Optional[str] = kwargs.get('cache_dir')
             return FastF1Provider(cache_dir=cache_dir)
         else:
             # 为了向后兼容，默认返回 FastF1Provider
             logger.warning(f"不支持的数据提供者类型: {provider_type}，使用默认的 FastF1Provider")
-            cache_dir = kwargs.get('cache_dir')
+            cache_dir: Optional[str] = kwargs.get('cache_dir')
             return FastF1Provider(cache_dir=cache_dir)
     
     @staticmethod

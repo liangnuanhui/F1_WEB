@@ -15,6 +15,7 @@ celery_app = Celery(
     include=[
         "app.tasks.data_sync",
         "app.tasks.scheduler",
+        "app.tasks.post_race_tasks",  # 添加比赛后同步任务模块
     ]
 )
 
@@ -35,6 +36,7 @@ celery_app.conf.update(
     task_routes={
         "app.tasks.data_sync.*": {"queue": "data_sync"},
         "app.tasks.scheduler.*": {"queue": "scheduler"},
+        "app.tasks.post_race_tasks.*": {"queue": "post_race_sync"},  # 比赛后同步任务路由
     },
     
     # 队列配置
@@ -43,6 +45,12 @@ celery_app.conf.update(
         Queue("default"),
         Queue("data_sync", routing_key="data_sync"),
         Queue("scheduler", routing_key="scheduler"),
+        # 新增比赛后同步专用队列
+        Queue("post_race_sync", routing_key="post_race_sync"),
+        Queue("post_race_scheduler", routing_key="post_race_scheduler"),
+        Queue("post_race_monitor", routing_key="post_race_monitor"),
+        Queue("post_race_cleanup", routing_key="post_race_cleanup"),
+        Queue("post_race_batch", routing_key="post_race_batch"),
     ),
     
     # 重试配置
@@ -54,15 +62,28 @@ celery_app.conf.update(
     
     # Beat 调度器配置
     beat_schedule={
-        # 每天检查一次是否有需要调度的比赛（F1比赛最频繁也就一周一次）
+        # 原有的调度任务
         "check-race-schedules": {
             "task": "app.tasks.scheduler.check_race_schedules",
             "schedule": 86400.0,  # 每24小时（1天）
         },
-        # 每6小时清理过期的调度任务
         "cleanup-expired-schedules": {
             "task": "app.tasks.scheduler.cleanup_expired_schedules", 
             "schedule": 21600.0,  # 每6小时
+        },
+        
+        # 新增的比赛后同步定期任务
+        "hourly-monitor-post-race-syncs": {
+            "task": "hourly_monitor_post_race_syncs",
+            "schedule": 3600.0,  # 每小时监控待执行的同步任务
+        },
+        "daily-cleanup-expired-schedules": {
+            "task": "daily_cleanup_expired_schedules",
+            "schedule": 86400.0,  # 每天清理过期的同步计划
+        },
+        "weekly-batch-schedule-races": {
+            "task": "weekly_batch_schedule_races",
+            "schedule": 604800.0,  # 每周批量安排即将到来的比赛
         },
     },
 )
