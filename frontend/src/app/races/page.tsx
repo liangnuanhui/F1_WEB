@@ -211,15 +211,10 @@ const RaceResultCard = React.memo(function RaceResultCard({
               />
             ))
           : podium.map((p, idx) => {
-              // 小屏下前三名卡片宽度错落，大屏下平分
-              let mobileClass = "";
-              if (idx === 0) mobileClass = "w-full";
-              else if (idx === 1) mobileClass = "w-[90%] self-end";
-              else if (idx === 2) mobileClass = "w-[80%] self-end";
               return (
                 <div
                   key={p.position}
-                  className={`rounded-xl bg-[#F7F4F1] flex items-center gap-2 p-2 min-w-0 overflow-hidden ${mobileClass} sm:w-auto sm:flex-1`}
+                  className="w-full sm:flex-1 rounded-xl bg-[#F7F4F1] flex items-center gap-2 p-2 min-w-0 overflow-hidden"
                 >
                   <div className="flex flex-col items-center justify-center w-6 text-zinc-500">
                     <span className="text-lg font-bold leading-none ">
@@ -230,10 +225,19 @@ const RaceResultCard = React.memo(function RaceResultCard({
                     </span>
                   </div>
                   {/* 头像占位 */}
-                  <div className="w-7 h-7 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden -ml-2">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
                     {p.driver_name && p.driver_name !== "-" ? (
                       <img
-                        src={`/driver_avatar/${p.driver_name.replace(/ /g, "_")}.png`}
+                        src={`/driver_avatar/${p.driver_name
+                          .replace(/ /g, "_")
+                          .replace(/Ü/g, "u")
+                          .replace(/ü/g, "u")
+                          .replace(/Ä/g, "a")
+                          .replace(/ä/g, "a")
+                          .replace(/Ö/g, "o")
+                          .replace(/ö/g, "o")
+                          .replace(/É/g, "e")
+                          .replace(/é/g, "e")}.png`}
                         alt={p.driver_name}
                         width={30}
                         height={30}
@@ -256,11 +260,11 @@ const RaceResultCard = React.memo(function RaceResultCard({
                       "-"
                     )}
                   </div>
-                  <div className="flex flex-col ml-0.5 min-w-0 overflow-hidden -ml-2">
+                  <div className="flex flex-col ml-1 min-w-0 overflow-hidden">
                     <span className="font-bold text-[13px] text-zinc-900 truncate">
                       {p.driver_code}
                     </span>
-                    <span className="text-zinc-500 font-mono font-medium text-[10px] break-words -ml-2">
+                    <span className="text-zinc-500 font-mono font-medium text-[8px] leading-tight">
                       {p.result_time}
                     </span>
                   </div>
