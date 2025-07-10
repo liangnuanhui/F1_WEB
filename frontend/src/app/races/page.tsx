@@ -9,6 +9,7 @@ import axios, { type AxiosResponse } from "axios";
 import { CountryFlag } from "@/components/CountryFlag";
 import Image from "next/image";
 import React from "react";
+import { useRouter } from "next/navigation";
 
 function formatF1DateRange(dateStr?: string) {
   if (!dateStr) return "-";
@@ -121,6 +122,7 @@ const RaceResultCard = React.memo(function RaceResultCard({
 }: {
   race: Race;
 }) {
+  const router = useRouter();
   // 特殊location显示
   const displayName = getCountryName(race);
 
@@ -179,7 +181,10 @@ const RaceResultCard = React.memo(function RaceResultCard({
           { position: 3, driver_code: "-", driver_name: "-", result_time: "-" },
         ];
   return (
-    <div className="relative rounded-2xl bg-white p-6 shadow flex flex-col justify-between sm:h-64 h-[320px] min-h-[220px]">
+    <div
+      className="relative rounded-2xl bg-white p-6 shadow flex flex-col justify-between sm:h-64 h-[320px] min-h-[220px] cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={() => router.push(`/races/${race.id}`)}
+    >
       {/* 头部信息 */}
       <div className="flex justify-between items-start">
         <div>
@@ -188,7 +193,7 @@ const RaceResultCard = React.memo(function RaceResultCard({
           </p>
           <div className="flex items-center gap-3">
             <CountryFlag country={displayName} className="w-8 h-6 rounded" />
-            <h2 className="text-3xl font-extrabold text-zinc-900">
+            <h2 className="text-3xl font-extrabold text-zinc-900 hover:underline hover:decoration-zinc-900 hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
               {displayName}
             </h2>
           </div>
@@ -285,6 +290,8 @@ const RaceCard = React.memo(function RaceCard({
   wide?: boolean;
   bgImageUrl: string;
 }) {
+  const router = useRouter();
+
   if (!race)
     return (
       <div
@@ -296,8 +303,9 @@ const RaceCard = React.memo(function RaceCard({
 
   return (
     <div
-      className={`relative rounded-xl shadow-md overflow-hidden flex flex-col justify-end text-white transition-all duration-200 h-80 w-full bg-cover bg-center`}
+      className={`relative rounded-xl shadow-md overflow-hidden flex flex-col justify-end text-white transition-all duration-200 h-80 w-full bg-cover bg-center cursor-pointer hover:shadow-xl`}
       style={{ backgroundImage: `url('${bgImageUrl}')` }}
+      onClick={() => router.push(`/races/${race.id}`)}
     >
       {/* 半透明遮罩 */}
       <div className="absolute inset-0 bg-black/40" />
@@ -306,7 +314,9 @@ const RaceCard = React.memo(function RaceCard({
           <div className="text-xs font-bold tracking-widest mb-1">
             ROUND {race.round_number}
           </div>
-          <div className="text-3xl font-extrabold">{getCountryName(race)}</div>
+          <div className="text-3xl font-extrabold hover:underline hover:decoration-white hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
+            {getCountryName(race)}
+          </div>
           <div className="text-lg font-bold my-2">
             {getRaceWeekendRange(race)}
           </div>
@@ -326,6 +336,7 @@ const NextRaceCard = React.memo(function NextRaceCard({
 }: {
   race: Race;
 }) {
+  const router = useRouter();
   // 特殊location显示
   const displayName = getCountryName(race);
 
@@ -352,7 +363,10 @@ const NextRaceCard = React.memo(function NextRaceCard({
     }
   }
   return (
-    <div className="relative rounded-2xl bg-gradient-to-br from-[#FF1E00] to-[#B80000] p-6 shadow flex flex-col min-h-[220px] h-64 overflow-hidden">
+    <div
+      className="relative rounded-2xl bg-gradient-to-br from-[#FF1E00] to-[#B80000] p-6 shadow flex flex-col min-h-[220px] h-64 overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={() => router.push(`/races/${race.id}`)}
+    >
       {/* 头部信息 */}
       <div className="flex justify-between items-start">
         <div>
@@ -361,7 +375,7 @@ const NextRaceCard = React.memo(function NextRaceCard({
           </div>
           <div className="flex items-center gap-2 mb-2">
             <CountryFlag country={displayName} className="w-8 h-6 rounded" />
-            <span className="text-3xl font-extrabold text-white drop-shadow">
+            <span className="text-3xl font-extrabold text-white drop-shadow hover:underline hover:decoration-white hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
               {displayName}
             </span>
           </div>
@@ -425,6 +439,7 @@ const UpcomingRaceCard = React.memo(function UpcomingRaceCard({
 }: {
   race: Race;
 }) {
+  const router = useRouter();
   // 特殊location显示
   const displayName = getCountryName(race);
 
@@ -451,7 +466,10 @@ const UpcomingRaceCard = React.memo(function UpcomingRaceCard({
     }
   }
   return (
-    <div className="relative rounded-2xl bg-white p-6 shadow flex flex-col justify-between min-h-[220px] h-64">
+    <div
+      className="relative rounded-2xl bg-white p-6 shadow flex flex-col justify-between min-h-[220px] h-64 cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={() => router.push(`/races/${race.id}`)}
+    >
       {/* 头部信息 */}
       <div>
         <p className="text-xs text-zinc-400 font-semibold tracking-wider mb-1">
@@ -459,7 +477,7 @@ const UpcomingRaceCard = React.memo(function UpcomingRaceCard({
         </p>
         <div className="flex items-center gap-3">
           <CountryFlag country={displayName} className="w-8 h-6 rounded" />
-          <h2 className="text-3xl font-extrabold text-zinc-900">
+          <h2 className="text-3xl font-extrabold text-zinc-900 hover:underline hover:decoration-zinc-900 hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
             {displayName}
           </h2>
         </div>
