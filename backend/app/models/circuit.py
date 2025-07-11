@@ -27,6 +27,13 @@ class Circuit(Base):
     lap_record_driver = Column(String(100), nullable=True)  # 记录保持者
     lap_record_year = Column(Integer, nullable=True)  # 记录年份
     
+    # F1官网新增字段
+    first_grand_prix = Column(Integer, nullable=True)  # 首次举办大奖赛年份
+    typical_lap_count = Column(Integer, nullable=True)  # 典型圈数
+    race_distance = Column(Float, nullable=True)  # 比赛距离(公里)
+    circuit_layout_image_url = Column(String(500), nullable=True)  # 赛道布局图URL
+    circuit_layout_image_path = Column(String(500), nullable=True)  # 本地存储的布局图路径
+    
     # 赛道特点
     description = Column(Text, nullable=True)
     characteristics = Column(Text, nullable=True)  # 赛道特点

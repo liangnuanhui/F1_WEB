@@ -473,34 +473,39 @@ export default function RaceDetailPage({
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Schedule 标题部分 */}
         <div className="mb-8">
-          <div className="flex items-center gap-4 mb-6">
-            <h2 className="text-3xl font-extrabold text-gray-900">SCHEDULE</h2>
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between mb-6">
+            {/* 左侧：标题和Add calendar按钮 */}
+            <div className="flex items-center gap-4">
+              <h2 className="text-3xl font-extrabold text-gray-900">
+                SCHEDULE
+              </h2>
               <button className="bg-red-600 text-white px-4 py-2 rounded font-semibold text-sm">
                 Add F1 calendar
               </button>
-              <div className="flex bg-gray-100 rounded">
-                <button
-                  className={`px-4 py-2 rounded text-sm font-semibold transition-colors ${
-                    timezoneMode === "my"
-                      ? "bg-black text-white"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                  onClick={() => setTimezoneMode("my")}
-                >
-                  My time
-                </button>
-                <button
-                  className={`px-4 py-2 rounded text-sm font-semibold transition-colors ${
-                    timezoneMode === "track"
-                      ? "bg-black text-white"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                  onClick={() => setTimezoneMode("track")}
-                >
-                  Track time
-                </button>
-              </div>
+            </div>
+
+            {/* 右侧：时区切换按钮 */}
+            <div className="flex bg-gray-100 rounded">
+              <button
+                className={`px-4 py-2 rounded text-sm font-semibold transition-colors ${
+                  timezoneMode === "my"
+                    ? "bg-black text-white"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                onClick={() => setTimezoneMode("my")}
+              >
+                My time
+              </button>
+              <button
+                className={`px-4 py-2 rounded text-sm font-semibold transition-colors ${
+                  timezoneMode === "track"
+                    ? "bg-black text-white"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                onClick={() => setTimezoneMode("track")}
+              >
+                Track time
+              </button>
             </div>
           </div>
 

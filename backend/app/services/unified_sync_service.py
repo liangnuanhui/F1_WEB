@@ -377,7 +377,9 @@ class UnifiedSyncService:
                     fp2_date = handle_session_date(row.get('Session2DateUtc'))
                     fp3_date = handle_session_date(row.get('Session3DateUtc'))
                     qualifying_date = handle_session_date(row.get('Session4DateUtc'))
-                    sprint_date = handle_session_date(row.get('Session5DateUtc')) if 'Session5DateUtc' in row and row['EventFormat'] == 'sprint' else None
+                    # 修复：Session5通常是正赛时间，不管是conventional还是sprint格式
+                    # 只有testing格式的Session5才是None
+                    session5_date = handle_session_date(row.get('Session5DateUtc')) if 'Session5DateUtc' in row and pd.notna(row.get('Session5DateUtc')) else None
                     race_time = handle_session_date(row.get('EventDate')) # 使用 EventDate 作为比赛时间
                     
                 else: # ergast
@@ -389,7 +391,7 @@ class UnifiedSyncService:
                     race_date = pd.to_datetime(row['raceDate']).date() if 'raceDate' in row else pd.to_datetime(row['date']).date()
                     race_time = pd.to_datetime(f"{row['raceDate']}T{row['raceTime']}") if 'raceTime' in row and row['raceTime'] else None
                     
-                    fp1_date, fp2_date, fp3_date, qualifying_date, sprint_date = None, None, None, None, None
+                    fp1_date, fp2_date, fp3_date, qualifying_date, session5_date = None, None, None, None, None
 
                     # 查找赛道，并将其激活
                     circuit = self.db.query(Circuit).filter(Circuit.circuit_id == circuit_id).first()
@@ -419,7 +421,7 @@ class UnifiedSyncService:
                     existing_race.session2_date = fp2_date
                     existing_race.session3_date = fp3_date
                     existing_race.session4_date = qualifying_date
-                    existing_race.session5_date = sprint_date
+                    existing_race.session5_date = session5_date
                     existing_race.is_sprint = 'sprint' in row.get('EventFormat', '') if source == 'fastf1' else False
                     races.append(existing_race)
                 else:
@@ -438,7 +440,7 @@ class UnifiedSyncService:
                         session2_date=fp2_date,
                         session3_date=fp3_date,
                         session4_date=qualifying_date,
-                        session5_date=sprint_date,
+                        session5_date=session5_date,
                         is_sprint='sprint' in row.get('EventFormat', '') if source == 'fastf1' else False
                     )
                     self.db.add(new_race)
