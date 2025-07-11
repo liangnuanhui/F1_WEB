@@ -6,6 +6,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from .base import BaseModelSchema
+from .circuit import CircuitResponse
 
 
 class RaceBase(BaseModel):
@@ -62,6 +63,7 @@ class RaceResponse(RaceBase, BaseModelSchema):
     season_name: Optional[str] = Field(default=None, description="赛季名称")
     circuit_name: Optional[str] = Field(default=None, description="赛道名称")
     circuit_country: Optional[str] = Field(default=None, description="赛道国家")
+    circuit: Optional[CircuitResponse] = Field(default=None, description="完整赛道信息")
 
 
 class RaceListResponse(BaseModel):

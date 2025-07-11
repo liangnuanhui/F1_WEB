@@ -182,6 +182,29 @@ async def get_race(
             "season_name": race.season.name if race.season else None,
             "circuit_name": race.circuit.circuit_name if race.circuit else None,
             "circuit_country": race.circuit.country if race.circuit else None,
+            # 包含完整的circuit对象
+            "circuit": {
+                "circuit_id": race.circuit.circuit_id,
+                "circuit_url": race.circuit.circuit_url,
+                "circuit_name": race.circuit.circuit_name,
+                "lat": race.circuit.lat,
+                "long": race.circuit.long,
+                "locality": race.circuit.locality,
+                "country": race.circuit.country,
+                "length": race.circuit.length,
+                "corners": race.circuit.corners,
+                "lap_record": race.circuit.lap_record,
+                "lap_record_driver": race.circuit.lap_record_driver,
+                "lap_record_year": race.circuit.lap_record_year,
+                "first_grand_prix": race.circuit.first_grand_prix,
+                "typical_lap_count": race.circuit.typical_lap_count,
+                "race_distance": race.circuit.race_distance,
+                "circuit_layout_image_url": race.circuit.circuit_layout_image_url,
+                "circuit_layout_image_path": race.circuit.circuit_layout_image_path,
+                "description": race.circuit.description,
+                "characteristics": race.circuit.characteristics,
+                "is_active": race.circuit.is_active,
+            } if race.circuit else None,
         }
         
         return ApiResponse(

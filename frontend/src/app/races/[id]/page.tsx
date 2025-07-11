@@ -284,7 +284,7 @@ const SessionCard: React.FC<SessionCardProps> = ({
   );
 
   return (
-    <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           {isCompleted && <CheckerFlag />}
@@ -410,10 +410,13 @@ export default function RaceDetailPage({
   ]; // 显示所有5个session，即使某些没有具体日期
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: "rgb(247, 244, 241)" }}
+    >
       {/* 头部横幅 */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="container mx-auto p-4 pt-8">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-8">
             {/* 左侧：比赛信息 */}
             <div className="flex-1">
@@ -467,12 +470,12 @@ export default function RaceDetailPage({
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 主要内容 */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Schedule 标题部分 */}
-        <div className="mb-8">
+        {/* 主要内容 */}
+        {/* Schedule 卡片 */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          {/* 分割线 */}
+          <div className="border-t-4 border-red-600 mb-6"></div>
           <div className="flex items-center justify-between mb-6">
             {/* 左侧：标题和Add calendar按钮 */}
             <div className="flex items-center gap-4">
@@ -518,20 +521,189 @@ export default function RaceDetailPage({
                 : `${currentTimezone} (Track time)`}
             </span>
           </div>
+
+          {/* Session 卡片列表 */}
+          <div className="space-y-4">
+            {sessions.map((session, index) => (
+              <SessionCard
+                key={index}
+                sessionName={session.name}
+                sessionDate={session.date}
+                isCompleted={isPastRace}
+                timezone={currentTimezone}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Session 卡片列表 */}
-        <div className="space-y-4">
-          {sessions.map((session, index) => (
-            <SessionCard
-              key={index}
-              sessionName={session.name}
-              sessionDate={session.date}
-              isCompleted={isPastRace}
-              timezone={currentTimezone}
-            />
-          ))}
-        </div>
+        {/* 赛道信息部分 */}
+        {race.circuit && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+            {/* CIRCUIT 标题 */}
+            <div className="mb-8">
+              <div className="border-t-4 border-red-600 mb-4"></div>
+              <h2 className="text-4xl font-black text-black mb-2">CIRCUIT</h2>
+            </div>
+
+            {/* 赛道信息内容 */}
+            <div className="overflow-hidden">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* 左侧：赛道布局图 */}
+                <div className="flex justify-center items-center">
+                  {race.circuit.circuit_layout_image_path ||
+                  race.circuit.circuit_layout_image_url ? (
+                    <div className="relative w-full max-w-md">
+                      <Image
+                        src={
+                          race.circuit.circuit_layout_image_path
+                            ? race.circuit.circuit_layout_image_path.replace(
+                                "static/",
+                                "/"
+                              )
+                            : race.circuit.circuit_layout_image_url || ""
+                        }
+                        alt={`${race.circuit.circuit_name} Layout`}
+                        width={400}
+                        height={300}
+                        className="w-full h-auto rounded-lg"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full max-w-md h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <span className="text-gray-500">暂无赛道布局图</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 右侧：赛道数据 */}
+                <div className="space-y-6">
+                  {/* Circuit Length */}
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-600 mb-1">
+                      Circuit Length
+                    </h3>
+                    <p className="text-4xl font-black text-black">
+                      {race.circuit.length
+                        ? `${(race.circuit.length / 1000).toFixed(3)}km`
+                        : "-"}
+                    </p>
+                  </div>
+
+                  {/* 数据网格 */}
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* First Grand Prix */}
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-600 mb-1">
+                        First Grand Prix
+                      </h3>
+                      <p className="text-3xl font-black text-black">
+                        {race.circuit.first_grand_prix || "-"}
+                      </p>
+                    </div>
+
+                    {/* Number of Laps */}
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-600 mb-1">
+                        Number of Laps
+                      </h3>
+                      <p className="text-3xl font-black text-black">
+                        {race.circuit.typical_lap_count || "-"}
+                      </p>
+                    </div>
+
+                    {/* Fastest lap time */}
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-600 mb-1">
+                        Fastest lap time
+                      </h3>
+                      <p className="text-3xl font-black text-black">
+                        {race.circuit.lap_record || "-"}
+                      </p>
+                      {race.circuit.lap_record_driver &&
+                        race.circuit.lap_record_year && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {race.circuit.lap_record_driver} (
+                            {race.circuit.lap_record_year})
+                          </p>
+                        )}
+                    </div>
+
+                    {/* Race Distance */}
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-600 mb-1">
+                        Race Distance
+                      </h3>
+                      <p className="text-3xl font-black text-black">
+                        {race.circuit.race_distance
+                          ? `${race.circuit.race_distance.toFixed(2)}km`
+                          : "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ABOUT 部分 */}
+        {race.circuit && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="border-t-4 border-red-600 mb-4"></div>
+            <div className="flex items-center justify-between">
+              <h2 className="text-4xl font-black text-black">ABOUT</h2>
+              {race.circuit.circuit_url && (
+                <a
+                  href={race.circuit.circuit_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  <span>Learn more</span>
+                  <svg
+                    className="ml-2 w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
+                  </svg>
+                </a>
+              )}
+            </div>
+
+            {/* 赛道描述 */}
+            {race.circuit.description && (
+              <div className="mt-6 border border-gray-200 rounded-lg p-6">
+                <p className="text-gray-700 leading-relaxed">
+                  {race.circuit.description}
+                </p>
+              </div>
+            )}
+
+            {/* 赛道特点 */}
+            {race.circuit.characteristics && (
+              <div className="mt-4 border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-black mb-2">
+                  Track Characteristics
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  {race.circuit.characteristics}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

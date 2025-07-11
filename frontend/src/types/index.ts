@@ -41,6 +41,12 @@ export interface Circuit {
   lap_record?: string;
   lap_record_driver?: string;
   lap_record_year?: number;
+  // F1官网新增字段
+  first_grand_prix?: number;
+  typical_lap_count?: number;
+  race_distance?: number;
+  circuit_layout_image_url?: string;
+  circuit_layout_image_path?: string;
   description?: string;
   characteristics?: string;
   is_active: boolean;
