@@ -305,7 +305,7 @@ export default function HomePage() {
         {/* 页面标题和选项卡 */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-black tracking-wider mb-8">
-            2025 SEASON
+            2025 FORMULA 1
           </h1>
           <div className="flex justify-center">
             <div className="flex items-center p-1 bg-zinc-100 rounded-lg">
@@ -336,7 +336,7 @@ export default function HomePage() {
             onClick={() =>
               (window.location.href = `/standings?tab=${activeTab}`)
             }
-            className="inline-flex items-center px-6 py-3 bg-zinc-800 text-white font-bold rounded-md hover:bg-zinc-700 transition-colors"
+            className="inline-flex items-center px-6 py-3 bg-zinc-800 text-white font-bold rounded-md hover:bg-zinc-700 transition-colors cursor-pointer"
           >
             Show all
             <svg
