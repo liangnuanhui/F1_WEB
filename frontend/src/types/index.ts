@@ -233,3 +233,19 @@ export interface SortOptions {
   field: string;
   direction: "asc" | "desc";
 }
+
+// === 组合类型定义 ===
+
+// 合并的车手类型 - 包含积分榜和车手详情
+export type MergedDriver = DriverStanding & Driver;
+
+// 合并的车队类型 - 包含积分榜和车队详情
+export type MergedConstructor = ConstructorStanding & Constructor;
+
+// 增强的车手类型 - 用于车手卡片组件
+export type EnhancedDriver = DriverStanding & Partial<Driver>;
+
+// 增强的车队类型 - 用于车队卡片组件
+export type EnhancedConstructor = ConstructorStanding & {
+  drivers: MergedDriver[];
+};

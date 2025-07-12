@@ -1,174 +1,58 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { standingsApi, constructorsApi } from "@/lib/api";
-import { getTeamColor } from "@/lib/team-colors";
-import { Constructor, ConstructorStanding, DriverStanding } from "@/types";
-import Image from "next/image";
-import { ChevronRight } from "lucide-react";
-import { teamLogoMap } from "@/lib/team-logo-map";
-import { availableAvatarSet } from "@/lib/available-avatars";
-
-// Helper to format driver names for avatar lookup
-const formatAvatarName = (driverName: string) => {
-  // Normalize to handle special characters (e.g., ü -> u) and replace spaces with underscores.
-  const normalizedName = driverName
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-  return normalizedName.replace(/ /g, "_");
-};
-
-// Helper to format driver names for display (bold surname)
-const formatDriverDisplayName = (driverName: string) => {
-  const parts = driverName.split(" ");
-  if (parts.length > 1) {
-    const firstName = parts.slice(0, -1).join(" ");
-    const lastName = parts[parts.length - 1];
-    return (
-      <>
-        {firstName} <span className="font-bold">{lastName.toUpperCase()}</span>
-      </>
-    );
-  }
-  return <span className="font-bold">{driverName.toUpperCase()}</span>;
-};
-
-const TeamCard = ({
-  constructor,
-  drivers,
-  priority = false,
-}: {
-  constructor: ConstructorStanding;
-  drivers: DriverStanding[];
-  priority?: boolean;
-}) => {
-  const color = getTeamColor(constructor.constructor_id);
-  const logoFilename = teamLogoMap[constructor.constructor_id] || null;
-  const logoUrl = logoFilename ? `/team_logos/${logoFilename}.svg` : null;
-
-  const cardStyle = {
-    background: `linear-gradient(135deg, ${color} 40%, rgba(0,0,0,0.5) 100%)`,
-    color: "#fff",
-  };
-
-  const handleCardClick = () => {
-    if (constructor.constructor_url) {
-      window.open(constructor.constructor_url, "_blank");
-    }
-  };
-
-  return (
-    <div
-      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl transition-transform duration-300 hover:scale-105"
-      style={cardStyle}
-      onClick={handleCardClick}
-    >
-      <div className="relative z-10 p-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-3xl font-bold mb-2">
-              {constructor.constructor_name}
-            </h2>
-            <div className="flex space-x-4">
-              {drivers.map((driver) => {
-                const avatarName = formatAvatarName(driver.driver_name);
-                const hasAvatar = availableAvatarSet.has(avatarName);
-                const avatarUrl = hasAvatar
-                  ? `/driver_avatar/${avatarName}.png`
-                  : `/driver_avatar/default.svg`;
-
-                return (
-                  <div
-                    key={driver.driver_id}
-                    className="flex items-center space-x-2"
-                  >
-                    <div
-                      className="rounded-full w-8 h-8 flex-shrink-0"
-                      style={{ backgroundColor: color }}
-                    >
-                      <Image
-                        src={avatarUrl}
-                        alt={driver.driver_name}
-                        width={32}
-                        height={32}
-                        className="rounded-full"
-                      />
-                    </div>
-                    <p className="text-sm tracking-wide">
-                      {formatDriverDisplayName(driver.driver_name)}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          {logoUrl && (
-            <div className="bg-white/20 rounded-full p-2">
-              <Image
-                src={logoUrl}
-                alt={`${constructor.constructor_name} logo`}
-                width={24}
-                height={24}
-                className="opacity-80"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="relative mt-4 px-6 pb-4">
-        <Image
-          src={`/2025_constructor_car_photo/${constructor.constructor_id}.png`}
-          alt={`${constructor.constructor_name} car`}
-          width={450}
-          height={225}
-          className="w-full h-auto transform-gpu opacity-90 transition-transform duration-500 group-hover:scale-110"
-          priority={priority}
-        />
-      </div>
-
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-black/30 p-2 opacity-0 transition-opacity group-hover:opacity-100">
-        <ChevronRight className="h-6 w-6" />
-      </div>
-
-      <div className="absolute inset-0 bg-black/10 opacity-50 group-hover:opacity-0 transition-opacity duration-300"></div>
-    </div>
-  );
-};
+import {
+  Constructor,
+  ConstructorStanding,
+  DriverStanding,
+  Driver,
+  MergedDriver,
+} from "@/types";
+import { TeamCard } from "@/components/TeamCard";
+import {
+  useDriverStandings,
+  useConstructorStandings,
+  useDrivers,
+  useConstructors,
+} from "@/hooks";
 
 export default function ConstructorPage() {
   const year = 2025;
 
+  // 使用统一的hooks
   const {
-    data: constructorStandings,
+    standings: constructorStandings,
     isLoading: isLoadingConstructors,
     error: errorConstructors,
-  } = useQuery({
-    queryKey: ["constructorStandings", year],
-    queryFn: () => standingsApi.getConstructorStandings({ year }),
-  });
+  } = useConstructorStandings({ year });
 
   const {
-    data: driverStandings,
+    standings: driverStandings,
     isLoading: isLoadingDrivers,
     error: errorDrivers,
-  } = useQuery({
-    queryKey: ["driverStandings", year],
-    queryFn: () => standingsApi.getDriverStandings({ year }),
-  });
+  } = useDriverStandings({ year });
 
   const {
-    data: constructors,
+    constructors,
     isLoading: isLoadingConstructorsData,
     error: errorConstructorsData,
-  } = useQuery({
-    queryKey: ["constructors"],
-    queryFn: () => constructorsApi.getConstructors(),
-  });
+  } = useConstructors();
+
+  const {
+    drivers: driversData,
+    isLoading: isLoadingDriversData,
+    error: errorDriversData,
+  } = useDrivers({ size: 30 });
 
   const isLoading =
-    isLoadingConstructors || isLoadingDrivers || isLoadingConstructorsData;
-  const error = errorConstructors || errorDrivers || errorConstructorsData;
+    isLoadingConstructors ||
+    isLoadingDrivers ||
+    isLoadingConstructorsData ||
+    isLoadingDriversData;
+  const error =
+    errorConstructors ||
+    errorDrivers ||
+    errorConstructorsData ||
+    errorDriversData;
 
   if (isLoading) {
     return (
@@ -189,15 +73,38 @@ export default function ConstructorPage() {
     );
   }
 
-  const constructorMap = constructors?.data.reduce(
-    (acc, constructor) => {
+  const constructorMap = constructors?.reduce(
+    (acc: Record<string, Constructor>, constructor: Constructor) => {
       acc[constructor.constructor_id] = constructor;
       return acc;
     },
     {} as Record<string, Constructor>
   );
 
-  const driversByConstructor = driverStandings?.data.reduce(
+  // 创建车手数据映射
+  const driversMap =
+    driversData?.reduce(
+      (acc: Record<string, Driver>, driver: Driver) => {
+        acc[driver.driver_id] = driver;
+        return acc;
+      },
+      {} as Record<string, Driver>
+    ) ?? {};
+
+  // 合并车手积分榜数据和完整车手数据
+  const mergedDrivers = driverStandings
+    ?.map((standing: DriverStanding) => {
+      const driverDetails = driversMap[standing.driver_id];
+      return {
+        ...standing,
+        ...driverDetails,
+      };
+    })
+    .filter(
+      (driver: any) => driver.driver_id && driver.forename
+    ) as MergedDriver[];
+
+  const driversByConstructor = mergedDrivers.reduce(
     (acc, driver) => {
       if (driver.constructor_id) {
         if (!acc[driver.constructor_id]) {
@@ -214,11 +121,11 @@ export default function ConstructorPage() {
       }
       return acc;
     },
-    {} as Record<string, DriverStanding[]>
+    {} as Record<string, MergedDriver[]>
   );
 
-  const mergedConstructorStandings = constructorStandings?.data.map(
-    (standing) => ({
+  const mergedConstructorStandings = constructorStandings?.map(
+    (standing: ConstructorStanding) => ({
       ...standing,
       constructor_url:
         constructorMap?.[standing.constructor_id]?.constructor_url || null,
@@ -236,7 +143,7 @@ export default function ConstructorPage() {
 
       {mergedConstructorStandings && mergedConstructorStandings.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {mergedConstructorStandings.map((constructor, index) => (
+          {mergedConstructorStandings.map((constructor: any, index: number) => (
             <TeamCard
               key={constructor.constructor_id}
               constructor={constructor}
