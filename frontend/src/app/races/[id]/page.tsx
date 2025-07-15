@@ -249,8 +249,7 @@ const SessionCard: React.FC<SessionCardProps> = ({
   // 从UTC转换到目标时区
   const { date, time } = convertToTimezone(
     sessionDate,
-    timezone,
-    "UTC" // 原始数据始终是UTC
+    timezone
   );
 
   return (

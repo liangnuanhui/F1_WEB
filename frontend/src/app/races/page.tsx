@@ -10,16 +10,6 @@ import Image from "next/image";
 import React from "react";
 import { useRouter } from "next/navigation";
 
-// 只显示月和日
-function formatMonthDayRange(start?: string, end?: string) {
-  if (!start) return "-";
-  const startDate = new Date(start);
-  const endDate = end ? new Date(end) : startDate;
-  const month = startDate.getMonth() + 1;
-  const startDay = startDate.getDate();
-  const endDay = endDate.getDate();
-  return `${month}月${startDay}${endDay !== startDay ? `-${endDay}` : ""}日`;
-}
 
 // 修正版：保证服务端和客户端一致的日期解析
 function parseDateToUTC(dateStr?: string) {
@@ -156,7 +146,7 @@ const RaceResultCard = React.memo(function RaceResultCard({
       }[]> = await axios.get(
         `/api/v1/races/${race.id}/podium`
       );
-      return res.data.data;
+      return res.data;
     },
     staleTime: 60 * 1000,
   });
@@ -228,7 +218,7 @@ const RaceResultCard = React.memo(function RaceResultCard({
                   {/* 头像 - 精细调整 */}
                   <div className="w-6 h-6 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
                     {p.driver_name && p.driver_name !== "-" ? (
-                      <img
+                      <Image
                         src={`/driver_avatar/${p.driver_name
                           .replace(/ /g, "_")
                           .replace(/Ü/g, "u")
@@ -244,7 +234,6 @@ const RaceResultCard = React.memo(function RaceResultCard({
                         height={24}
                         className="object-cover w-full h-full rounded-full"
                         style={{ objectPosition: "center" }}
-                        loading="lazy"
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
                           img.style.display = "none";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Driver, Constructor } from "@/types";
+import { DriverStanding, ConstructorStanding } from "@/types";
 
 import { useState } from "react";
 import Image from "next/image";
@@ -57,11 +57,11 @@ function DriverCard({
   position,
   className,
 }: {
-  driver: Driver;
+  driver: DriverStanding;
   position: number;
   className?: string;
 }) {
-  const teamColor = getTeamColor(driver.constructor_id);
+  const teamColor = getTeamColor(driver.constructor_id || '');
 
   // 解析车手姓名，假设格式是 "Forename Surname"
   const nameParts = driver.driver_name.split(" ");
@@ -130,7 +130,7 @@ function ConstructorCard({
   className,
   drivers,
 }: {
-  constructor: Constructor;
+  constructor: ConstructorStanding;
   position: number;
   className?: string;
   drivers?: string[];
