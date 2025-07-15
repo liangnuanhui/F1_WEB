@@ -11,7 +11,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-# lib/
+# # Python lib directory (not frontend lib)
+/backend/lib/
 lib64/
 # Allow frontend lib directory
 !frontend/src/lib/
@@ -109,7 +110,8 @@ dist
 
 # Gatsby files
 .cache/
-public
+# Note: Gatsby public, not Next.js public
+# public
 
 # Storybook build outputs
 .out
@@ -229,7 +231,8 @@ dist
 
 # Gatsby files
 .cache/
-public
+# Note: Gatsby public, not Next.js public
+# public
 
 # Storybook build outputs
 .out
@@ -259,7 +262,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Python lib directory (not frontend lib)
+/backend/lib/
 lib64/
 parts/
 sdist/
