@@ -1,10 +1,11 @@
 services:
-  # 主Web服务
+  # 主Web服务 - 免费版
   - type: web
     name: f1-web-api
     env: python
+    plan: free
     buildCommand: "cd backend && pip install -r requirements.txt"
-    startCommand: "cd backend && bash start.sh web"
+    startCommand: "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -20,54 +21,17 @@ services:
       - key: DEBUG
         value: false
       - key: PYTHONPATH
-        value: /opt/render/project/src/backend
+        value: $(pwd)
 
-  # Celery Worker服务
-  - type: worker
-    name: f1-web-worker
-    env: python
-    buildCommand: "cd backend && pip install -r requirements.txt"
-    startCommand: "cd backend && bash start.sh worker"
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: f1-web-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: f1-web-redis
-          property: connectionString
-      - key: PYTHONPATH
-        value: /opt/render/project/src/backend
-
-  # Celery Beat调度器
-  - type: worker
-    name: f1-web-scheduler
-    env: python
-    buildCommand: "cd backend && pip install -r requirements.txt"
-    startCommand: "cd backend && bash start.sh scheduler"
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: f1-web-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: f1-web-redis
-          property: connectionString
-      - key: PYTHONPATH
-        value: /opt/render/project/src/backend
-
-  # Redis缓存服务
+  # Redis缓存服务 - 免费版
   - type: redis
     name: f1-web-redis
+    plan: free
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
-    plan: starter
 
 databases:
   - name: f1-web-db
     databaseName: f1_web
     user: f1_user
+    plan: free

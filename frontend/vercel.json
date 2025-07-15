@@ -9,10 +9,16 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/"
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://f1-web-api.onrender.com"
+    "NEXT_PUBLIC_API_URL": "https://f1-web-api.onrender.com",
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "pages/api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
   }
 }

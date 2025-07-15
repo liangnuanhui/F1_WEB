@@ -15,6 +15,7 @@ from .endpoints import (
     scheduler,  # 新增调度器端点
     post_race_sync,  # 比赛后数据同步端点
     auto_sync,  # 完全自动化同步端点
+    manual_sync,  # 手动数据同步端点
 )
 
 api_router = APIRouter()
@@ -29,4 +30,5 @@ api_router.include_router(races.router, prefix="/races", tags=["races"])
 api_router.include_router(constructors.router, prefix="/constructors", tags=["constructors"])
 api_router.include_router(scheduler.router, prefix="/scheduler", tags=["scheduler"])  # 新增
 api_router.include_router(post_race_sync.router, prefix="/post-race-sync", tags=["post-race-sync"])  # 比赛后同步
-api_router.include_router(auto_sync.router, prefix="/auto-sync", tags=["auto-sync"])  # 完全自动化同步 
+api_router.include_router(auto_sync.router, prefix="/auto-sync", tags=["auto-sync"])  # 完全自动化同步
+api_router.include_router(manual_sync.router, prefix="/manual", tags=["manual-sync"])  # 手动数据同步 
