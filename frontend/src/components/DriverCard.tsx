@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { getTeamColor } from "@/lib/team-colors";
 import { CountryFlag } from "@/components/CountryFlag";
-import { formatNameForImage, splitDriverName } from "@/lib/formatters";
+import { formatNameForImage, splitDriverName, mapConstructorIdForDriverNumber, fixDriverNameForImage, getDriverNumberForImage } from "@/lib/formatters";
 import { MergedDriver } from "@/types";
 
 interface DriverCardProps {
@@ -17,7 +17,15 @@ export const DriverCard = ({ driver, priority = false }: DriverCardProps) => {
   };
 
   const driverPhoto = formatNameForImage(driver.driver_name);
-  const driverNumberPath = `/driver_number/2025_${driver.constructor_id}_${formatNameForImage(driver.driver_name).toLowerCase()}_${driver.number || 0}.avif`;
+  
+  // 使用正确的车队名称映射和车手名称修复
+  const mappedConstructorId = mapConstructorIdForDriverNumber(driver.constructor_id || "");
+  const fixedDriverName = fixDriverNameForImage(driver.driver_name);
+  
+  // 使用正确的号码映射
+  const correctNumber = getDriverNumberForImage(driver.driver_name, driver.number || 0);
+  
+  const driverNumberPath = `/driver_number/2025_${mappedConstructorId}_${fixedDriverName}_${correctNumber}.avif`;
 
   const { firstName, lastName } = splitDriverName(driver.driver_name);
 
@@ -58,10 +66,8 @@ export const DriverCard = ({ driver, priority = false }: DriverCardProps) => {
           <p className="mt-1 text-sm font-light text-white/80">
             {driver.constructor_name}
           </p>
-        </div>
-        <div className="flex items-end justify-between">
           {driver.nationality && (
-            <div className="h-8 w-8 overflow-hidden rounded-full">
+            <div className="h-8 w-8 overflow-hidden rounded-full mt-2">
               <CountryFlag
                 nationality={driver.nationality}
                 className="h-full w-full object-cover"
@@ -69,16 +75,23 @@ export const DriverCard = ({ driver, priority = false }: DriverCardProps) => {
             </div>
           )}
           {driver.number && (
-            <div className="relative h-12 w-20">
+            <div className="relative h-12 w-20 mt-2">
               <Image
                 src={driverNumberPath}
                 alt={`${driver.driver_name} number`}
                 fill
                 sizes="(max-width: 768px) 10vw, (max-width: 1200px) 5vw, 80px"
                 style={{ objectFit: "contain" }}
+                onError={(e) => {
+                  // 如果图片加载失败，隐藏图片元素
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
               />
             </div>
           )}
+        </div>
+        <div className="flex flex-col items-end justify-end">
         </div>
       </div>
       <div className="absolute -bottom-8 -right-4 h-60 w-60 z-20">
