@@ -60,12 +60,12 @@ services:
       - key: PYTHONPATH
         value: /opt/render/project/src/backend
 
+  # Redis缓存服务
+  - type: redis
+    name: f1-web-redis
+    maxmemoryPolicy: allkeys-lru
+
 databases:
   - name: f1-web-db
     databaseName: f1_web
     user: f1_user
-
-services:
-  - type: redis
-    name: f1-web-redis
-    maxmemoryPolicy: allkeys-lru
