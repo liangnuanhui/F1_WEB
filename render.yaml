@@ -64,6 +64,8 @@ services:
   - type: redis
     name: f1-web-redis
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+    plan: starter
 
 databases:
   - name: f1-web-db
