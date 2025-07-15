@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     
     # 安全配置
     secret_key: str = Field(
-        default="your-secret-key-here-change-in-production",
+        default="dev-secret-key-change-in-production",
         description="密钥"
     )
     algorithm: str = Field(default="HS256", description="加密算法")

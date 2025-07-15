@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { driversApi } from "@/lib/api";
-import { Driver } from "@/types";
 
 interface UseDriversOptions {
   page?: number;

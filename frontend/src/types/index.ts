@@ -228,7 +228,7 @@ export interface NavItem {
 export interface ChartData {
   name: string;
   value: number;
-  [key: string]: any;
+  [key: string]: string | number | boolean;
 }
 
 // 筛选器类型
@@ -237,7 +237,7 @@ export interface FilterOptions {
   circuit?: string;
   driver?: string;
   constructor?: string;
-  [key: string]: any;
+  [key: string]: string | number | undefined;
 }
 
 // 排序选项类型

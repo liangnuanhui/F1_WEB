@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.models.circuit import Circuit
 from app.schemas.circuit import CircuitResponse, CircuitListResponse
-from app.services.circuit_sync_service import sync_circuits_main
+from app.services.circuit_sync_service_v2 import sync_circuits_main
 import logging
 
 logger = logging.getLogger(__name__)

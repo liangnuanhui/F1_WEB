@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { constructorsApi } from "@/lib/api";
-import { Constructor } from "@/types";
 
 interface UseConstructorsOptions {
   page?: number;

@@ -93,26 +93,38 @@ export const TeamCard = ({
                         aria-label={`查看 ${driver.driver_name} 的维基百科页面`}
                       >
                         {(() => {
-                          const { firstName, lastName } = formatDriverDisplayName(driver.driver_name);
+                          const { firstName, lastName } =
+                            formatDriverDisplayName(driver.driver_name);
                           return firstName ? (
                             <>
-                              {firstName} <span className="font-bold">{lastName.toUpperCase()}</span>
+                              {firstName}{" "}
+                              <span className="font-bold">
+                                {lastName.toUpperCase()}
+                              </span>
                             </>
                           ) : (
-                            <span className="font-bold">{lastName.toUpperCase()}</span>
+                            <span className="font-bold">
+                              {lastName.toUpperCase()}
+                            </span>
                           );
                         })()}
                       </button>
                     ) : (
                       <p className="text-sm tracking-wide">
                         {(() => {
-                          const { firstName, lastName } = formatDriverDisplayName(driver.driver_name);
+                          const { firstName, lastName } =
+                            formatDriverDisplayName(driver.driver_name);
                           return firstName ? (
                             <>
-                              {firstName} <span className="font-bold">{lastName.toUpperCase()}</span>
+                              {firstName}{" "}
+                              <span className="font-bold">
+                                {lastName.toUpperCase()}
+                              </span>
                             </>
                           ) : (
-                            <span className="font-bold">{lastName.toUpperCase()}</span>
+                            <span className="font-bold">
+                              {lastName.toUpperCase()}
+                            </span>
                           );
                         })()}
                       </p>
@@ -127,8 +139,8 @@ export const TeamCard = ({
               <Image
                 src={logoUrl}
                 alt={`${constructor.constructor_name} logo`}
-                width={24}
-                height={24}
+                width={32}
+                height={32}
                 className="opacity-80"
               />
             </div>

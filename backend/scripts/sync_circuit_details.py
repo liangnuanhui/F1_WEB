@@ -17,7 +17,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.database import get_db
-from app.services.circuit_sync_service import sync_circuits_main
+from app.services.circuit_sync_service_v2 import sync_circuits_main
 from app.models.circuit import Circuit
 import logging
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { Driver, Constructor } from "@/types";
+
 import { useState } from "react";
 import Image from "next/image";
 import { useDriverStandings } from "@/hooks/use-driver-standings";
@@ -7,7 +9,6 @@ import { useConstructorStandings } from "@/hooks/use-constructor-standings";
 import { getTeamColor } from "@/lib/team-colors";
 import { getTeamLogoFilename } from "@/lib/team-logo-map";
 import { CountryFlag } from "@/components/CountryFlag";
-import { availableAvatarSet } from "@/lib/available-avatars";
 
 // 工具函数，从全名生成头像路径
 const getAvatarPath = (fullName: string) => {
@@ -56,7 +57,7 @@ function DriverCard({
   position,
   className,
 }: {
-  driver: any;
+  driver: Driver;
   position: number;
   className?: string;
 }) {
@@ -129,7 +130,7 @@ function ConstructorCard({
   className,
   drivers,
 }: {
-  constructor: any;
+  constructor: Constructor;
   position: number;
   className?: string;
   drivers?: string[];

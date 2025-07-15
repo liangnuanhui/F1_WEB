@@ -66,7 +66,7 @@ const initialState: AppState = {
 // 创建应用 Store
 export const useAppStore = create<AppStore>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
       ...initialState,
 
       setCurrentSeason: (season) => set({ currentSeason: season }),

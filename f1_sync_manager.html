@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1比赛数据同步管理面板</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #e10600;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #e10600;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #c50500;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏎️ F1比赛数据同步管理面板</h1>
+        
+        <div class="form-group">
+            <label for="apiUrl">API服务器地址:</label>
+            <input type="url" id="apiUrl" placeholder="https://your-app.onrender.com" value="http://localhost:8000">
+        </div>
+        
+        <div class="form-group">
+            <label for="seasonYear">赛季年份:</label>
+            <input type="number" id="seasonYear" value="2025" min="2020" max="2030">
+        </div>
+        
+        <div class="form-group">
+            <label for="raceRound">比赛轮次:</label>
+            <input type="number" id="raceRound" value="1" min="1" max="24">
+        </div>
+        
+        <div class="button-group">
+            <button onclick="scheduleRace()">📅 安排同步计划</button>
+            <button onclick="checkStatus()">📊 检查同步状态</button>
+            <button onclick="syncNow()">⚡ 立即手动同步</button>
+            <button onclick="batchSchedule()">📦 批量安排(7天)</button>
+            <button onclick="getStats()">📈 查看统计信息</button>
+        </div>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        function getApiUrl() {
+            return document.getElementById('apiUrl').value.replace(/\/$/, '');
+        }
+        
+        function getSeasonYear() {
+            return parseInt(document.getElementById('seasonYear').value);
+        }
+        
+        function getRaceRound() {
+            return parseInt(document.getElementById('raceRound').value);
+        }
+        
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+        
+        async function apiRequest(url, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(url, options);
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${result.message || '请求失败'}`);
+                }
+                
+                return result;
+            } catch (error) {
+                throw new Error(`请求失败: ${error.message}`);
+            }
+        }
+        
+        async function scheduleRace() {
+            const apiUrl = getApiUrl();
+            const year = getSeasonYear();
+            const round = getRaceRound();
+            
+            try {
+                const url = `${apiUrl}/api/v1/post-race-sync/${year}/${round}/schedule`;
+                const result = await apiRequest(url, 'POST', {
+                    retry_intervals: [6, 12, 24]
+                });
+                
+                showResult(`✅ 成功安排同步计划
+比赛: ${result.race_name || '未知'}
+赛季: ${year} 第${round}轮
+重试间隔: 6, 12, 24 小时`, 'success');
+            } catch (error) {
+                showResult(`❌ 安排同步计划失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkStatus() {
+            const apiUrl = getApiUrl();
+            const year = getSeasonYear();
+            const round = getRaceRound();
+            
+            try {
+                const url = `${apiUrl}/api/v1/post-race-sync/${year}/${round}/schedule`;
+                const result = await apiRequest(url);
+                const schedule = result.schedule;
+                
+                let message = `📊 ${year} 赛季第 ${round} 轮同步状态:
+比赛名称: ${schedule.race_name || '未知'}
+完成状态: ${schedule.is_completed ? '✅ 已完成' : '⏳ 进行中'}
+成功率: ${(schedule.success_rate * 100).toFixed(1)}%
+
+尝试详情:`;
+                
+                schedule.attempts.forEach(attempt => {
+                    const statusIcon = {
+                        'pending': '⏳',
+                        'running': '🏃',
+                        'success': '✅',
+                        'partial': '⚠️',
+                        'failed': '❌'
+                    }[attempt.status] || '❓';
+                    
+                    message += `\n  尝试 ${attempt.attempt_number}: ${statusIcon} ${attempt.status}`;
+                });
+                
+                showResult(message, 'info');
+            } catch (error) {
+                showResult(`❌ 检查状态失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function syncNow() {
+            const apiUrl = getApiUrl();
+            const year = getSeasonYear();
+            const round = getRaceRound();
+            
+            try {
+                const url = `${apiUrl}/api/v1/post-race-sync/${year}/${round}/execute/1`;
+                await apiRequest(url, 'POST');
+                
+                showResult(`✅ 已触发 ${year} 赛季第 ${round} 轮的立即同步
+请稍等几分钟后检查同步状态`, 'success');
+            } catch (error) {
+                showResult(`❌ 手动同步失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function batchSchedule() {
+            const apiUrl = getApiUrl();
+            const year = getSeasonYear();
+            
+            try {
+                const url = `${apiUrl}/api/v1/post-race-sync/batch-schedule?season_year=${year}&days_ahead=7`;
+                const result = await apiRequest(url, 'POST');
+                
+                showResult(`✅ 成功批量安排了 ${result.scheduled_count || 0} 场比赛的同步计划
+时间范围: 未来 7 天`, 'success');
+            } catch (error) {
+                showResult(`❌ 批量安排失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function getStats() {
+            const apiUrl = getApiUrl();
+            const year = getSeasonYear();
+            
+            try {
+                const url = `${apiUrl}/api/v1/post-race-sync/stats?season_year=${year}`;
+                const stats = await apiRequest(url);
+                
+                const message = `📈 ${year} 赛季同步统计:
+总计划数: ${stats.total_schedules || 0}
+已完成: ${stats.completed_schedules || 0}
+进行中: ${stats.pending_schedules || 0}
+失败: ${stats.failed_schedules || 0}
+整体成功率: ${((stats.overall_success_rate || 0) * 100).toFixed(1)}%`;
+                
+                showResult(message, 'info');
+            } catch (error) {
+                showResult(`❌ 获取统计失败: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

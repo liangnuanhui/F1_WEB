@@ -1,9 +1,10 @@
 "use client";
 
 import { useRace } from "@/hooks/use-races";
+import { Race } from "@/types";
 import { formatDate, getCountryName } from "@/lib/utils";
 import { CountryFlag } from "@/components/CountryFlag";
-import { Calendar, MapPin, Clock, Flag } from "lucide-react";
+import { Calendar, MapPin, Clock } from "lucide-react";
 import Image from "next/image";
 import React, { useState } from "react";
 
@@ -71,7 +72,7 @@ const LOCATION_TIMEZONE_MAP: Record<string, string> = {
 };
 
 // 获取比赛所在地时区
-const getTrackTimezone = (race: any): string => {
+const getTrackTimezone = (race: Race): string => {
   // 尝试从多个字段获取地理信息
   const country = race.country || "";
   const location = race.location || "";
@@ -120,8 +121,7 @@ const getTrackTimezone = (race: any): string => {
 // 简化的时区转换函数
 const convertToTimezone = (
   dateStr: string | undefined,
-  targetTimezone: string,
-  sourceTimezone: string
+  targetTimezone: string
 ): { date: string; time: string } => {
   if (!dateStr) return { date: "-", time: "-" };
 
@@ -191,36 +191,6 @@ const convertToTimezone = (
   }
 };
 
-// 简化的时区偏移映射 - 考虑夏令时
-const getTimezoneOffsetHours = (timezone: string): number => {
-  // 这个函数现在不再需要，因为我们使用浏览器原生的时区转换
-  const now = new Date();
-  const month = now.getMonth() + 1; // 1-12
-
-  const offsets: Record<string, { winter: number; summer: number }> = {
-    "Europe/London": { winter: 0, summer: 1 }, // UTC+0/+1
-    "Asia/Shanghai": { winter: 8, summer: 8 }, // UTC+8 (无夏令时)
-    "America/New_York": { winter: -5, summer: -4 }, // UTC-5/-4
-    "America/Los_Angeles": { winter: -8, summer: -7 }, // UTC-8/-7
-    "Asia/Tokyo": { winter: 9, summer: 9 }, // UTC+9 (无夏令时)
-    "Asia/Bahrain": { winter: 3, summer: 3 }, // UTC+3
-    "Asia/Riyadh": { winter: 3, summer: 3 }, // UTC+3
-    "Australia/Melbourne": { winter: 10, summer: 11 }, // UTC+10/+11
-    "Asia/Baku": { winter: 4, summer: 4 }, // UTC+4
-    "Asia/Singapore": { winter: 8, summer: 8 }, // UTC+8
-    "America/Mexico_City": { winter: -6, summer: -5 }, // UTC-6/-5
-    "America/Sao_Paulo": { winter: -3, summer: -3 }, // UTC-3
-    "Asia/Qatar": { winter: 3, summer: 3 }, // UTC+3
-    "Asia/Dubai": { winter: 4, summer: 4 }, // UTC+4
-  };
-
-  const tzConfig = offsets[timezone];
-  if (!tzConfig) return 0;
-
-  // 简化的夏令时判断 (3月-10月为夏季)
-  const isSummer = month >= 3 && month <= 10;
-  return isSummer ? tzConfig.summer : tzConfig.winter;
-};
 
 // 方格旗组件
 const CheckerFlag = () => (

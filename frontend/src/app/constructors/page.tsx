@@ -1,5 +1,7 @@
 "use client";
 
+import { Constructor } from "@/types";
+
 import {
   Constructor,
   ConstructorStanding,
@@ -143,7 +145,7 @@ export default function ConstructorPage() {
 
       {mergedConstructorStandings && mergedConstructorStandings.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {mergedConstructorStandings.map((constructor: any, index: number) => (
+          {mergedConstructorStandings.map((constructor: Constructor, index: number) => (
             <TeamCard
               key={constructor.constructor_id}
               constructor={constructor}

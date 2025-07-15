@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import ReactCountryFlag from "react-country-flag";
 import { countryCodeMap } from "@/lib/country-code-map";
 import { nationalityToFlagCode } from "@/lib/nationality-to-flag-code";
@@ -12,7 +13,7 @@ export function CountryFlag({
   country?: string;
   nationality?: string;
   className?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }) {
   // 方案一：根据国籍，使用 react-country-flag 库 (用于车手)
   if (nationality) {
@@ -40,10 +41,12 @@ export function CountryFlag({
     if (!countryCode) return null; // or a placeholder
 
     return (
-      <img
+      <Image
         src={`/country_flags/${countryCode.toUpperCase()}.svg`}
         alt={`${country} flag`}
         title={country}
+        width={20}
+        height={15}
         {...props}
       />
     );

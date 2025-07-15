@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1自动同步一键设置</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #e10600 0%, #ff4444 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #e10600;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #e10600;
+        }
+        button {
+            background: linear-gradient(135deg, #e10600 0%, #c50500 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(225, 6, 0, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        .loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+        .highlight {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .highlight strong {
+            color: #e10600;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #e10600;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏎️ F1自动同步一键设置</h1>
+        
+        <div class="highlight">
+            <strong>📢 重要说明：</strong><br>
+            运行一次后，系统就会自动处理所有比赛的数据更新！<br>
+            你再也不需要手动操作了！
+        </div>
+        
+        <div class="form-group">
+            <label for="apiUrl">🌐 你的API服务器地址:</label>
+            <input type="url" id="apiUrl" placeholder="https://your-app.onrender.com" required>
+            <small style="color: #666; margin-top: 5px; display: block;">
+                替换为你在Render上的实际应用URL
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label for="seasonYear">📅 赛季年份:</label>
+            <input type="number" id="seasonYear" value="2025" min="2020" max="2030" required>
+        </div>
+        
+        <button onclick="setupAutoSync()" id="setupBtn">
+            🚀 一键设置完全自动化同步
+        </button>
+        
+        <button onclick="checkStatus()" id="statusBtn" style="background: #6c757d; margin-top: 10px;">
+            📊 检查当前状态
+        </button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        function getApiUrl() {
+            return document.getElementById('apiUrl').value.replace(/\/$/, '');
+        }
+        
+        function getSeasonYear() {
+            return parseInt(document.getElementById('seasonYear').value);
+        }
+        
+        function showResult(message, type = 'loading') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+        
+        function setButtonsDisabled(disabled) {
+            document.getElementById('setupBtn').disabled = disabled;
+            document.getElementById('statusBtn').disabled = disabled;
+        }
+        
+        async function setupAutoSync() {
+            const apiUrl = getApiUrl();
+            const year = getSeasonYear();
+            
+            if (!apiUrl) {
+                showResult('❌ 请输入API服务器地址', 'error');
+                return;
+            }
+            
+            setButtonsDisabled(true);
+            showResult('🔄 正在设置完全自动化同步，请稍候...', 'loading');
+            
+            try {
+                const url = `${apiUrl}/api/v1/auto-sync/setup-season/${year}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showResult(`🎉 设置成功！
+
+✅ 已为 ${year} 赛季设置完全自动化同步
+✅ 系统会在每场比赛结束后的 6, 12, 24, 30, 36, 42, 48 小时自动尝试同步
+✅ 一旦获取到新数据就停止重试
+✅ 每天自动检查新比赛并安排同步
+
+🎯 从现在开始，你完全不需要再手动操作！
+   系统会自动更新：
+   • 车手积分榜
+   • 车队积分榜  
+   • 比赛结果
+   • 排位赛结果
+   • 冲刺赛结果
+
+任务ID: ${result.data.task_id}
+状态: ${result.data.status}`, 'success');
+                } else {
+                    showResult(`❌ 设置失败: ${result.message || '未知错误'}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ 请求失败: ${error.message}
+                
+请检查：
+1. API地址是否正确
+2. 服务器是否正在运行
+3. 网络连接是否正常`, 'error');
+            } finally {
+                setButtonsDisabled(false);
+            }
+        }
+        
+        async function checkStatus() {
+            const apiUrl = getApiUrl();
+            const year = getSeasonYear();
+            
+            if (!apiUrl) {
+                showResult('❌ 请输入API服务器地址', 'error');
+                return;
+            }
+            
+            setButtonsDisabled(true);
+            showResult('🔍 正在检查状态...', 'loading');
+            
+            try {
+                const url = `${apiUrl}/api/v1/auto-sync/status/${year}`;
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    const data = result.data;
+                    showResult(`📊 ${year} 赛季自动同步状态:
+
+📈 总体统计:
+   • 总比赛数: ${data.total_races}
+   • 已安排自动同步: ${data.scheduled_races}
+   • 待执行任务: ${data.pending_tasks}  
+   • 已完成任务: ${data.completed_tasks}
+
+🏎️ 比赛详情:
+${data.race_details.map(race => 
+    `   第${race.round}轮 ${race.name}: ${race.status === 'scheduled' ? '✅ 已安排' : '⚠️ 未安排'}`
+).join('\n')}
+
+${data.scheduled_races === data.total_races ? 
+    '🎉 所有比赛都已安排自动同步！' : 
+    '⚠️ 部分比赛未安排，建议运行一键设置'}`, 'success');
+                } else {
+                    showResult(`❌ 检查状态失败: ${result.message || '未知错误'}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ 请求失败: ${error.message}`, 'error');
+            } finally {
+                setButtonsDisabled(false);
+            }
+        }
+        
+        // 页面加载时尝试检测API地址
+        window.onload = function() {
+            // 如果在localhost环境，使用默认值
+            if (window.location.hostname === 'localhost') {
+                document.getElementById('apiUrl').value = 'http://localhost:8000';
+            }
+        };
+    </script>
+</body>
+</html>

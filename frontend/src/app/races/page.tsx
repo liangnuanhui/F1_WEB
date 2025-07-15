@@ -1,8 +1,7 @@
 "use client";
 
 import { useRaces } from "@/hooks/use-races";
-import { formatDate, formatRaceName, getCountryName } from "@/lib/utils";
-import { Calendar } from "lucide-react";
+import { getCountryName } from "@/lib/utils";
 import { Race } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import axios, { type AxiosResponse } from "axios";
@@ -10,16 +9,6 @@ import { CountryFlag } from "@/components/CountryFlag";
 import Image from "next/image";
 import React from "react";
 import { useRouter } from "next/navigation";
-
-function formatF1DateRange(dateStr?: string) {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  const day = date.getDate();
-  const month = date.toLocaleString("en-US", { month: "short" });
-  // 取三天范围（F1 官网通常为周五-周日）
-  const start = day - 2 > 0 ? day - 2 : day;
-  return `${start} - ${day} ${month}`;
-}
 
 // 只显示月和日
 function formatMonthDayRange(start?: string, end?: string) {
@@ -159,7 +148,12 @@ const RaceResultCard = React.memo(function RaceResultCard({
         result_time: string;
       }[]
     > => {
-      const res: AxiosResponse<any> = await axios.get(
+      const res: AxiosResponse<{
+        position: number;
+        driver_code: string;
+        driver_name: string;
+        result_time: string;
+      }[]> = await axios.get(
         `/api/v1/races/${race.id}/podium`
       );
       return res.data.data;
@@ -215,7 +209,7 @@ const RaceResultCard = React.memo(function RaceResultCard({
                 className="w-full sm:flex-1 rounded-lg bg-zinc-100 animate-pulse flex items-center gap-2 px-3 py-2 h-[44px]"
               />
             ))
-          : podium.map((p, idx) => {
+          : podium.map((p) => {
               return (
                 <div
                   key={p.position}
@@ -285,11 +279,9 @@ const RaceResultCard = React.memo(function RaceResultCard({
 
 const RaceCard = React.memo(function RaceCard({
   race,
-  wide = false,
   bgImageUrl,
 }: {
   race: Race | null;
-  wide?: boolean;
   bgImageUrl: string;
 }) {
   const router = useRouter();
@@ -608,7 +600,7 @@ export default function RacesPage() {
               <span className="mb-3 ml-2 text-xl lg:text-2xl font-bold text-zinc-800">
                 Previous
               </span>
-              <RaceCard race={prevRace} wide={false} bgImageUrl={bgUrls[0]} />
+              <RaceCard race={prevRace} bgImageUrl={bgUrls[0]} />
             </div>
             
             {/* Next - 在移动设备上占据全宽 */}
@@ -616,7 +608,7 @@ export default function RacesPage() {
               <span className="mb-3 ml-2 text-xl lg:text-2xl font-bold text-zinc-800">
                 Next Race
               </span>
-              <RaceCard race={nextRace} wide={true} bgImageUrl={bgUrls[1]} />
+              <RaceCard race={nextRace} bgImageUrl={bgUrls[1]} />
             </div>
             
             {/* Upcoming - 在移动设备上显示为水平滚动 */}
@@ -629,7 +621,6 @@ export default function RacesPage() {
                   <div key={race.id} className="flex-none w-72 snap-start">
                     <RaceCard
                       race={race}
-                      wide={false}
                       bgImageUrl={bgUrls[index + 2]}
                     />
                   </div>
@@ -645,7 +636,6 @@ export default function RacesPage() {
               {upcoming[0] && (
                 <RaceCard
                   race={upcoming[0]}
-                  wide={false}
                   bgImageUrl={bgUrls[2]}
                 />
               )}
@@ -659,7 +649,6 @@ export default function RacesPage() {
               {upcoming[1] && (
                 <RaceCard
                   race={upcoming[1]}
-                  wide={false}
                   bgImageUrl={bgUrls[3]}
                 />
               )}
@@ -669,7 +658,7 @@ export default function RacesPage() {
       </div>
       {raceArr.length > 0 ? (
         <div className="max-w-[95vw] lg:max-w-[90vw] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 px-2">
-          {raceArr.map((race: Race, idx: number) => {
+          {raceArr.map((race: Race) => {
             // 判断比赛状态
             const now = new Date();
             const eventDate = race.event_date
