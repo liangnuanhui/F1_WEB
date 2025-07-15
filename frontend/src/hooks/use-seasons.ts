@@ -23,6 +23,6 @@ export function useSeason(id: number) {
 export function useActiveSeason() {
   return useQuery({
     queryKey: queryKeys.seasons.active(),
-    queryFn: () => seasonsApi.getActive(),
+    queryFn: () => seasonsApi.getCurrent(),
   });
 }

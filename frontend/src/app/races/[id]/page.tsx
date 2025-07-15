@@ -320,7 +320,7 @@ export default function RaceDetailPage({
   const [timezoneMode, setTimezoneMode] = useState<"my" | "track">("my");
 
   // 获取race数据（在所有条件返回之前确保hooks调用顺序一致）
-  const race = raceResponse?.data;
+  const race = raceResponse;
 
   // 确定要使用的时区（在条件返回之前）
   const currentTimezone =
@@ -361,7 +361,7 @@ export default function RaceDetailPage({
     );
   }
 
-  if (error || !raceResponse?.success) {
+  if (error || !raceResponse) {
     return (
       <div className="text-center py-8 bg-background min-h-[60vh]">
         <p className="text-red-500">加载比赛详情失败，请稍后重试</p>

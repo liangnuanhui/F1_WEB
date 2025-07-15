@@ -14,12 +14,12 @@ export const useConstructorStandings = (options: UseConstructorStandingsOptions 
   // 如果未提供年份或赛季ID，获取活跃赛季
   const { data: season, isLoading: seasonLoading } = useQuery({
     queryKey: ["active-season"],
-    queryFn: () => seasonsApi.getActive(),
+    queryFn: () => seasonsApi.getCurrent(),
     enabled: enabled && !year && !seasonId,
   });
 
-  const finalYear = year || season?.data?.year;
-  const finalSeasonId = seasonId || season?.data?.id;
+  const finalYear = year || season?.year;
+  const finalSeasonId = seasonId || season?.id;
 
   const {
     data: standings,
@@ -29,12 +29,12 @@ export const useConstructorStandings = (options: UseConstructorStandingsOptions 
     queryKey: ["constructor-standings", finalYear, finalSeasonId],
     queryFn: () =>
       finalYear
-        ? standingsApi.getConstructorStandings({ year: finalYear })
+        ? standingsApi.getConstructorStandings(finalYear)
         : Promise.resolve(null),
     enabled: enabled && !!finalYear,
   });
 
-  const standingsData = standings?.data as ConstructorStanding[] | undefined;
+  const standingsData = standings as ConstructorStanding[] | undefined;
 
   return {
     standings: standingsData,

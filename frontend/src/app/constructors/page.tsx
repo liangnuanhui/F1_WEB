@@ -79,7 +79,7 @@ export default function ConstructorPage() {
       return acc;
     },
     {} as Record<string, Constructor>
-  );
+  ) ?? {};
 
   // 创建车手数据映射
   const driversMap =
@@ -92,7 +92,7 @@ export default function ConstructorPage() {
     ) ?? {};
 
   // 合并车手积分榜数据和完整车手数据
-  const mergedDrivers = driverStandings
+  const mergedDrivers = (driverStandings
     ?.map((standing: DriverStanding) => {
       const driverDetails = driversMap[standing.driver_id];
       return {
@@ -101,8 +101,8 @@ export default function ConstructorPage() {
       };
     })
     .filter(
-      (driver: any) => driver.driver_id && driver.forename
-    ) as MergedDriver[];
+      (driver: MergedDriver) => driver.driver_id && driver.forename
+    ) ?? []) as MergedDriver[];
 
   const driversByConstructor = mergedDrivers.reduce(
     (acc, driver) => {

@@ -182,55 +182,57 @@ const RaceResultCard = React.memo(function RaceResultCard({
         ];
   return (
     <div
-      className="relative rounded-2xl bg-white p-6 shadow flex flex-col justify-between sm:h-64 h-[320px] min-h-[220px] cursor-pointer hover:shadow-lg transition-shadow"
+      className="relative rounded-2xl bg-white p-4 sm:p-6 shadow flex flex-col justify-between h-64 sm:h-72 lg:h-64 min-h-[220px] cursor-pointer hover:shadow-lg transition-shadow"
       onClick={() => router.push(`/races/${race.id}`)}
     >
-      {/* 头部信息 */}
-      <div className="flex justify-between items-start">
-        <div>
+      {/* 头部信息 - 宽屏优化 */}
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1 min-w-0 pr-3">
           <p className="text-xs text-zinc-400 font-semibold tracking-wider mb-1">
             {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
           </p>
-          <div className="flex items-center gap-3">
-            <CountryFlag country={displayName} className="w-8 h-6 rounded" />
-            <h2 className="text-3xl font-extrabold text-zinc-900 hover:underline hover:decoration-zinc-900 hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
+          <div className="flex items-center gap-3 mb-1">
+            <CountryFlag country={displayName} className="w-8 h-6 rounded flex-shrink-0" />
+            <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 hover:underline hover:decoration-zinc-900 hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer truncate">
               {displayName}
             </h2>
           </div>
-          <p className="text-sm text-zinc-500 font-medium mt-1 min-h-[2.5rem] line-clamp-2">
+          <p className="text-sm text-zinc-500 font-medium line-clamp-2 max-h-8 overflow-hidden">
             {race.official_event_name}
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-zinc-500 font-semibold text-xs whitespace-nowrap flex-row bg-[#F7F4F1]">
+        <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-zinc-500 font-semibold text-xs whitespace-nowrap bg-[#F7F4F1] flex-shrink-0">
           <CheckerFlag />
           <span>{dateStr}</span>
         </div>
       </div>
-      {/* 前三名 */}
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 w-full overflow-hidden">
+      {/* 前三名 - 宽屏优化 */}
+      <div className="flex flex-col sm:flex-row gap-2 w-full">
         {isLoading
           ? [1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="w-full sm:flex-1 rounded-xl bg-zinc-100 animate-pulse flex items-center gap-2 px-2 py-2 h-[48px]"
+                className="w-full sm:flex-1 rounded-lg bg-zinc-100 animate-pulse flex items-center gap-2 px-3 py-2 h-[44px]"
               />
             ))
           : podium.map((p, idx) => {
               return (
                 <div
                   key={p.position}
-                  className="w-full sm:flex-1 rounded-xl bg-[#F7F4F1] flex items-center gap-2 p-2 min-w-0 overflow-hidden"
+                  className="w-full sm:flex-1 rounded-lg bg-[#F7F4F1] flex items-center gap-1.5 px-2.5 py-2 min-w-0 hover:bg-[#F0EDE8] transition-colors h-[44px]"
                 >
-                  <div className="flex flex-col items-center justify-center w-6 text-zinc-500">
-                    <span className="text-lg font-bold leading-none ">
+                  {/* 排名显示 - 精细调整 */}
+                  <div className="flex flex-col items-center justify-center w-5 text-zinc-500 flex-shrink-0">
+                    <span className="text-sm font-bold leading-none">
                       {p.position}
                     </span>
-                    <span className="text-[10px] font-semibold leading-none">
+                    <span className="text-[8px] font-semibold leading-none">
                       {["ST", "ND", "RD"][p.position - 1] || "TH"}
                     </span>
                   </div>
-                  {/* 头像占位 */}
-                  <div className="w-7 h-7 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
+                  
+                  {/* 头像 - 精细调整 */}
+                  <div className="w-6 h-6 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
                     {p.driver_name && p.driver_name !== "-" ? (
                       <img
                         src={`/driver_avatar/${p.driver_name
@@ -244,33 +246,33 @@ const RaceResultCard = React.memo(function RaceResultCard({
                           .replace(/É/g, "e")
                           .replace(/é/g, "e")}.png`}
                         alt={p.driver_name}
-                        width={30}
-                        height={30}
-                        className="object-cover w-7 h-7 rounded-full"
+                        width={24}
+                        height={24}
+                        className="object-cover w-full h-full rounded-full"
                         style={{ objectPosition: "center" }}
                         loading="lazy"
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
                           img.style.display = "none";
                           if (img.parentElement) {
-                            img.parentElement.textContent = p.driver_code
-                              ? p.driver_code[0]
-                              : "-";
+                            img.parentElement.innerHTML = `<span class="text-xs font-bold text-zinc-600">${p.driver_code ? p.driver_code.slice(0, 2) : "-"}</span>`;
                           }
                         }}
                       />
-                    ) : p.driver_code ? (
-                      p.driver_code[0]
                     ) : (
-                      "-"
+                      <span className="text-xs font-bold text-zinc-600">
+                        {p.driver_code ? p.driver_code.slice(0, 2) : "-"}
+                      </span>
                     )}
                   </div>
-                  <div className="flex flex-col ml-1 min-w-0 overflow-hidden">
-                    <span className="font-bold text-[13px] text-zinc-900 truncate">
-                      {p.driver_code}
+                  
+                  {/* 车手信息 - 精细优化 */}
+                  <div className="flex flex-col flex-1 min-w-0 overflow-hidden justify-center">
+                    <span className="font-bold text-xs text-zinc-900 truncate leading-none mb-0.5">
+                      {p.driver_code || "-"}
                     </span>
-                    <span className="text-zinc-500 font-mono font-medium text-[8px] leading-tight">
-                      {p.result_time}
+                    <span className="text-zinc-500 font-mono font-medium text-[9px] leading-none truncate">
+                      {p.result_time || "-"}
                     </span>
                   </div>
                 </div>
@@ -303,7 +305,7 @@ const RaceCard = React.memo(function RaceCard({
 
   return (
     <div
-      className={`relative rounded-xl shadow-md overflow-hidden flex flex-col justify-end text-white transition-all duration-200 h-80 w-full bg-cover bg-center cursor-pointer hover:shadow-xl`}
+      className={`relative rounded-xl shadow-md overflow-hidden flex flex-col justify-end text-white transition-all duration-200 h-64 sm:h-72 lg:h-80 w-full bg-cover bg-center cursor-pointer hover:shadow-xl`}
       style={{ backgroundImage: `url('${bgImageUrl}')` }}
       onClick={() => router.push(`/races/${race.id}`)}
     >
@@ -311,13 +313,13 @@ const RaceCard = React.memo(function RaceCard({
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative z-10 p-6 flex flex-col h-full justify-between">
         <div>
-          <div className="text-xs font-bold tracking-widest mb-1">
+          <div className="text-xs sm:text-sm font-bold tracking-widest mb-1">
             ROUND {race.round_number}
           </div>
-          <div className="text-3xl font-extrabold hover:underline hover:decoration-white hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
+          <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold hover:underline hover:decoration-white hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
             {getCountryName(race)}
           </div>
-          <div className="text-lg font-bold my-2">
+          <div className="text-sm sm:text-base lg:text-lg font-bold my-2">
             {getRaceWeekendRange(race)}
           </div>
         </div>
@@ -364,7 +366,7 @@ const NextRaceCard = React.memo(function NextRaceCard({
   }
   return (
     <div
-      className="relative rounded-2xl bg-gradient-to-br from-[#FF1E00] to-[#B80000] p-6 shadow flex flex-col min-h-[220px] h-64 overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+      className="relative rounded-2xl bg-gradient-to-br from-[#FF1E00] to-[#B80000] p-4 sm:p-6 shadow flex flex-col min-h-[220px] h-64 sm:h-72 lg:h-64 overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
       onClick={() => router.push(`/races/${race.id}`)}
     >
       {/* 头部信息 */}
@@ -375,7 +377,7 @@ const NextRaceCard = React.memo(function NextRaceCard({
           </div>
           <div className="flex items-center gap-2 mb-2">
             <CountryFlag country={displayName} className="w-8 h-6 rounded" />
-            <span className="text-3xl font-extrabold text-white drop-shadow hover:underline hover:decoration-white hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
+            <span className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white drop-shadow hover:underline hover:decoration-white hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
               {displayName}
             </span>
           </div>
@@ -383,13 +385,13 @@ const NextRaceCard = React.memo(function NextRaceCard({
             {race.official_event_name}
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-white rounded-lg px-4 py-2 text-[#B80000] font-extrabold text-lg shadow cursor-pointer select-none whitespace-nowrap flex-row">
+        <div className="flex items-center gap-2 bg-white rounded-lg px-2 sm:px-4 py-2 text-[#B80000] font-extrabold text-sm sm:text-lg shadow cursor-pointer select-none whitespace-nowrap flex-row">
           NEXT RACE
           <span className="ml-1">&rarr;</span>
         </div>
       </div>
       {/* 左下角日期 */}
-      <div className="absolute left-6 bottom-6 text-3xl font-extrabold text-white drop-shadow">
+      <div className="absolute left-4 sm:left-6 bottom-4 sm:bottom-6 text-xl sm:text-2xl lg:text-3xl font-extrabold text-white drop-shadow">
         {dateStr}
       </div>
       {/* 右下角赛道图 */}
@@ -467,7 +469,7 @@ const UpcomingRaceCard = React.memo(function UpcomingRaceCard({
   }
   return (
     <div
-      className="relative rounded-2xl bg-white p-6 shadow flex flex-col justify-between min-h-[220px] h-64 cursor-pointer hover:shadow-lg transition-shadow"
+      className="relative rounded-2xl bg-white p-4 sm:p-6 shadow flex flex-col justify-between min-h-[220px] h-64 sm:h-72 lg:h-64 cursor-pointer hover:shadow-lg transition-shadow"
       onClick={() => router.push(`/races/${race.id}`)}
     >
       {/* 头部信息 */}
@@ -477,7 +479,7 @@ const UpcomingRaceCard = React.memo(function UpcomingRaceCard({
         </p>
         <div className="flex items-center gap-3">
           <CountryFlag country={displayName} className="w-8 h-6 rounded" />
-          <h2 className="text-3xl font-extrabold text-zinc-900 hover:underline hover:decoration-zinc-900 hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-zinc-900 hover:underline hover:decoration-zinc-900 hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
             {displayName}
           </h2>
         </div>
@@ -488,7 +490,7 @@ const UpcomingRaceCard = React.memo(function UpcomingRaceCard({
 
       {/* 底部信息 */}
       <div className="flex justify-between items-end">
-        <div className="text-2xl font-bold text-zinc-900">{dateStr}</div>
+        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-zinc-900">{dateStr}</div>
         <div className="opacity-90">
           {race.circuit_id ? (
             <CircuitImage
@@ -535,7 +537,7 @@ export default function RacesPage() {
   let prevRace: Race | null = null,
     nextRace: Race | null = null,
     upcoming: Race[] = [];
-  const raceArr = races?.data || [];
+  const raceArr = races || [];
   if (raceArr.length > 0) {
     const now = new Date();
     const sorted = [...raceArr].sort(
@@ -592,30 +594,51 @@ export default function RacesPage() {
   return (
     <div className="space-y-6 bg-background min-h-screen pb-10">
       <div className="relative w-screen ">
-        <div className="w-[90vw] mx-auto px-2 pt-6 pb-8">
+        <div className="w-[95vw] lg:w-[90vw] mx-auto px-2 pt-4 sm:pt-6 pb-6 sm:pb-8">
           {/* <div className="flex items-center space-x-2 justify-center mb-6">
             <img src="/calendar.png" alt="logo" className="h-10 w-10" />
             <span className="text-4xl font-extrabold tracking-tight">
               2025 赛历
             </span>
           </div> */}
-          <div className="flex flex-row gap-x-6">
-            {/* Previous */}
-            <div className="flex flex-col flex-[1_1_0%]">
-              <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
+          {/* 响应式顶部展示区域 */}
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+            {/* Previous - 在移动设备上隐藏或简化 */}
+            <div className="hidden lg:flex flex-col flex-[1_1_0%]">
+              <span className="mb-3 ml-2 text-xl lg:text-2xl font-bold text-zinc-800">
                 Previous
               </span>
               <RaceCard race={prevRace} wide={false} bgImageUrl={bgUrls[0]} />
             </div>
-            {/* Next */}
-            <div className="flex flex-col flex-[2_2_0%]">
-              <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
-                Next
+            
+            {/* Next - 在移动设备上占据全宽 */}
+            <div className="flex flex-col flex-1 lg:flex-[2_2_0%]">
+              <span className="mb-3 ml-2 text-xl lg:text-2xl font-bold text-zinc-800">
+                Next Race
               </span>
               <RaceCard race={nextRace} wide={true} bgImageUrl={bgUrls[1]} />
             </div>
-            {/* Upcoming1 */}
-            <div className="flex flex-col flex-[1_1_0%]">
+            
+            {/* Upcoming - 在移动设备上显示为水平滚动 */}
+            <div className="lg:hidden">
+              <span className="mb-3 ml-2 text-xl font-bold text-zinc-800">
+                Upcoming Races
+              </span>
+              <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
+                {upcoming.map((race, index) => (
+                  <div key={race.id} className="flex-none w-72 snap-start">
+                    <RaceCard
+                      race={race}
+                      wide={false}
+                      bgImageUrl={bgUrls[index + 2]}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Upcoming1 - 桌面版 */}
+            <div className="hidden lg:flex flex-col flex-[1_1_0%]">
               <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
                 {upcoming.length > 0 ? "Upcoming" : ""}
               </span>
@@ -627,8 +650,9 @@ export default function RacesPage() {
                 />
               )}
             </div>
-            {/* Upcoming2 */}
-            <div className="flex flex-col flex-[1_1_0%]">
+            
+            {/* Upcoming2 - 桌面版 */}
+            <div className="hidden lg:flex flex-col flex-[1_1_0%]">
               <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
                 &nbsp;
               </span>
@@ -644,8 +668,8 @@ export default function RacesPage() {
         </div>
       </div>
       {raceArr.length > 0 ? (
-        <div className="max-w-[90vw] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
-          {raceArr.map((race: Race, idx) => {
+        <div className="max-w-[95vw] lg:max-w-[90vw] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 px-2">
+          {raceArr.map((race: Race, idx: number) => {
             // 判断比赛状态
             const now = new Date();
             const eventDate = race.event_date
@@ -654,7 +678,7 @@ export default function RacesPage() {
             const isPast = eventDate && eventDate < now;
             // 下一场比赛判断
             const nextRace = raceArr.find(
-              (r) => new Date(r.event_date || "") >= now
+              (r: Race) => new Date(r.event_date || "") >= now
             );
             const isNext = nextRace && nextRace.id === race.id;
             // TESTING卡片始终用UpcomingRaceCard

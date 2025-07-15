@@ -2,10 +2,10 @@ import Image from "next/image";
 import { getTeamColor } from "@/lib/team-colors";
 import { CountryFlag } from "@/components/CountryFlag";
 import { formatNameForImage, splitDriverName } from "@/lib/formatters";
-import { EnhancedDriver } from "@/types";
+import { MergedDriver } from "@/types";
 
 interface DriverCardProps {
-  driver: EnhancedDriver;
+  driver: MergedDriver;
   priority?: boolean;
 }
 
@@ -17,7 +17,7 @@ export const DriverCard = ({ driver, priority = false }: DriverCardProps) => {
   };
 
   const driverPhoto = formatNameForImage(driver.driver_name);
-  const driverNumberPath = `/driver_number/2025_${driver.constructor_id}_${formatNameForImage(driver.driver_name).toLowerCase()}_${driver.driver_number}.avif`;
+  const driverNumberPath = `/driver_number/2025_${driver.constructor_id}_${formatNameForImage(driver.driver_name).toLowerCase()}_${driver.number || 0}.avif`;
 
   const { firstName, lastName } = splitDriverName(driver.driver_name);
 
@@ -68,7 +68,7 @@ export const DriverCard = ({ driver, priority = false }: DriverCardProps) => {
               />
             </div>
           )}
-          {driver.driver_number && (
+          {driver.number && (
             <div className="relative h-12 w-20">
               <Image
                 src={driverNumberPath}

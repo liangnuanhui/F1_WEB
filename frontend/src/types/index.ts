@@ -76,6 +76,11 @@ export interface Race {
   session4_date?: string;
   session5?: string;
   session5_date?: string;
+  // 后端返回的额外字段
+  season_name?: string;
+  circuit_name?: string;
+  circuit_country?: string;
+  // 关联对象
   season?: Season;
   circuit?: Circuit;
 }
@@ -89,11 +94,7 @@ export interface Driver {
   forename: string;
   surname: string;
   date_of_birth?: string;
-  nationality?: string;
-  id: string;
-  driver_number: number;
-  dob: string;
-  url: string;
+  nationality?: string | null;
 }
 
 // 车队类型 - 与数据库一致
@@ -102,6 +103,17 @@ export interface Constructor {
   constructor_url: string;
   name: string;
   nationality: string;
+  season_id?: number;
+  base?: string | null;
+  team_chief?: string | null;
+  technical_chief?: string | null;
+  power_unit?: string | null;
+  is_active?: boolean;
+  championships?: number;
+  wins?: number;
+  podiums?: number;
+  poles?: number;
+  fastest_laps?: number;
 }
 
 // 比赛结果类型 - 基于实际数据库模型

@@ -19,7 +19,7 @@ function formatMonthDay(dateStr?: string) {
 export function Header() {
   // 获取即将到来的比赛
   const { data: upcoming, isLoading } = useUpcomingRaces();
-  const nextRace = upcoming?.data?.[0];
+  const nextRace = upcoming?.[0];
   const pathname = usePathname();
 
   return (

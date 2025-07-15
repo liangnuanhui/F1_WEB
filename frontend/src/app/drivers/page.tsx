@@ -1,6 +1,8 @@
 "use client";
 
-import { Driver, DriverStanding, MergedDriver } from "@/types";
+import React, { useMemo } from "react";
+
+import { Driver, DriverStanding, ConstructorStanding, MergedDriver } from "@/types";
 import { DriverCard } from "@/components/DriverCard";
 import {
   useDriverStandings,
@@ -30,10 +32,62 @@ export default function DriversPage() {
     error: errorConstructors,
   } = useConstructorStandings({ year });
 
+  // 所有的 useMemo 必须在条件返回之前调用
+  const driversMap = useMemo(
+    () => driversData?.reduce(
+        (acc: Record<string, Driver>, driver: Driver) => {
+          acc[driver.driver_id] = driver;
+          return acc;
+        },
+        {} as Record<string, Driver>
+      ) ?? {},
+    [driversData]
+  );
+
+  const mergedDrivers = useMemo(
+    () => (driverStandingsData
+      ?.map((standing: DriverStanding) => {
+        const driverDetails = driversMap[standing.driver_id];
+        return {
+          ...standing,
+          ...driverDetails,
+        };
+      })
+      .filter(
+        (driver: MergedDriver) => driver.driver_id && driver.forename
+      ) as MergedDriver[]) ?? [],
+    [driverStandingsData, driversMap]
+  );
+
+  const orderedConstructorIds = useMemo(
+    () => constructorStandingsData?.map((c: ConstructorStanding) => c.constructor_id) ?? [],
+    [constructorStandingsData]
+  );
+
+  const sortedDrivers = useMemo(
+    () => mergedDrivers
+      .filter((driver) => driver.driver_id !== "doohan")
+      .sort((a, b) => {
+        const teamAIndex = orderedConstructorIds.indexOf(a.constructor_id!);
+        const teamBIndex = orderedConstructorIds.indexOf(b.constructor_id!);
+
+        if (teamAIndex === -1) return 1;
+        if (teamBIndex === -1) return -1;
+        if (teamAIndex !== teamBIndex) {
+          return teamAIndex - teamBIndex;
+        }
+
+        return (b.points ?? 0) - (a.points ?? 0);
+      }),
+    [mergedDrivers, orderedConstructorIds]
+  );
+
+  // 计算状态 - 在所有 hooks 调用之后
   const isLoading =
     isLoadingStandings || isLoadingDrivers || isLoadingConstructors;
   const error = errorStandings || errorDrivers || errorConstructors;
 
+  // 条件渲染 - 在所有 hooks 调用之后
   if (isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -53,45 +107,6 @@ export default function DriversPage() {
     );
   }
 
-  const driversMap =
-    driversData?.reduce(
-      (acc: Record<string, Driver>, driver: Driver) => {
-        acc[driver.driver_id] = driver;
-        return acc;
-      },
-      {} as Record<string, Driver>
-    ) ?? {};
-
-  const mergedDrivers = driverStandingsData
-    ?.map((standing: DriverStanding) => {
-      const driverDetails = driversMap[standing.driver_id];
-      return {
-        ...standing,
-        ...driverDetails,
-      };
-    })
-    .filter(
-      (driver: any) => driver.driver_id && driver.forename
-    ) as MergedDriver[];
-
-  const orderedConstructorIds =
-    constructorStandingsData?.map((c: any) => c.constructor_id) ?? [];
-
-  const sortedDrivers = mergedDrivers
-    .filter((driver) => driver.driver_id !== "doohan")
-    .sort((a, b) => {
-      const teamAIndex = orderedConstructorIds.indexOf(a.constructor_id!);
-      const teamBIndex = orderedConstructorIds.indexOf(b.constructor_id!);
-
-      if (teamAIndex === -1) return 1;
-      if (teamBIndex === -1) return -1;
-      if (teamAIndex !== teamBIndex) {
-        return teamAIndex - teamBIndex;
-      }
-
-      return (b.points ?? 0) - (a.points ?? 0);
-    });
-
   return (
     <div className="container mx-auto p-4">
       <div className="mb-8">
@@ -103,7 +118,7 @@ export default function DriversPage() {
         </p>
       </div>
       {sortedDrivers.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedDrivers.map((driver, index) => (
             <DriverCard
               key={driver.driver_id}

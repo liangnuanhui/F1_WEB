@@ -14,12 +14,12 @@ export const useDriverStandings = (options: UseDriverStandingsOptions = {}) => {
   // 如果未提供年份或赛季ID，获取活跃赛季
   const { data: season, isLoading: seasonLoading } = useQuery({
     queryKey: ["active-season"],
-    queryFn: () => seasonsApi.getActive(),
+    queryFn: () => seasonsApi.getCurrent(),
     enabled: enabled && !year && !seasonId,
   });
 
-  const finalYear = year || season?.data?.year;
-  const finalSeasonId = seasonId || season?.data?.id;
+  const finalYear = year || season?.year;
+  const finalSeasonId = seasonId || season?.id;
 
   const {
     data: standings,
@@ -29,14 +29,14 @@ export const useDriverStandings = (options: UseDriverStandingsOptions = {}) => {
     queryKey: ["driver-standings", finalYear, finalSeasonId],
     queryFn: () =>
       finalYear
-        ? standingsApi.getDriverStandings({ year: finalYear })
+        ? standingsApi.getDriverStandings(finalYear)
         : Promise.resolve(null),
     enabled: enabled && !!finalYear,
   });
 
   // 过滤掉 'doohan' 车手
-  const standingsData = standings?.data
-    ? (standings.data as DriverStanding[]).filter(
+  const standingsData = standings
+    ? (standings as DriverStanding[]).filter(
         (driver) => driver.driver_id !== "doohan"
       )
     : undefined;
