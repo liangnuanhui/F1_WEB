@@ -3,8 +3,8 @@ services:
   - type: web
     name: f1-web-api
     env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "bash start.sh web"
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && bash start.sh web"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -19,13 +19,15 @@ services:
         value: production
       - key: DEBUG
         value: false
+      - key: PYTHONPATH
+        value: /opt/render/project/src/backend
 
   # Celery Worker服务
   - type: worker
     name: f1-web-worker
     env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "bash start.sh worker"
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && bash start.sh worker"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -36,13 +38,15 @@ services:
           type: redis
           name: f1-web-redis
           property: connectionString
+      - key: PYTHONPATH
+        value: /opt/render/project/src/backend
 
   # Celery Beat调度器
   - type: worker
     name: f1-web-scheduler
     env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "bash start.sh scheduler"
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && bash start.sh scheduler"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -53,6 +57,8 @@ services:
           type: redis
           name: f1-web-redis
           property: connectionString
+      - key: PYTHONPATH
+        value: /opt/render/project/src/backend
 
 databases:
   - name: f1-web-db
