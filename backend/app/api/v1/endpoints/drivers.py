@@ -13,6 +13,23 @@ from app.schemas.base import ApiResponse
 router = APIRouter()
 
 
+def _serialize_driver(driver: Driver) -> dict:
+    """
+    将Driver对象序列化为字典
+    统一的数据序列化逻辑，避免重复代码
+    """
+    return {
+        "driver_id": driver.driver_id,
+        "number": driver.number,
+        "code": driver.code,
+        "driver_url": driver.driver_url,
+        "forename": driver.forename,
+        "surname": driver.surname,
+        "date_of_birth": driver.date_of_birth,
+        "nationality": driver.nationality,
+    }
+
+
 @router.get("/", response_model=DriverListPaginatedResponse)
 async def get_drivers(
     db: Session = Depends(get_db),
@@ -31,20 +48,9 @@ async def get_drivers(
         # 查询车手数据
         drivers = db.query(Driver).offset(offset).limit(size).all()
         
-        # 转换为响应格式
-        driver_list = []
-        for driver in drivers:
-            driver_data = {
-                "driver_id": driver.driver_id,
-                "number": driver.number,
-                "code": driver.code,
-                "driver_url": driver.driver_url,
-                "forename": driver.forename,
-                "surname": driver.surname,
-                "date_of_birth": driver.date_of_birth,
-                "nationality": driver.nationality,
-            }
-            driver_list.append(driver_data)
+        # 使用统一的序列化函数
+        driver_list = [_serialize_driver(driver) for driver in drivers]
+        
         pages = (total + size - 1) // size
         return {
             "data": driver_list,
@@ -73,19 +79,8 @@ async def search_drivers(
             (Driver.code.ilike(f"%{q}%"))
         ).limit(10).all()
         
-        driver_list = []
-        for driver in drivers:
-            driver_data = {
-                "driver_id": driver.driver_id,
-                "number": driver.number,
-                "code": driver.code,
-                "driver_url": driver.driver_url,
-                "forename": driver.forename,
-                "surname": driver.surname,
-                "date_of_birth": driver.date_of_birth,
-                "nationality": driver.nationality,
-            }
-            driver_list.append(driver_data)
+        # 使用统一的序列化函数
+        driver_list = [_serialize_driver(driver) for driver in drivers]
         
         return ApiResponse(
             success=True,
@@ -107,16 +102,8 @@ async def get_driver(driver_id: str, db: Session = Depends(get_db)):
         if not driver:
             raise HTTPException(status_code=404, detail="车手不存在")
         
-        driver_data = {
-            "driver_id": driver.driver_id,
-            "number": driver.number,
-            "code": driver.code,
-            "driver_url": driver.driver_url,
-            "forename": driver.forename,
-            "surname": driver.surname,
-            "date_of_birth": driver.date_of_birth,
-            "nationality": driver.nationality,
-        }
+        # 使用统一的序列化函数
+        driver_data = _serialize_driver(driver)
         
         return ApiResponse(
             success=True,

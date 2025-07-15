@@ -2,7 +2,10 @@
 Redis连接和缓存管理
 """
 import redis
+import structlog
 from .config import settings
+
+logger = structlog.get_logger()
 
 # 创建Redis连接池
 redis_pool = redis.ConnectionPool.from_url(
@@ -38,8 +41,8 @@ def init_redis():
     """
     try:
         redis_client.ping()
-        print("✅ Redis连接成功")
+        logger.info("Redis连接成功")
         return True
     except redis.ConnectionError as e:
-        print(f"❌ Redis连接失败: {e}")
+        logger.error("Redis连接失败", error=str(e))
         return False 

@@ -1,14 +1,22 @@
 """
 FastAPI 主应用
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from sqlalchemy.exc import SQLAlchemyError
 import structlog
 
 from .core.config import settings
 from .core.database import init_db
 from .core.redis import init_redis
+from .core.exceptions import (
+    BaseAPIException,
+    http_exception_handler,
+    base_api_exception_handler,
+    sqlalchemy_exception_handler,
+    general_exception_handler
+)
 
 # 导入数据模型以确保数据库表被创建
 from .models import Season, Circuit, Race, Driver, Constructor, Result
@@ -45,6 +53,12 @@ app = FastAPI(
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
 )
+
+# 注册异常处理器
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(BaseAPIException, base_api_exception_handler)
+app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 # 添加CORS中间件
 app.add_middleware(

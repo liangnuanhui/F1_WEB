@@ -74,22 +74,6 @@ export const DriverCard = ({ driver, priority = false }: DriverCardProps) => {
               />
             </div>
           )}
-          {driver.number && (
-            <div className="relative h-12 w-20 mt-2">
-              <Image
-                src={driverNumberPath}
-                alt={`${driver.driver_name} number`}
-                fill
-                sizes="(max-width: 768px) 10vw, (max-width: 1200px) 5vw, 80px"
-                style={{ objectFit: "contain" }}
-                onError={(e) => {
-                  // 如果图片加载失败，隐藏图片元素
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
-              />
-            </div>
-          )}
         </div>
         <div className="flex flex-col items-end justify-end">
         </div>
@@ -105,6 +89,25 @@ export const DriverCard = ({ driver, priority = false }: DriverCardProps) => {
           className="transition-transform duration-300 group-hover:scale-105"
         />
       </div>
+      {driver.number && (
+        <div className="absolute -bottom-4 right-32 h-40 w-40 z-10 flex items-center justify-center">
+          <Image
+            src={driverNumberPath}
+            alt={`${driver.driver_name} number`}
+            width={120}
+            height={120}
+            sizes="(max-width: 768px) 25vw, (max-width: 1200px) 15vw, 120px"
+            style={{ 
+              objectFit: "contain",
+              opacity: 0.3,
+              filter: "brightness(1.5) contrast(0.8)",
+              maxWidth: "120px",
+              maxHeight: "120px"
+            }}
+            className="transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+      )}
     </div>
   );
 };

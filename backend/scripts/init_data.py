@@ -5,6 +5,7 @@
 支持动态年份
 """
 
+import argparse
 import asyncio
 import logging
 import sys
@@ -38,10 +39,9 @@ def get_current_year():
     return datetime.now().year
 
 
-async def main():
+async def main(year_to_sync: int):
     """主函数"""
-    current_year = get_current_year()
-    logger.info(f"🚀 开始初始化F1数据 (当前年份: {current_year})...")
+    logger.info(f"🚀 开始初始化F1数据 (年份: {year_to_sync})...")
     start_time = time.time()
     
     try:
@@ -74,40 +74,38 @@ async def main():
         drivers = sync_service.sync_drivers()
         logger.info(f"✅ 车手数据同步完成，共 {len(drivers)} 个车手")
         
-        # 5. 同步比赛数据（当前赛季）
-        logger.info(f"5️⃣ 同步比赛数据 ({current_year}赛季)...")
-        races = sync_service.sync_races(current_year)
+        # 5. 同步比赛数据
+        logger.info(f"5️⃣ 同步比赛数据 ({year_to_sync}赛季)...")
+        races = sync_service.sync_races(year_to_sync)
         logger.info(f"✅ 比赛数据同步完成，共 {len(races)} 场比赛")
         
-        # 6. 同步积分榜数据（当前赛季）
-        logger.info(f"6️⃣ 同步积分榜数据 ({current_year}赛季)...")
-        if sync_service.sync_driver_standings(current_year):
+        # 6. 同步积分榜数据
+        logger.info(f"6️⃣ 同步积分榜数据 ({year_to_sync}赛季)...")
+        if sync_service.sync_driver_standings(year_to_sync):
             logger.info("✅ 车手积分榜同步完成")
         else:
             logger.warning("⚠️ 车手积分榜同步跳过")
         
-        if sync_service.sync_constructor_standings(current_year):
+        if sync_service.sync_constructor_standings(year_to_sync):
             logger.info("✅ 车队积分榜同步完成")
         else:
             logger.warning("⚠️ 车队积分榜同步跳过")
         
-        # 7. 同步比赛结果数据（前3轮）
-        logger.info(f"7️⃣ 同步比赛结果数据 ({current_year}赛季，前3轮)...")
-        for round_num in range(1, 4):
-            logger.info(f"   同步第 {round_num} 轮比赛结果...")
-            if sync_service.sync_race_results(current_year):
-                logger.info(f"   ✅ 第 {round_num} 轮比赛结果同步完成")
-            else:
-                logger.warning(f"   ⚠️ 第 {round_num} 轮比赛结果同步跳过")
-            
-            if sync_service.sync_qualifying_results(current_year):
-                logger.info(f"   ✅ 第 {round_num} 轮排位赛结果同步完成")
-            else:
-                logger.warning(f"   ⚠️ 第 {round_num} 轮排位赛结果同步跳过")
+        # 7. 同步比赛结果数据
+        logger.info(f"7️⃣ 同步比赛结果数据 ({year_to_sync}赛季)...")
+        if sync_service.sync_race_results(year_to_sync):
+            logger.info(f"   ✅ 比赛结果同步完成")
+        else:
+            logger.warning(f"   ⚠️ 比赛结果同步跳过")
         
-        # 8. 同步冲刺赛结果数据（当前赛季）
-        logger.info(f"8️⃣ 同步冲刺赛结果数据 ({current_year}赛季)...")
-        if sync_service.sync_sprint_results(current_year):
+        if sync_service.sync_qualifying_results(year_to_sync):
+            logger.info(f"   ✅ 排位赛结果同步完成")
+        else:
+            logger.warning(f"   ⚠️ 排位赛结果同步跳过")
+        
+        # 8. 同步冲刺赛结果数据
+        logger.info(f"8️⃣ 同步冲刺赛结果数据 ({year_to_sync}赛季)...")
+        if sync_service.sync_sprint_results(year_to_sync):
             logger.info("✅ 冲刺赛结果同步完成")
         else:
             logger.warning("⚠️ 冲刺赛结果同步跳过")
@@ -168,7 +166,10 @@ async def show_statistics(db: Session):
         seasons = db.query(Season).order_by(Season.year).all()
         logger.info("\n🏆 === 赛季信息 ===")
         for season in seasons:
-            logger.info(f"{season.year}: {season.name} {'(当前赛季)' if season.is_current else ''}")
+            is_current_str = ""
+            if season.is_active:
+                is_current_str = "(当前赛季)"
+            logger.info(f"{season.year}: {season.name} {is_current_str}")
         
         # 显示最近的比赛
         recent_races = db.query(Race).order_by(Race.event_date.desc()).limit(5).all()
@@ -180,19 +181,28 @@ async def show_statistics(db: Session):
         drivers = db.query(Driver).limit(10).all()
         logger.info("\n👥 === 车手信息 (前10名) ===")
         for driver in drivers:
-            logger.info(f"{driver.given_name} {driver.family_name} ({driver.driver_nationality}) - #{driver.driver_number}")
+            logger.info(f"{driver.forename} {driver.surname} ({driver.nationality}) - #{driver.driver_number}")
         
         # 显示车队信息
         constructors = db.query(Constructor).all()
         logger.info("\n🏎️ === 车队信息 ===")
         for constructor in constructors:
-            logger.info(f"{constructor.constructor_name} ({constructor.constructor_nationality})")
+            logger.info(f"{constructor.name} ({constructor.nationality})")
         
     except Exception as e:
         logger.error(f"显示统计信息时发生错误: {e}")
 
 
 if __name__ == "__main__":
-    success = asyncio.run(main())
+    parser = argparse.ArgumentParser(description="F1数据初始化脚本")
+    parser.add_argument(
+        "--year",
+        type=int,
+        default=get_current_year(),
+        help="指定要同步的赛季年份 (默认: 当前年份)",
+    )
+    args = parser.parse_args()
+
+    success = asyncio.run(main(args.year))
     if not success:
         sys.exit(1) 

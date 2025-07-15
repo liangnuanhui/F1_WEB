@@ -14,6 +14,7 @@ from app.models.season import Season  # 导入 Season 模型
 from app.models.driver_season import DriverSeason # 导入 DriverSeason 模型
 from app.schemas.standings import DriverStandingResponse, ConstructorStandingResponse, StandingHistoryResponse
 from app.schemas.base import ApiResponse
+from app.core.cache import redis_cache
 
 router = APIRouter()
 
@@ -45,7 +46,8 @@ def _get_season_id(db: Session, season_id: Optional[int], year: Optional[int]) -
 
 
 @router.get("/drivers", response_model=ApiResponse[List[DriverStandingResponse]])
-def get_driver_standings(
+@redis_cache(prefix="driver_standings", ttl=1800)  # 缓存30分钟
+async def get_driver_standings(
     db: Session = Depends(get_db),
     season_id: Optional[int] = Query(None, description="赛季ID (优先)"),
     year: Optional[int] = Query(None, description="赛季年份"),
@@ -109,7 +111,10 @@ def get_driver_standings(
 
         return ApiResponse(success=True, message="获取车手积分榜成功", data=result)
 
-    except HTTPException:
+    except HTTPException as e:
+        # 特殊处理 _get_season_id 抛出的 200 "错误"
+        if e.status_code == 200:
+            return ApiResponse(success=True, message=e.detail, data=[])
         raise
     except Exception as e:
         # For debugging purposes, you might want to log the error
@@ -121,7 +126,8 @@ def get_driver_standings(
 
 
 @router.get("/constructors", response_model=ApiResponse[List[ConstructorStandingResponse]])
-def get_constructor_standings(
+@redis_cache(prefix="constructor_standings", ttl=1800)  # 缓存30分钟
+async def get_constructor_standings(
     db: Session = Depends(get_db),
     season_id: Optional[int] = Query(None, description="赛季ID (优先)"),
     year: Optional[int] = Query(None, description="赛季年份"),
@@ -171,7 +177,8 @@ def get_constructor_standings(
 
 
 @router.get("/drivers/{driver_id}/history")
-def get_driver_standing_history(
+@redis_cache(prefix="driver_standings_history", ttl=3600)  # 缓存1小时
+async def get_driver_standing_history(
     driver_id: str,
     season: Optional[int] = Query(None, description="赛季年份（可选）"),
     limit: int = Query(20, ge=1, le=100, description="返回记录数量限制"),
@@ -197,7 +204,9 @@ def get_driver_standing_history(
             raise HTTPException(status_code=404, detail="车手不存在")
         
         # 构建查询
-        query = db.query(DriverStanding).filter(DriverStanding.driver_id == driver_id)
+        query = db.query(DriverStanding).options(
+            joinedload(DriverStanding.constructor)
+        ).filter(DriverStanding.driver_id == driver_id)
         
         if season:
             query = query.filter(DriverStanding.season_id == season)
@@ -212,7 +221,8 @@ def get_driver_standing_history(
         # 转换为响应格式
         standings_data = []
         for standing in standings:
-            constructor = db.query(Constructor).filter(Constructor.constructor_id == standing.constructor_id).first()
+            # 使用预加载的constructor避免N+1查询
+            constructor = standing.constructor if standing.constructor else None
             
             standings_data.append(StandingHistoryResponse(
                 id=standing.id,
@@ -247,7 +257,8 @@ def get_driver_standing_history(
 
 
 @router.get("/constructors/{constructor_id}/history")
-def get_constructor_standing_history(
+@redis_cache(prefix="constructor_standings_history", ttl=3600)  # 缓存1小时
+async def get_constructor_standing_history(
     constructor_id: str,
     season: Optional[int] = Query(None, description="赛季年份（可选）"),
     limit: int = Query(20, ge=1, le=100, description="返回记录数量限制"),
