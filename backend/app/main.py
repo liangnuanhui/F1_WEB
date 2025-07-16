@@ -60,10 +60,23 @@ app.add_exception_handler(BaseAPIException, base_api_exception_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
+# 动态CORS配置
+def get_cors_origins():
+    origins = list(settings.backend_cors_origins)
+    
+    # 在生产环境中，更宽松地允许Vercel域名
+    if settings.environment == "production":
+        origins.extend([
+            # 开发环境保持严格控制，生产环境允许更多Vercel域名
+            "*"  # 临时允许所有域名，后续可以收紧
+        ])
+    
+    return origins
+
 # 添加CORS中间件
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.backend_cors_origins,
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

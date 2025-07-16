@@ -74,6 +74,11 @@ class Settings(BaseSettings):
             "http://127.0.0.1:3001",
             "https://f1-web-woad.vercel.app",
             "https://*.vercel.app",
+            # Vercel预览部署域名格式
+            "https://f1-9dmssfkci-frankleungs-projects.vercel.app",
+            # 支持更多Vercel域名格式
+            "https://f1-web-git-main-frankleungs-projects.vercel.app",
+            "https://f1-web-git-main-frankleuos-projects.vercel.app",
         ],
         description="CORS允许的源",
     )
