@@ -38,7 +38,7 @@ export function ConstructorStandings() {
 
   // 创建车队数据映射
   const constructorsMap =
-    constructorsData?.data.reduce(
+    constructorsData?.reduce(
       (acc, constructor) => {
         acc[constructor.constructor_id] = constructor;
         return acc;

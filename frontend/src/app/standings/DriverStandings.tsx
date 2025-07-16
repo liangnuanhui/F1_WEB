@@ -51,7 +51,7 @@ export function DriverStandings() {
 
   // 创建车手数据映射
   const driversMap =
-    driversData?.data.reduce(
+    driversData?.reduce(
       (acc, driver) => {
         acc[driver.driver_id] = driver;
         return acc;
@@ -84,7 +84,7 @@ export function DriverStandings() {
       <div>
         {mergedDrivers.map((item) => {
           const hasValidUrl = item.driver_url && item.driver_url.trim() !== "";
-          
+
           const handleDriverClick = () => {
             if (hasValidUrl) {
               window.open(item.driver_url, "_blank");
@@ -96,11 +96,17 @@ export function DriverStandings() {
               key={item.driver_id}
               className="grid grid-cols-12 gap-4 px-6 py-3 items-center border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50 transition-colors"
             >
-              <div className="col-span-1 font-bold text-lg">{item.position}</div>
-              <div 
-                className={`col-span-4 flex items-center gap-4 transition-transform duration-300 hover:scale-105 ${hasValidUrl ? 'cursor-pointer' : ''}`}
+              <div className="col-span-1 font-bold text-lg">
+                {item.position}
+              </div>
+              <div
+                className={`col-span-4 flex items-center gap-4 transition-transform duration-300 hover:scale-105 ${hasValidUrl ? "cursor-pointer" : ""}`}
                 onClick={handleDriverClick}
-                aria-label={hasValidUrl ? `查看 ${item.driver_name} 的维基百科页面` : undefined}
+                aria-label={
+                  hasValidUrl
+                    ? `查看 ${item.driver_name} 的维基百科页面`
+                    : undefined
+                }
                 role={hasValidUrl ? "button" : undefined}
               >
                 <div

@@ -4,12 +4,11 @@ import { useRaces } from "@/hooks/use-races";
 import { getCountryName } from "@/lib/utils";
 import { Race } from "@/types";
 import { useQuery } from "@tanstack/react-query";
-import axios, { type AxiosResponse } from "axios";
+import { racesApi } from "@/lib/api";
 import { CountryFlag } from "@/components/CountryFlag";
 import Image from "next/image";
 import React from "react";
 import { useRouter } from "next/navigation";
-
 
 // 修正版：保证服务端和客户端一致的日期解析
 function parseDateToUTC(dateStr?: string) {
@@ -130,24 +129,7 @@ const RaceResultCard = React.memo(function RaceResultCard({
   // 拉取真实前三名数据
   const { data, isLoading } = useQuery({
     queryKey: ["race-podium", race.id],
-    queryFn: async (): Promise<
-      {
-        position: number;
-        driver_code: string;
-        driver_name: string;
-        result_time: string;
-      }[]
-    > => {
-      const res: AxiosResponse<{
-        position: number;
-        driver_code: string;
-        driver_name: string;
-        result_time: string;
-      }[]> = await axios.get(
-        `/api/v1/races/${race.id}/podium`
-      );
-      return res.data;
-    },
+    queryFn: () => racesApi.getPodium(race.id),
     staleTime: 60 * 1000,
   });
   // 占位数据
@@ -176,7 +158,10 @@ const RaceResultCard = React.memo(function RaceResultCard({
             {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
           </p>
           <div className="flex items-center gap-3 mb-1">
-            <CountryFlag country={displayName} className="w-8 h-6 rounded flex-shrink-0" />
+            <CountryFlag
+              country={displayName}
+              className="w-8 h-6 rounded flex-shrink-0"
+            />
             <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 hover:underline hover:decoration-zinc-900 hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer truncate">
               {displayName}
             </h2>
@@ -214,7 +199,7 @@ const RaceResultCard = React.memo(function RaceResultCard({
                       {["ST", "ND", "RD"][p.position - 1] || "TH"}
                     </span>
                   </div>
-                  
+
                   {/* 头像 - 精细调整 */}
                   <div className="w-6 h-6 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center overflow-hidden">
                     {p.driver_name && p.driver_name !== "-" ? (
@@ -248,7 +233,7 @@ const RaceResultCard = React.memo(function RaceResultCard({
                       </span>
                     )}
                   </div>
-                  
+
                   {/* 车手信息 - 精细优化 */}
                   <div className="flex flex-col flex-1 min-w-0 overflow-hidden justify-center">
                     <span className="font-bold text-xs text-zinc-900 truncate leading-none mb-0.5">
@@ -471,7 +456,9 @@ const UpcomingRaceCard = React.memo(function UpcomingRaceCard({
 
       {/* 底部信息 */}
       <div className="flex justify-between items-end">
-        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-zinc-900">{dateStr}</div>
+        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-zinc-900">
+          {dateStr}
+        </div>
         <div className="opacity-90">
           {race.circuit_id ? (
             <CircuitImage
@@ -591,7 +578,7 @@ export default function RacesPage() {
               </span>
               <RaceCard race={prevRace} bgImageUrl={bgUrls[0]} />
             </div>
-            
+
             {/* Next - 在移动设备上占据全宽 */}
             <div className="flex flex-col flex-1 lg:flex-[2_2_0%]">
               <span className="mb-3 ml-2 text-xl lg:text-2xl font-bold text-zinc-800">
@@ -599,7 +586,7 @@ export default function RacesPage() {
               </span>
               <RaceCard race={nextRace} bgImageUrl={bgUrls[1]} />
             </div>
-            
+
             {/* Upcoming - 在移动设备上显示为水平滚动 */}
             <div className="lg:hidden">
               <span className="mb-3 ml-2 text-xl font-bold text-zinc-800">
@@ -608,38 +595,29 @@ export default function RacesPage() {
               <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
                 {upcoming.map((race, index) => (
                   <div key={race.id} className="flex-none w-72 snap-start">
-                    <RaceCard
-                      race={race}
-                      bgImageUrl={bgUrls[index + 2]}
-                    />
+                    <RaceCard race={race} bgImageUrl={bgUrls[index + 2]} />
                   </div>
                 ))}
               </div>
             </div>
-            
+
             {/* Upcoming1 - 桌面版 */}
             <div className="hidden lg:flex flex-col flex-[1_1_0%]">
               <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
                 {upcoming.length > 0 ? "Upcoming" : ""}
               </span>
               {upcoming[0] && (
-                <RaceCard
-                  race={upcoming[0]}
-                  bgImageUrl={bgUrls[2]}
-                />
+                <RaceCard race={upcoming[0]} bgImageUrl={bgUrls[2]} />
               )}
             </div>
-            
+
             {/* Upcoming2 - 桌面版 */}
             <div className="hidden lg:flex flex-col flex-[1_1_0%]">
               <span className="mb-3 ml-2 text-2xl font-bold text-zinc-800">
                 &nbsp;
               </span>
               {upcoming[1] && (
-                <RaceCard
-                  race={upcoming[1]}
-                  bgImageUrl={bgUrls[3]}
-                />
+                <RaceCard race={upcoming[1]} bgImageUrl={bgUrls[3]} />
               )}
             </div>
           </div>

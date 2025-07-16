@@ -128,6 +128,23 @@ export const racesApi = {
   getUpcoming: async (): Promise<Race[]> => {
     return apiRequest<Race[]>("/races/upcoming");
   },
+
+  // 获取比赛前三名
+  getPodium: async (raceId: number): Promise<{
+    position: number;
+    driver_id: string;
+    driver_code: string;
+    driver_name: string;
+    result_time: string;
+  }[]> => {
+    return apiRequest<{
+      position: number;
+      driver_id: string;
+      driver_code: string;
+      driver_name: string;
+      result_time: string;
+    }[]>(`/races/${raceId}/podium`);
+  },
 };
 
 // 车手相关 API
