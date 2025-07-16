@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.models.driver import Driver
-from app.schemas.driver import DriverResponse, DriverListPaginatedResponse
+from app.schemas.driver import DriverResponse
 from app.schemas.base import ApiResponse
 
 router = APIRouter()
@@ -30,7 +30,7 @@ def _serialize_driver(driver: Driver) -> dict:
     }
 
 
-@router.get("/", response_model=DriverListPaginatedResponse)
+@router.get("/", response_model=ApiResponse[List[DriverResponse]])
 async def get_drivers(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1, description="页码"),
@@ -51,14 +51,11 @@ async def get_drivers(
         # 使用统一的序列化函数
         driver_list = [_serialize_driver(driver) for driver in drivers]
         
-        pages = (total + size - 1) // size
-        return {
-            "data": driver_list,
-            "total": total,
-            "page": page,
-            "size": size,
-            "pages": pages
-        }
+        return ApiResponse(
+            success=True,
+            message=f"获取车手列表成功，第{page}页，共{total}条记录",
+            data=driver_list
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取车手列表失败: {str(e)}")
 
@@ -78,13 +75,13 @@ async def search_drivers(
             (Driver.surname.ilike(f"%{q}%")) |
             (Driver.code.ilike(f"%{q}%"))
         ).limit(10).all()
-        
+
         # 使用统一的序列化函数
         driver_list = [_serialize_driver(driver) for driver in drivers]
         
         return ApiResponse(
             success=True,
-            message="搜索车手成功",
+            message=f"搜索车手成功，找到{len(driver_list)}条记录",
             data=driver_list
         )
     except Exception as e:
@@ -92,17 +89,18 @@ async def search_drivers(
 
 
 @router.get("/{driver_id}", response_model=ApiResponse[DriverResponse])
-async def get_driver(driver_id: str, db: Session = Depends(get_db)):
+async def get_driver(
+    driver_id: str,
+    db: Session = Depends(get_db)
+):
     """
     根据ID获取车手详情
     """
     try:
         driver = db.query(Driver).filter(Driver.driver_id == driver_id).first()
-        
         if not driver:
             raise HTTPException(status_code=404, detail="车手不存在")
         
-        # 使用统一的序列化函数
         driver_data = _serialize_driver(driver)
         
         return ApiResponse(
