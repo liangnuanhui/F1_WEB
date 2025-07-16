@@ -72,6 +72,8 @@ class Settings(BaseSettings):
             "http://127.0.0.1:3000",
             "http://localhost:3001",
             "http://127.0.0.1:3001",
+            "https://f1-web-woad.vercel.app",
+            "https://*.vercel.app",
         ],
         description="CORS允许的源",
     )

@@ -126,7 +126,7 @@ export const racesApi = {
 
   // 获取即将到来的比赛
   getUpcoming: async (): Promise<Race[]> => {
-    return apiRequest<Race[]>("/races/upcoming/");
+    return apiRequest<Race[]>("/races/upcoming");
   },
 };
 
