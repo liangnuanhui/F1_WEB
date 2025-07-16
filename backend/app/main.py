@@ -50,8 +50,8 @@ app = FastAPI(
     title=settings.project_name,
     version=settings.app_version,
     description="F1赛事数据网站后端API",
-    docs_url="/docs" if settings.debug else None,
-    redoc_url="/redoc" if settings.debug else None,
+    docs_url="/docs",  # 临时启用docs用于调试
+    redoc_url="/redoc",
 )
 
 # 注册异常处理器
