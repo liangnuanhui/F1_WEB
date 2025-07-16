@@ -2,9 +2,12 @@ import axios from "axios";
 
 // 配置API基础URL
 const getBaseURL = () => {
-  // 生产环境使用Vercel代理
+  // 生产环境直接使用Render API（CORS已正确配置）
   if (process.env.NODE_ENV === "production") {
-    return process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+    return (
+      process.env.NEXT_PUBLIC_API_URL ||
+      "https://f1-web-api.onrender.com/api/v1"
+    );
   }
   // 开发环境使用本地API
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
