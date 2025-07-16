@@ -115,15 +115,15 @@ export function getRaceDisplayName(race: {
   circuit?: { country?: string };
   country?: string;
 }): string {
-  // 特殊轮次显示location（如Miami, Monaco, Silverstone等）
-  // 移除了 13 (Spa)，让它显示国家名Belgium而不是地点名Spa-Francorchamps
-  const specialLocRounds = [0, 6, 7, 8, 12, 22]; // Testing, Miami, Imola, Monaco, Silverstone等
+  // 特殊轮次显示location（如Miami, Monaco等）
+  // 移除了 12 (Silverstone) 和 13 (Spa)，让它们显示国家名而不是地点名
+  const specialLocRounds = [0, 6, 7, 8, 22]; // Testing, Miami, Imola, Monaco等
   if (specialLocRounds.includes(race.round_number) && race.location) {
     return race.location;
   }
 
-  // 其他比赛显示国家名
-  return race.circuit?.country || race.country || race.location || "Unknown";
+  // 其他比赛显示国家名 - 优先使用location（完整名称），再使用circuit.country或country（可能是简写）
+  return race.location || race.circuit?.country || race.country || "Unknown";
 }
 
 // 新增：专门用于获取国旗的国家代码

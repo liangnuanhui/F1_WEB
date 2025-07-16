@@ -2,7 +2,11 @@
 
 import { useRace } from "@/hooks/use-races";
 import { Race } from "@/types";
-import { formatDate, getCountryName } from "@/lib/utils";
+import {
+  formatDate,
+  getRaceDisplayName,
+  getRaceNationality,
+} from "@/lib/utils";
 import { CountryFlag } from "@/components/CountryFlag";
 import { Calendar, MapPin, Clock } from "lucide-react";
 import Image from "next/image";
@@ -191,7 +195,6 @@ const convertToTimezone = (
   }
 };
 
-
 // 方格旗组件
 const CheckerFlag = () => (
   <svg
@@ -247,10 +250,7 @@ const SessionCard: React.FC<SessionCardProps> = ({
   timezone,
 }) => {
   // 从UTC转换到目标时区
-  const { date, time } = convertToTimezone(
-    sessionDate,
-    timezone
-  );
+  const { date, time } = convertToTimezone(sessionDate, timezone);
 
   return (
     <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
@@ -347,7 +347,7 @@ export default function RaceDetailPage({
     );
   }
 
-  const displayName = getCountryName(race);
+  const displayName = getRaceDisplayName(race);
 
   // 判断比赛是否已结束
   const now = new Date();
@@ -399,8 +399,8 @@ export default function RaceDetailPage({
 
               <div className="flex items-center gap-4 mb-4">
                 <CountryFlag
-                  country={displayName}
-                  className="w-12 h-8 rounded"
+                  nationality={getRaceNationality(race)}
+                  size="1.8em"
                 />
                 <h1 className="text-4xl font-extrabold text-gray-900 hover:underline hover:decoration-gray-900 hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
                   {displayName}
