@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { DriverStandings } from "./DriverStandings";
 import { ConstructorStandings } from "./ConstructorStandings";
 
 type StandingType = "drivers" | "teams";
 
-export default function StandingsPage() {
+function StandingsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab") as StandingType;
 
@@ -58,5 +58,22 @@ export default function StandingsPage() {
       </div>
       <div>{renderContent()}</div>
     </div>
+  );
+}
+
+export default function StandingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading standings...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <StandingsContent />
+    </Suspense>
   );
 }

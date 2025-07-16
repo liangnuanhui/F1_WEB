@@ -2,20 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // 性能优化配置
-  experimental: {
-    // 启用 Turbopack (已在 package.json 中配置)
-    turbo: {
-      rules: {
-        "*.svg": {
-          loaders: ["@svgr/webpack"],
-          as: "*.js",
-        },
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
       },
     },
   },
-
-  // 编译优化
-  swcMinify: true,
 
   // 图片优化
   images: {
