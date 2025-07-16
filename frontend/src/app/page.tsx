@@ -61,7 +61,7 @@ function DriverCard({
   position: number;
   className?: string;
 }) {
-  const teamColor = getTeamColor(driver.constructor_id || '');
+  const teamColor = getTeamColor(driver.constructor_id || "");
 
   // 解析车手姓名，假设格式是 "Forename Surname"
   const nameParts = driver.driver_name.split(" ");
@@ -92,11 +92,8 @@ function DriverCard({
             </div>
             <div className="text-sm opacity-90">{driver.constructor_name}</div>
             {driver.nationality && (
-              <div className="h-6 w-8 overflow-hidden rounded-sm">
-                <CountryFlag
-                  nationality={driver.nationality}
-                  className="h-full w-full object-cover"
-                />
+              <div className="flex items-center justify-start">
+                <CountryFlag nationality={driver.nationality} size="2em" />
               </div>
             )}
           </div>
