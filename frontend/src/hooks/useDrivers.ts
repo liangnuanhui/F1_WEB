@@ -21,10 +21,7 @@ export const useDrivers = (options: UseDriversOptions = {}) => {
   });
 
   return {
-    drivers: drivers?.data,
-    total: drivers?.total,
-    pages: drivers?.pages,
-    currentPage: drivers?.page,
+    drivers: drivers,
     isLoading,
     error,
   };

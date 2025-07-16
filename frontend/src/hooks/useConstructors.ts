@@ -21,7 +21,7 @@ export const useConstructors = (options: UseConstructorsOptions = {}) => {
   });
 
   return {
-    constructors: constructors?.data,
+    constructors: constructors,
     isLoading,
     error,
   };

@@ -136,15 +136,13 @@ export const driversApi = {
   getAll: async (params?: {
     page?: number;
     size?: number;
-  }): Promise<PaginatedResponse<Driver>> => {
+  }): Promise<Driver[]> => {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.size) searchParams.append("size", params.size.toString());
 
     const query = searchParams.toString();
-    return apiRequest<PaginatedResponse<Driver>>(
-      `/drivers/${query ? `?${query}` : ""}`
-    );
+    return apiRequest<Driver[]>(`/drivers/${query ? `?${query}` : ""}`);
   },
 
   // 获取单个车手
@@ -170,7 +168,7 @@ export const constructorsApi = {
       page?: number;
       size?: number;
     } = { page: 1, size: 50 }
-  ): Promise<PaginatedResponse<Constructor>> => {
+  ): Promise<Constructor[]> => {
     const searchParams = new URLSearchParams();
     if (params.page) searchParams.append("page", params.page.toString());
     if (params.size) searchParams.append("size", params.size.toString());
@@ -178,14 +176,7 @@ export const constructorsApi = {
     const query = searchParams.toString();
     const data = await apiRequest<Constructor[]>(`/constructors/?${query}`);
 
-    // 由于后端车队API不返回分页信息，构造基本的分页响应
-    return {
-      data: data,
-      total: data.length,
-      page: params.page || 1,
-      size: params.size || 50,
-      pages: 1,
-    };
+    return data;
   },
 
   // 获取单个车队
