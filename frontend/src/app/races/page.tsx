@@ -1,7 +1,7 @@
 "use client";
 
 import { useRaces } from "@/hooks/use-races";
-import { getCountryName } from "@/lib/utils";
+import { getRaceDisplayName, getRaceNationality } from "@/lib/utils";
 import { Race } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { racesApi } from "@/lib/api";
@@ -102,7 +102,7 @@ const RaceResultCard = React.memo(function RaceResultCard({
 }) {
   const router = useRouter();
   // 特殊location显示
-  const displayName = getCountryName(race);
+  const displayName = getRaceDisplayName(race);
 
   // 日期范围（英文简写）
   const getShortMonth = (date: Date) =>
@@ -158,10 +158,7 @@ const RaceResultCard = React.memo(function RaceResultCard({
             {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
           </p>
           <div className="flex items-center gap-3 mb-1">
-            <CountryFlag
-              country={displayName}
-              className="w-8 h-6 rounded flex-shrink-0"
-            />
+            <CountryFlag nationality={getRaceNationality(race)} size="1.8em" />
             <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 hover:underline hover:decoration-zinc-900 hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer truncate">
               {displayName}
             </h2>
@@ -283,7 +280,7 @@ const RaceCard = React.memo(function RaceCard({
             ROUND {race.round_number}
           </div>
           <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold hover:underline hover:decoration-white hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
-            {getCountryName(race)}
+            {getRaceDisplayName(race)}
           </div>
           <div className="text-sm sm:text-base lg:text-lg font-bold my-2">
             {getRaceWeekendRange(race)}
@@ -306,7 +303,7 @@ const NextRaceCard = React.memo(function NextRaceCard({
 }) {
   const router = useRouter();
   // 特殊location显示
-  const displayName = getCountryName(race);
+  const displayName = getRaceDisplayName(race);
 
   // 日期范围（英文简写）
   const getShortMonth = (date: Date) =>
@@ -342,7 +339,7 @@ const NextRaceCard = React.memo(function NextRaceCard({
             {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
           </div>
           <div className="flex items-center gap-2 mb-2">
-            <CountryFlag country={displayName} className="w-8 h-6 rounded" />
+            <CountryFlag nationality={getRaceNationality(race)} size="1.8em" />
             <span className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white drop-shadow hover:underline hover:decoration-white hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
               {displayName}
             </span>
@@ -409,7 +406,7 @@ const UpcomingRaceCard = React.memo(function UpcomingRaceCard({
 }) {
   const router = useRouter();
   // 特殊location显示
-  const displayName = getCountryName(race);
+  const displayName = getRaceDisplayName(race);
 
   // 日期范围（英文简写）
   const getShortMonth = (date: Date) =>
@@ -444,7 +441,7 @@ const UpcomingRaceCard = React.memo(function UpcomingRaceCard({
           {race.round_number === 0 ? "TESTING" : `ROUND ${race.round_number}`}
         </p>
         <div className="flex items-center gap-3">
-          <CountryFlag country={displayName} className="w-8 h-6 rounded" />
+          <CountryFlag nationality={getRaceNationality(race)} size="1.8em" />
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-zinc-900 hover:underline hover:decoration-zinc-900 hover:decoration-2 hover:underline-offset-4 transition-all duration-200 cursor-pointer">
             {displayName}
           </h2>

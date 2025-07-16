@@ -57,6 +57,7 @@ export const countryCodeMap: Record<string, string> = {
   // Common shorthands/aliases
   UK: "gbr",
   USA: "usa",
+  US: "usa",
 
   // Special Locations to Country mapping
   Sakhir: "brn", // Testing
@@ -65,4 +66,7 @@ export const countryCodeMap: Record<string, string> = {
   "Las Vegas": "usa",
   Miami: "usa",
   Austin: "usa", // COTA
+  Silverstone: "gbr", // 为location提供回退
+  Barcelona: "esp",
+  "Spa-Francorchamps": "bel",
 };

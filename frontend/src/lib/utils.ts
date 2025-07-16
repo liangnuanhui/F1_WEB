@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { countryCodeMap } from "./country-code-map";
 import { nationalityToFlagCode } from "./nationality-to-flag-code";
+import { countryToNationality } from "./country-to-nationality"; // 新增导入
 
 // 合并 Tailwind CSS 类名的工具函数
 export function cn(...inputs: ClassValue[]) {
@@ -95,11 +96,56 @@ export function getCountryName(race: {
   circuit?: { country?: string };
   country?: string;
 }): string {
-  const specialLocRounds = [0, 6, 7, 22]; // e.g., Testing, Miami, Imola
+  // 优先使用circuit.country（用于国旗显示）
+  // 只有在没有circuit.country时才使用location（用于地点显示）
+
+  // 对于测试赛 (round_number=0)，使用location
+  if (race.round_number === 0 && race.location) {
+    return race.location;
+  }
+
+  // 优先返回circuit.country，这样国旗能正确映射
+  return race.circuit?.country || race.country || race.location || "Unknown";
+}
+
+// 新增：获取比赛的显示名称（优先显示特殊地点）
+export function getRaceDisplayName(race: {
+  round_number: number;
+  location?: string;
+  circuit?: { country?: string };
+  country?: string;
+}): string {
+  // 特殊轮次显示location（如Miami, Monaco, Silverstone等）
+  // 移除了 13 (Spa)，让它显示国家名Belgium而不是地点名Spa-Francorchamps
+  const specialLocRounds = [0, 6, 7, 8, 12, 22]; // Testing, Miami, Imola, Monaco, Silverstone等
   if (specialLocRounds.includes(race.round_number) && race.location) {
     return race.location;
   }
+
+  // 其他比赛显示国家名
+  return race.circuit?.country || race.country || race.location || "Unknown";
+}
+
+// 新增：专门用于获取国旗的国家代码
+export function getCountryForFlag(race: {
+  round_number: number;
+  location?: string;
+  circuit?: { country?: string };
+  country?: string;
+}): string {
+  // 总是优先返回circuit.country，确保国旗正确显示
   return race.circuit?.country || race.country || "Unknown";
+}
+
+// 🆕 新增：获取比赛的nationality格式，用于统一的国旗显示
+export function getRaceNationality(race: {
+  round_number: number;
+  location?: string;
+  circuit?: { country?: string };
+  country?: string;
+}): string | undefined {
+  const country = getCountryForFlag(race);
+  return countryToNationality[country];
 }
 
 // 格式化车手姓名

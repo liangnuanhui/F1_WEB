@@ -1,7 +1,13 @@
 import Image from "next/image";
 import { getTeamColor } from "@/lib/team-colors";
 import { CountryFlag } from "@/components/CountryFlag";
-import { formatNameForImage, splitDriverName, mapConstructorIdForDriverNumber, fixDriverNameForImage, getDriverNumberForImage } from "@/lib/formatters";
+import {
+  formatNameForImage,
+  splitDriverName,
+  mapConstructorIdForDriverNumber,
+  fixDriverNameForImage,
+  getDriverNumberForImage,
+} from "@/lib/formatters";
 import { MergedDriver } from "@/types";
 
 interface DriverCardProps {
@@ -17,14 +23,19 @@ export const DriverCard = ({ driver, priority = false }: DriverCardProps) => {
   };
 
   const driverPhoto = formatNameForImage(driver.driver_name);
-  
+
   // 使用正确的车队名称映射和车手名称修复
-  const mappedConstructorId = mapConstructorIdForDriverNumber(driver.constructor_id || "");
+  const mappedConstructorId = mapConstructorIdForDriverNumber(
+    driver.constructor_id || ""
+  );
   const fixedDriverName = fixDriverNameForImage(driver.driver_name);
-  
+
   // 使用正确的号码映射
-  const correctNumber = getDriverNumberForImage(driver.driver_name, driver.number || 0);
-  
+  const correctNumber = getDriverNumberForImage(
+    driver.driver_name,
+    driver.number || 0
+  );
+
   const driverNumberPath = `/driver_number/2025_${mappedConstructorId}_${fixedDriverName}_${correctNumber}.avif`;
 
   const { firstName, lastName } = splitDriverName(driver.driver_name);
@@ -67,16 +78,12 @@ export const DriverCard = ({ driver, priority = false }: DriverCardProps) => {
             {driver.constructor_name}
           </p>
           {driver.nationality && (
-            <div className="h-8 w-8 overflow-hidden rounded-full mt-2">
-              <CountryFlag
-                nationality={driver.nationality}
-                className="h-full w-full object-cover"
-              />
+            <div className="flex items-center justify-start mt-2">
+              <CountryFlag nationality={driver.nationality} size="2em" />
             </div>
           )}
         </div>
-        <div className="flex flex-col items-end justify-end">
-        </div>
+        <div className="flex flex-col items-end justify-end"></div>
       </div>
       <div className="absolute -bottom-8 -right-4 h-60 w-60 z-20">
         <Image
@@ -97,12 +104,12 @@ export const DriverCard = ({ driver, priority = false }: DriverCardProps) => {
             width={120}
             height={120}
             sizes="(max-width: 768px) 25vw, (max-width: 1200px) 15vw, 120px"
-            style={{ 
+            style={{
               objectFit: "contain",
               opacity: 0.3,
               filter: "brightness(1.5) contrast(0.8)",
               maxWidth: "120px",
-              maxHeight: "120px"
+              maxHeight: "120px",
             }}
             className="transition-transform duration-300 group-hover:scale-105"
           />
