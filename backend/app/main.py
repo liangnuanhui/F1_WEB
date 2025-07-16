@@ -72,7 +72,12 @@ app.add_middleware(
 # 添加可信主机中间件
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"] if settings.debug else ["localhost", "127.0.0.1"]
+    allowed_hosts=["*"] if settings.debug else [
+        "localhost", 
+        "127.0.0.1", 
+        "f1-web-api.onrender.com",
+        "*.onrender.com"  # 允许所有Render子域名
+    ]
 )
 
 
