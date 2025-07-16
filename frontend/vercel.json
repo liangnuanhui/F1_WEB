@@ -1,24 +1,8 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "package.json",
-      "use": "@vercel/next"
+      "source": "/api/:path*",
+      "destination": "https://f1-web-api.onrender.com/api/:path*"
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/"
-    }
-  ],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "https://f1-web-api.onrender.com",
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "pages/api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  ]
 }
