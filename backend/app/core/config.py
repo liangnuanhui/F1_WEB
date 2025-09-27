@@ -24,14 +24,14 @@ class Settings(BaseSettings):
     
     # 数据库配置
     database_url: str = Field(
-        default="postgresql://f1_user:f1_password@localhost:5432/f1_web",
-        description="数据库连接URL"
+        default="postgresql://user:password@localhost:5432/dbname",
+        description="数据库连接URL - 生产环境请使用环境变量"
     )
     database_host: str = Field(default="localhost", description="数据库主机")
     database_port: int = Field(default=5432, description="数据库端口")
     database_name: str = Field(default="f1_web", description="数据库名称")
     database_user: str = Field(default="f1_user", description="数据库用户")
-    database_password: str = Field(default="f1_password", description="数据库密码")
+    database_password: str = Field(default="change_this_password", description="数据库密码")
     
     # Redis配置
     redis_url: str = Field(
@@ -59,8 +59,8 @@ class Settings(BaseSettings):
     
     # 安全配置
     secret_key: str = Field(
-        default="dev-secret-key-change-in-production",
-        description="密钥"
+        default="CHANGE-THIS-SECRET-KEY-IN-PRODUCTION",
+        description="密钥 - 生产环境必须更改"
     )
     algorithm: str = Field(default="HS256", description="加密算法")
     access_token_expire_minutes: int = Field(default=30, description="访问令牌过期时间")

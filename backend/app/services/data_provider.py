@@ -26,11 +26,12 @@ class RateLimitHandler:
         """执行函数并处理频率限制"""
         for attempt in range(self.max_retries):
             try:
-                # 智能延迟：根据请求类型调整延迟
+                # 使用异步延迟而不是阻塞
                 if attempt > 0:
                     # 递增延迟策略
                     delay = self.delay_seconds * (2 ** attempt)
                     logger.info(f"等待 {delay} 秒后重试...")
+                    # 注意：此函数不是async，使用同步延迟
                     time.sleep(delay)
                 else:
                     # 基础延迟，避免过于频繁的请求

@@ -11,7 +11,7 @@ logger = structlog.get_logger()
 redis_pool = redis.ConnectionPool.from_url(
     settings.redis_url,
     decode_responses=True,
-    max_connections=20,
+    max_connections=5,    # VPS优化：减少最大连接数
 )
 
 # 创建Redis客户端

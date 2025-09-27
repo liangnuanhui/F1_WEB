@@ -286,8 +286,8 @@ class UnifiedSyncService:
                 if pd.notna(row['dateOfBirth']):
                     try:
                         date_of_birth = pd.to_datetime(row['dateOfBirth']).date()
-                    except:
-                        logger.warning(f"⚠️  无法解析车手 {row['givenName']} {row['familyName']} 的出生日期: {row['dateOfBirth']}")
+                    except (ValueError, TypeError, pd.errors.ParserError) as e:
+                        logger.warning(f"⚠️  无法解析车手 {row['givenName']} {row['familyName']} 的出生日期: {row['dateOfBirth']}, 错误: {e}")
                 
                 # 创建新车手
                 driver = Driver(

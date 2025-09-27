@@ -41,7 +41,7 @@ def print_circuits(db: Session):
     print("🏁 赛道数据")
     print("="*80)
     
-    circuits = db.query(Circuit).order_by(Circuit.circuit_name).all()
+    circuits = db.query(Circuit).order_by(Circuit.circuit_name).limit(50).all()  # 限制查询数量
     data = []
     for circuit in circuits:
         data.append([

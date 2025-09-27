@@ -12,8 +12,8 @@ from .config import settings
 engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,
-    pool_size=10,         # 连接池大小
-    max_overflow=20,      # 超出池大小后可创建的最大连接数
+    pool_size=3,          # 连接池大小 - VPS优化
+    max_overflow=5,       # 超出池大小后可创建的最大连接数 - VPS优化
     pool_timeout=30,      # 连接超时时间（秒）
     echo=settings.debug,
 )

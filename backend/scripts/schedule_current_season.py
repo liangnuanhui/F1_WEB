@@ -182,10 +182,10 @@ def show_season_schedule_info(season_year: int):
              if race_end_time:
                  from datetime import timedelta
                  update_time = race_end_time + timedelta(hours=scheduler.post_race_delay_hours)
-                 update_time_str = update_time.strftime("%Y-%m-%d %H:%M:%S UTC")
-             else:
-                 update_time_str = "无法计算"
-            
+                update_time_str = update_time.strftime("%Y-%m-%d %H:%M:%S UTC")
+            else:
+                update_time_str = "无法计算"
+
             # 检查是否已有调度
             schedule_key = scheduler._get_schedule_key(season_year, race.round_number)
             status = "已调度" if scheduler.redis_client.exists(schedule_key) else "未调度"

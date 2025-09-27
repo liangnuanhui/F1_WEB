@@ -50,8 +50,8 @@ app = FastAPI(
     title=settings.project_name,
     version=settings.app_version,
     description="F1赛事数据网站后端API",
-    docs_url="/docs",  # 临时启用docs用于调试
-    redoc_url="/redoc",
+    docs_url="/docs" if settings.debug else None,  # 生产环境禁用API文档
+    redoc_url="/redoc" if settings.debug else None,
 )
 
 # 注册异常处理器
@@ -64,32 +64,45 @@ app.add_exception_handler(Exception, general_exception_handler)
 def get_cors_origins():
     origins = list(settings.backend_cors_origins)
     
-    # 在生产环境中，更宽松地允许Vercel域名
+    # 在生产环境中，使用严格的CORS配置
     if settings.environment == "production":
+        # 生产环境：仅允许配置的域名
+        origins.extend([])  # 移除通配符，仅使用backend_cors_origins中的域名
+    else:
+        # 开发环境：可以更宽松
         origins.extend([
-            # 开发环境保持严格控制，生产环境允许更多Vercel域名
-            "*"  # 临时允许所有域名，后续可以收紧
+            "http://localhost:3000",
+            "http://127.0.0.1:3000"
         ])
     
     return origins
 
-# 添加CORS中间件
+# 添加CORS中间件 - 生产环境严格配置
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_cors_origins(),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # 限制允许的方法
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With"
+    ],  # 限制允许的头部
+    expose_headers=["X-Total-Count"],  # 仅暴露必要的响应头
 )
 
 # 添加可信主机中间件
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=["*"] if settings.debug else [
-        "localhost", 
-        "127.0.0.1", 
-        "f1-web-api.onrender.com",
-        "*.onrender.com"  # 允许所有Render子域名
+        "localhost",
+        "127.0.0.1",
+        # VPS部署时需要添加你的域名
+        # "your-domain.com",
+        # "your-vps-ip"
     ]
 )
 
