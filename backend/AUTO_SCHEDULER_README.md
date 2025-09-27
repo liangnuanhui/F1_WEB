@@ -63,7 +63,7 @@ CELERY_BROKER_URL=redis://localhost:6379/1
 CELERY_RESULT_BACKEND=redis://localhost:6379/1
 
 # 数据库配置
-DATABASE_URL=postgresql://f1_user:f1_password@localhost:5432/f1_web
+DATABASE_URL=postgresql://username:password@localhost:5432/database_name
 
 # 数据更新配置
 DATA_UPDATE_INTERVAL=300  # 5分钟检查间隔

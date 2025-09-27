@@ -18,10 +18,10 @@ from app.services.unified_sync_service import UnifiedSyncService
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# 数据库配置
+# 数据库配置 - 请在环境变量中设置实际值
 DATABASE_CONFIGS = {
-    'local': "postgresql://f1_user:f1_password@localhost:5432/f1_web",
-    'render': "postgresql://f1_user:2VOxvRBuis4t6KaoERGUTwGgJLQ9kfWo@dpg-d1r32dripnbc73f00tbg-a.oregon-postgres.render.com/f1_web"
+    'local': os.environ.get('LOCAL_DATABASE_URL', "postgresql://username:password@localhost:5432/database_name"),
+    'render': os.environ.get('RENDER_DATABASE_URL', "postgresql://username:password@host:5432/database_name")
 }
 
 SYNC_FUNCTIONS = {

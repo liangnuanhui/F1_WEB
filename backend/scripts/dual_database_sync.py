@@ -92,9 +92,9 @@ def dual_database_sync():
     """执行双数据库同步"""
     logging.info("🎯 开始执行双数据库同步...")
     
-    # 数据库配置
-    local_db_url = "postgresql://f1_user:f1_password@localhost:5432/f1_web"
-    render_db_url = "postgresql://f1_user:2VOxvRBuis4t6KaoERGUTwGgJLQ9kfWo@dpg-d1r32dripnbc73f00tbg-a.oregon-postgres.render.com/f1_web"
+    # 数据库配置 - 请在环境变量中设置实际值
+    local_db_url = os.environ.get('LOCAL_DATABASE_URL', "postgresql://username:password@localhost:5432/database_name")
+    render_db_url = os.environ.get('RENDER_DATABASE_URL', "postgresql://username:password@host:5432/database_name")
     
     results = {}
     
