@@ -12,7 +12,8 @@ F1_USER="f1web"
 F1_HOME="/var/www/f1-web"
 DB_NAME="f1_web_db"
 DB_USER="f1_web_user"
-DB_PASSWORD="F1Web2024SecurePass!"
+# 从环境变量读取密码，或提示用户输入
+DB_PASSWORD="${F1_DB_PASSWORD:-$(openssl rand -base64 32 | tr -d '=+/' | cut -c1-25)}"
 
 # 颜色输出
 RED='\033[0;31m'
@@ -63,6 +64,8 @@ systemctl enable postgresql
 systemctl start postgresql
 
 # 创建数据库和用户
+echo "生成的数据库密码: $DB_PASSWORD" > /tmp/f1_db_password.txt
+echo "请保存此密码到安全位置！"
 sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || print_warning "用户 $DB_USER 可能已存在"
 sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null || print_warning "数据库 $DB_NAME 可能已存在"
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"

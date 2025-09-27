@@ -47,11 +47,15 @@ cd "$FRONTEND_DIR" || print_error "前端目录不存在: $FRONTEND_DIR"
 print_step "📦 安装依赖..."
 npm ci --production=false
 
+# 配置生产环境变量
 print_step "🔧 配置生产环境变量..."
+# 从环境变量读取API地址
+API_BASE_URL="${VITE_API_BASE_URL:-https://f1.251125.xyz/api/v1}"
+
 # 创建生产环境配置文件
 cat > .env.production << EOF
 # 生产环境配置
-VITE_API_BASE_URL=https://f1.251125.xyz/api/v1
+VITE_API_BASE_URL=$API_BASE_URL
 VITE_APP_TITLE=F1 Web
 VITE_APP_DESCRIPTION=Formula 1 Data Hub
 VITE_APP_VERSION=1.0.0
@@ -66,7 +70,13 @@ VITE_CHUNK_SIZE_LIMIT=1000
 EOF
 
 print_step "🏗️ 构建生产版本..."
-npm run build
+# 检查是否是Next.js项目
+if [ -f "package.json" ] && grep -q "next" package.json; then
+    npm run build
+else
+    # 如果是Vite项目
+    npm run build
+fi
 
 # 检查构建结果
 if [ ! -d "$BUILD_DIR" ]; then

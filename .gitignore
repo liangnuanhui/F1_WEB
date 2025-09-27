@@ -379,6 +379,11 @@ cache/
 # Redis dump
 dump.rdb
 
+# Deployment configs with secrets
+deploy/config/.env*
+deploy/config/*password*
+deploy/config/*secret*
+
 # Logs
 logs/
 *.log 

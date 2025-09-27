@@ -8,9 +8,9 @@ Type=simple
 User=f1web
 Group=www-data
 WorkingDirectory=/var/www/f1-web/backend
-Environment=PATH=/var/www/f1-web/backend/.venv/bin
+Environment=PATH=/home/f1web/.local/bin:/var/www/f1-web/backend/.venv/bin
 EnvironmentFile=/var/www/f1-web/.env
-ExecStart=/var/www/f1-web/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+ExecStart=/home/f1web/.local/bin/poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=3
 StandardOutput=journal

@@ -47,12 +47,16 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://127.0.0.1:8000/api/:path*", // 你的 FastAPI 后端地址
-      },
-    ];
+    // 仅在开发环境启用API重写
+    if (process.env.NODE_ENV === "development") {
+      return [
+        {
+          source: "/api/:path*",
+          destination: "http://127.0.0.1:8000/api/:path*", // 开发环境后端地址
+        },
+      ];
+    }
+    return []; // 生产环境不使用重写，由Caddy处理
   },
 };
 

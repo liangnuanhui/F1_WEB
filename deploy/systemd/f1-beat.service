@@ -8,9 +8,9 @@ Type=simple
 User=f1web
 Group=www-data
 WorkingDirectory=/var/www/f1-web/backend
-Environment=PATH=/var/www/f1-web/backend/.venv/bin
+Environment=PATH=/home/f1web/.local/bin:/var/www/f1-web/backend/.venv/bin
 EnvironmentFile=/var/www/f1-web/.env
-ExecStart=/var/www/f1-web/backend/.venv/bin/celery -A app.tasks.celery_app beat --loglevel=info
+ExecStart=/home/f1web/.local/bin/poetry run celery -A app.tasks.celery_app beat --loglevel=info
 Restart=always
 RestartSec=5
 StandardOutput=journal
