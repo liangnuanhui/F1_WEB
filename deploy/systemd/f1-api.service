@@ -1,0 +1,24 @@
+[Unit]
+Description=F1 Web API Service
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=f1web
+Group=www-data
+WorkingDirectory=/var/www/f1-web/backend
+Environment=PATH=/var/www/f1-web/backend/.venv/bin
+EnvironmentFile=/var/www/f1-web/.env
+ExecStart=/var/www/f1-web/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+# 性能优化
+LimitNOFILE=65536
+MemoryLimit=512M
+
+[Install]
+WantedBy=multi-user.target

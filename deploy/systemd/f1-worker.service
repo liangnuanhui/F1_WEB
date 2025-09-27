@@ -1,0 +1,24 @@
+[Unit]
+Description=F1 Web Celery Worker
+After=network.target redis.service f1-api.service
+Wants=redis.service
+
+[Service]
+Type=simple
+User=f1web
+Group=www-data
+WorkingDirectory=/var/www/f1-web/backend
+Environment=PATH=/var/www/f1-web/backend/.venv/bin
+EnvironmentFile=/var/www/f1-web/.env
+ExecStart=/var/www/f1-web/backend/.venv/bin/celery -A app.tasks.celery_app worker --loglevel=info --concurrency=4
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# 性能优化
+LimitNOFILE=65536
+MemoryLimit=512M
+
+[Install]
+WantedBy=multi-user.target

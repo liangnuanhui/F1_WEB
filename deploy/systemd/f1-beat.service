@@ -1,0 +1,23 @@
+[Unit]
+Description=F1 Web Celery Beat Scheduler
+After=network.target redis.service f1-worker.service
+Wants=redis.service
+
+[Service]
+Type=simple
+User=f1web
+Group=www-data
+WorkingDirectory=/var/www/f1-web/backend
+Environment=PATH=/var/www/f1-web/backend/.venv/bin
+EnvironmentFile=/var/www/f1-web/.env
+ExecStart=/var/www/f1-web/backend/.venv/bin/celery -A app.tasks.celery_app beat --loglevel=info
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# 重要：确保只有一个Beat实例运行
+LockPersonality=yes
+
+[Install]
+WantedBy=multi-user.target
