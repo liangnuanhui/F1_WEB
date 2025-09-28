@@ -59,7 +59,10 @@ done
 PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 NODE_VERSION=$(node -v | sed 's/v//' | cut -d'.' -f1)
 
-if (( $(echo "$PYTHON_VERSION < 3.9" | bc -l) )); then
+# Python版本检查 - 使用整数比较避免bc浮点问题
+PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
+PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
+if [ "$PYTHON_MAJOR" -lt 3 ] || ([ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -lt 9 ]); then
     print_error "Python版本过低，需要3.9+，当前: $PYTHON_VERSION"
 fi
 
@@ -155,7 +158,7 @@ fi
 
 print_step "📦 7. 安装Python依赖..."
 cd "$F1_HOME/backend"
-sudo -u "$F1_USER" /home/"$F1_USER"/.local/bin/poetry install --no-dev
+sudo -u "$F1_USER" /home/"$F1_USER"/.local/bin/poetry install --only=main
 
 print_step "📝 8. 创建环境配置..."
 cat > "$F1_HOME/.env" << EOF
@@ -198,7 +201,12 @@ sudo -u "$F1_USER" /home/"$F1_USER"/.local/bin/poetry run alembic upgrade head
 
 print_step "🎨 10. 构建前端应用..."
 cd "$F1_HOME/frontend"
-npm ci --production=false
+
+# 确保pnpm可用
+export PNPM_HOME="/root/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+
+pnpm install
 
 # 创建生产环境配置
 cat > .env.local << EOF
@@ -206,7 +214,7 @@ NEXT_PUBLIC_API_URL=/api/v1
 NODE_ENV=production
 EOF
 
-npm run build
+pnpm run build
 chown -R "$F1_USER":www-data dist/
 
 print_step "⚙️ 11. 安装systemd服务..."
