@@ -5,7 +5,7 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# 导入我们的模型
+# 导入我们的模型 - 确保所有模型都被导入以进行正确的迁移
 from app.models.base import Base
 from app.models.season import Season
 from app.models.circuit import Circuit
@@ -13,6 +13,10 @@ from app.models.race import Race
 from app.models.driver import Driver
 from app.models.constructor import Constructor
 from app.models.result import Result
+from app.models.driver_season import DriverSeason
+from app.models.qualifying_result import QualifyingResult
+from app.models.sprint_result import SprintResult
+from app.models.standings import DriverStanding, ConstructorStanding
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
