@@ -1,0 +1,25 @@
+[Unit]
+Description=F1 Web Frontend Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=f1web
+Group=www-data
+WorkingDirectory=/var/www/f1-web/frontend
+Environment=PATH=/root/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin
+Environment=NODE_ENV=production
+Environment=NEXT_PUBLIC_API_URL=/api/v1
+ExecStart=/root/.local/share/pnpm/pnpm start
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+# 性能优化
+LimitNOFILE=65536
+MemoryLimit=512M
+
+[Install]
+WantedBy=multi-user.target
