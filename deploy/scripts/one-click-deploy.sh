@@ -201,12 +201,9 @@ cd "$F1_HOME/frontend"
 npm ci --production=false
 
 # 创建生产环境配置
-cat > .env.production << EOF
-VITE_API_BASE_URL=https://f1.251125.xyz/api/v1
-VITE_APP_TITLE=F1 Web
-VITE_APP_DESCRIPTION=Formula 1 Data Hub
-VITE_BUILD_SOURCEMAP=false
-VITE_BUILD_MINIFY=true
+cat > .env.local << EOF
+NEXT_PUBLIC_API_URL=/api/v1
+NODE_ENV=production
 EOF
 
 npm run build

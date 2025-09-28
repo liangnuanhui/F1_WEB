@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // 输出配置 - 仅在生产环境使用静态导出
+  ...(process.env.NODE_ENV === 'production' && {
+    output: 'export',
+    trailingSlash: true,
+    distDir: 'dist',
+  }),
+
   // 性能优化配置
   turbopack: {
     rules: {
@@ -13,23 +20,29 @@ const nextConfig: NextConfig = {
 
   // 图片优化
   images: {
-    remotePatterns: [
-      {
-        protocol: "http",
-        hostname: "localhost",
-        port: "3000",
-        pathname: "/**",
-      },
-      {
-        protocol: "http",
-        hostname: "127.0.0.1",
-        port: "3000",
-        pathname: "/**",
-      },
-    ],
-    formats: ["image/webp", "image/avif"],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // 静态导出时禁用优化，开发环境保持优化
+    ...(process.env.NODE_ENV === 'production'
+      ? { unoptimized: true }
+      : {
+          remotePatterns: [
+            {
+              protocol: "http",
+              hostname: "localhost",
+              port: "3000",
+              pathname: "/**",
+            },
+            {
+              protocol: "http",
+              hostname: "127.0.0.1",
+              port: "3000",
+              pathname: "/**",
+            },
+          ],
+          formats: ["image/webp", "image/avif"],
+          deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+          imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+        }
+    ),
   },
 
   // 减少不必要的文件监控

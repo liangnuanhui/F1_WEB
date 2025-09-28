@@ -9,9 +9,8 @@ const getBaseURL = () => {
 
   // 生产环境：前后端同部署在VPS时，使用相对路径或同域名
   if (process.env.NODE_ENV === "production") {
-    // VPS部署建议：设置NEXT_PUBLIC_API_URL环境变量为你的VPS地址
-    // 例如: https://your-vps-domain.com/api/v1 或 https://your-ip:8000/api/v1
-    return "/api/v1"; // 默认使用相对路径，适合同域名部署
+    // VPS部署：使用相对路径，通过Caddy代理到后端
+    return "/api/v1";
   }
 
   // 开发环境使用本地API

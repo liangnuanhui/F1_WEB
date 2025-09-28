@@ -45,7 +45,9 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    # 优先使用环境变量中的数据库URL
+    import os
+    url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -64,11 +66,21 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    # 使用环境变量中的数据库URL
+    import os
+    database_url = os.getenv("DATABASE_URL")
+
+    if database_url:
+        # 如果有环境变量，直接使用
+        from sqlalchemy import create_engine
+        connectable = create_engine(database_url)
+    else:
+        # 否则使用配置文件
+        connectable = engine_from_config(
+            config.get_section(config.config_ini_section, {}),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
 
     with connectable.connect() as connection:
         context.configure(

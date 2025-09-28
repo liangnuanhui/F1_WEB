@@ -25,16 +25,16 @@ def upgrade() -> None:
     connection = op.get_bind()
 
     # 检查races表是否有race_time列
-    result = connection.execute(
+    result = connection.execute(sa.text(
         "SELECT column_name FROM information_schema.columns WHERE table_name='races' AND column_name='race_time'"
-    )
+    ))
     if result.fetchone():
         op.drop_column('races', 'race_time')
 
     # 检查seasons表是否有is_active列
-    result = connection.execute(
+    result = connection.execute(sa.text(
         "SELECT column_name FROM information_schema.columns WHERE table_name='seasons' AND column_name='is_active'"
-    )
+    ))
     if result.fetchone():
         op.drop_column('seasons', 'is_active')
     # ### end Alembic commands ###

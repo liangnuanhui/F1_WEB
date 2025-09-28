@@ -100,9 +100,8 @@ app.add_middleware(
     allowed_hosts=["*"] if settings.debug else [
         "localhost",
         "127.0.0.1",
-        # VPS部署时需要添加你的域名
-        # "your-domain.com",
-        # "your-vps-ip"
+        "f1.251125.xyz",  # Caddy会转发这个Host头
+        # 不需要添加VPS IP，因为请求通过Caddy代理
     ]
 )
 
