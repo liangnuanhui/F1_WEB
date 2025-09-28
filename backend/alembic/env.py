@@ -76,8 +76,15 @@ def run_migrations_online() -> None:
         connectable = create_engine(database_url)
     else:
         # 否则使用配置文件
+        configuration = config.get_section(config.config_ini_section)
+        configuration = configuration or {}
+
+        # 确保有数据库URL
+        if 'sqlalchemy.url' not in configuration:
+            raise ValueError("No database URL found in environment variable DATABASE_URL or alembic.ini")
+
         connectable = engine_from_config(
-            config.get_section(config.config_ini_section, {}),
+            configuration,
             prefix="sqlalchemy.",
             poolclass=pool.NullPool,
         )
