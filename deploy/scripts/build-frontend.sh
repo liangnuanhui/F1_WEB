@@ -36,15 +36,34 @@ if ! command -v node &> /dev/null; then
     print_error "Node.js 未安装，请先安装 Node.js 18+"
 fi
 
-NODE_VERSION=$(node -v | cut -d 'v' -f 2 | cut -d '.' -f 1)
-if [ "$NODE_VERSION" -lt 18 ]; then
-    print_error "Node.js 版本过低，需要 18+，当前版本: $(node -v)"
+# 改进的Node.js版本检查
+NODE_VERSION_RAW=$(node -v 2>/dev/null || echo "v0.0.0")
+NODE_VERSION=$(echo "$NODE_VERSION_RAW" | sed 's/v//' | cut -d'.' -f1)
+
+# 验证版本号是数字
+if ! [[ "$NODE_VERSION" =~ ^[0-9]+$ ]]; then
+    print_error "无法解析Node.js版本: $NODE_VERSION_RAW"
 fi
+
+if [ "$NODE_VERSION" -lt 18 ]; then
+    print_error "Node.js 版本过低，需要 18+，当前版本: $NODE_VERSION_RAW"
+fi
+
+print_step "✅ Node.js版本检查通过: $NODE_VERSION_RAW"
 
 # 进入前端目录
 cd "$FRONTEND_DIR" || print_error "前端目录不存在: $FRONTEND_DIR"
 
 print_step "📦 安装依赖..."
+if [ ! -f "package.json" ]; then
+    print_error "未找到package.json文件: $FRONTEND_DIR/package.json"
+fi
+
+# 检查npm是否可用
+if ! command -v npm &> /dev/null; then
+    print_error "npm未安装，请先安装Node.js和npm"
+fi
+
 npm ci --production=false
 
 # 配置生产环境变量

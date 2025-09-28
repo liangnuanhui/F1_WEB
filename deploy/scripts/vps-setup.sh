@@ -7,6 +7,29 @@ set -e
 
 echo "🚀 开始F1项目VPS部署..."
 
+# 检查系统要求
+print_step "🔍 检查系统要求..."
+# 检查是否为Ubuntu/Debian系统
+if ! command -v apt &> /dev/null; then
+    print_error "此脚本仅支持Ubuntu/Debian系统"
+fi
+
+# 检查可用内存 (建议至少2GB)
+MEMORY_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+MEMORY_GB=$((MEMORY_KB / 1024 / 1024))
+if [ "$MEMORY_GB" -lt 2 ]; then
+    print_warning "系统内存不足2GB (当前: ${MEMORY_GB}GB)，可能影响性能"
+fi
+
+# 检查磁盘空间 (建议至少5GB可用)
+DISK_AVAILABLE=$(df / | tail -1 | awk '{print $4}')
+DISK_GB=$((DISK_AVAILABLE / 1024 / 1024))
+if [ "$DISK_GB" -lt 5 ]; then
+    print_warning "根分区可用空间不足5GB (当前: ${DISK_GB}GB)"
+fi
+
+print_step "✅ 系统检查完成: ${MEMORY_GB}GB内存, ${DISK_GB}GB可用空间"
+
 # 配置变量
 F1_USER="f1web"
 F1_HOME="/var/www/f1-web"
@@ -66,10 +89,27 @@ systemctl start postgresql
 # 创建数据库和用户
 echo "生成的数据库密码: $DB_PASSWORD" > /tmp/f1_db_password.txt
 echo "请保存此密码到安全位置！"
-sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || print_warning "用户 $DB_USER 可能已存在"
-sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null || print_warning "数据库 $DB_NAME 可能已存在"
+
+# 尝试创建数据库用户，如果失败则检查是否已存在
+if ! sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null; then
+    print_warning "用户 $DB_USER 可能已存在，尝试更新密码..."
+    sudo -u postgres psql -c "ALTER USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
+fi
+
+# 尝试创建数据库，如果失败则检查是否已存在
+if ! sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null; then
+    print_warning "数据库 $DB_NAME 可能已存在，检查权限..."
+fi
+
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
 sudo -u postgres psql -c "ALTER USER $DB_USER CREATEDB;"
+
+# 验证数据库连接
+if sudo -u postgres psql -d "$DB_NAME" -c "SELECT 1;" > /dev/null 2>&1; then
+    print_step "✅ 数据库配置成功"
+else
+    print_error "数据库配置失败，请检查PostgreSQL设置"
+fi
 
 print_step "📦 5. 配置Redis服务..."
 systemctl enable redis-server
@@ -94,16 +134,28 @@ cp /tmp/deploy/systemd/*.service /etc/systemd/system/
 systemctl daemon-reload
 
 print_step "📝 8. 创建环境配置文件..."
-cp /tmp/deploy/config/.env.vps "$F1_HOME/.env"
+cp /tmp/deploy/config/.env.vps.template "$F1_HOME/.env"
 chown "$F1_USER":www-data "$F1_HOME/.env"
 chmod 600 "$F1_HOME/.env"
 
+# 替换模板中的密码占位符
+sed -i "s/CHANGE_THIS_PASSWORD/$DB_PASSWORD/g" "$F1_HOME/.env"
+# 生成随机SECRET_KEY
+SECRET_KEY=$(openssl rand -base64 32 | tr -d '=+/' | cut -c1-50)
+sed -i "s/CHANGE_THIS_SECRET_KEY_TO_RANDOM_STRING/$SECRET_KEY/g" "$F1_HOME/.env"
+
 print_step "🔐 9. 配置防火墙..."
 # 开放必要端口
-ufw allow 22    # SSH
-ufw allow 80    # HTTP
-ufw allow 443   # HTTPS
-ufw allow 8000  # F1 API (仅内部访问)
+ufw allow 13578  # SSH (自定义端口)
+ufw allow 80     # HTTP
+ufw allow 443    # HTTPS
+ufw allow 8000   # F1 API (仅内部访问)
+
+# 如果UFW未启用，询问是否启用
+if ! ufw status | grep -q "Status: active"; then
+    print_warning "UFW防火墙未启用，建议启用以增强安全性"
+    echo "可以稍后手动执行: ufw --force enable"
+fi
 
 print_step "📊 10. 检查端口占用..."
 netstat -tlnp | grep -E ':3000|:8000' || print_step "✅ 端口 3000 和 8000 可用"

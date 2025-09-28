@@ -40,6 +40,13 @@ f1.251125.xyz
 - ✅ 基础的Linux环境
 - ✅ 域名DNS解析 (`f1.251125.xyz` → VPS IP)
 
+### 📋 部署信息
+在使用自定义SSH端口(13578)的环境中，需要注意：
+
+1. **防火墙配置**: 脚本会自动开放端口13578
+2. **SSH连接**: 使用 `ssh -p 13578 root@172.245.39.166`
+3. **文件传输**: 使用 `scp -P 13578` (注意大写P)
+
 ### 2. 上传部署文件
 
 ```bash
@@ -47,11 +54,11 @@ f1.251125.xyz
 cd F1-web
 tar -czf f1-deploy.tar.gz deploy/
 
-# 上传到VPS
-scp f1-deploy.tar.gz root@your-vps:/tmp/
+# 上传到VPS (使用自定义端口)
+scp -P 13578 f1-deploy.tar.gz root@172.245.39.166:/tmp/
 
-# 在VPS上解压
-ssh root@your-vps
+# 连接到VPS并解压
+ssh -p 13578 root@172.245.39.166
 cd /tmp
 tar -xzf f1-deploy.tar.gz
 ```
@@ -238,8 +245,12 @@ sudo -u postgres psql -c "\du"
 
 ## 🔄 更新部署
 
-### 更新代码
+### 使用SSH自定义端口更新代码
 ```bash
+# 连接到VPS
+ssh -p 13578 root@172.245.39.166
+
+# 更新后端代码
 cd /var/www/f1-web/backend
 sudo -u f1web git pull origin vps-deployment
 sudo -u f1web poetry install --no-dev

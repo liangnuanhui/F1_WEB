@@ -10,7 +10,8 @@ Group=www-data
 WorkingDirectory=/var/www/f1-web/backend
 Environment=PATH=/home/f1web/.local/bin:/var/www/f1-web/backend/.venv/bin
 EnvironmentFile=/var/www/f1-web/.env
-ExecStart=/home/f1web/.local/bin/poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
+ExecStartPre=/bin/bash -c 'POETRY_PATH=$$(which poetry 2>/dev/null || echo "/home/f1web/.local/bin/poetry"); if [ ! -x "$$POETRY_PATH" ]; then echo "Poetry not found"; exit 1; fi'
+ExecStart=/bin/bash -c 'POETRY_PATH=$$(which poetry 2>/dev/null || echo "/home/f1web/.local/bin/poetry"); $$POETRY_PATH run uvicorn app.main:app --host 0.0.0.0 --port 8000'
 Restart=always
 RestartSec=3
 StandardOutput=journal

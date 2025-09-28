@@ -66,12 +66,39 @@ fi
 
 print_step "🐍 3. 安装Python依赖..."
 cd "$F1_HOME/backend"
-sudo -u "$F1_USER" /home/"$F1_USER"/.local/bin/poetry install --no-dev
+
+# 检查Poetry是否可用
+POETRY_PATH=$(which poetry 2>/dev/null || echo "/home/$F1_USER/.local/bin/poetry")
+if [ ! -x "$POETRY_PATH" ]; then
+    print_error "Poetry未安装或不可执行，请先运行基础设置脚本"
+fi
+
+# 检查pyproject.toml文件
+if [ ! -f "pyproject.toml" ]; then
+    print_error "未找到pyproject.toml文件，请确认代码已正确克隆"
+fi
+
+print_step "使用Poetry安装依赖: $POETRY_PATH"
+sudo -u "$F1_USER" "$POETRY_PATH" install --no-dev
 
 print_step "🗄️ 4. 运行数据库迁移..."
-sudo -u "$F1_USER" /home/"$F1_USER"/.local/bin/poetry run alembic upgrade head
+# 检查数据库连接
+if ! sudo -u postgres psql -d "$DB_NAME" -c "SELECT 1;" > /dev/null 2>&1; then
+    print_error "无法连接数据库 $DB_NAME，请检查PostgreSQL配置"
+fi
+
+# 检查alembic配置
+if [ ! -f "alembic.ini" ]; then
+    print_error "未找到alembic.ini文件，无法运行数据库迁移"
+fi
+
+sudo -u "$F1_USER" "$POETRY_PATH" run alembic upgrade head
 
 print_step "🎨 5. 构建前端应用..."
+if [ ! -f "/tmp/deploy/scripts/build-frontend.sh" ]; then
+    print_error "前端构建脚本不存在: /tmp/deploy/scripts/build-frontend.sh"
+fi
+
 bash /tmp/deploy/scripts/build-frontend.sh
 
 print_step "⚙️ 6. 启动systemd服务..."
