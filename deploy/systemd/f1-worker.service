@@ -5,13 +5,12 @@ Wants=redis.service
 
 [Service]
 Type=simple
-User=f1web
-Group=www-data
+User=root
+Group=root
 WorkingDirectory=/var/www/f1-web/backend
-Environment=PATH=/home/f1web/.local/bin:/var/www/f1-web/backend/.venv/bin
+Environment=PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=/var/www/f1-web/.env
-ExecStartPre=/bin/bash -c 'POETRY_PATH=$$(which poetry 2>/dev/null || echo "/home/f1web/.local/bin/poetry"); if [ ! -x "$$POETRY_PATH" ]; then echo "Poetry not found"; exit 1; fi'
-ExecStart=/bin/bash -c 'POETRY_PATH=$$(which poetry 2>/dev/null || echo "/home/f1web/.local/bin/poetry"); $$POETRY_PATH run celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2'
+ExecStart=/root/.cache/pypoetry/virtualenvs/f1-web-backend-gSlLT1KT-py3.12/bin/python -m celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
 Restart=always
 RestartSec=5
 StandardOutput=journal
